@@ -1,16 +1,20 @@
 #!/usr/bin/env node
-import { readFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { main } from "./main.js";
 
 /**
- * `brief-board`: the one client agents use. Brief 04 adds the commands; for
- * now it answers `--version`. It must run with plain `node` from `dist/`, with
- * no dev tools on PATH, because other repos call it by name.
+ * The `brief-board` binary. It runs from `dist/` with plain `node` and no dev
+ * tools on PATH, because other repos call it by name. `src/` and `dist/` sit
+ * one level under the package, so `../` is the package root either way.
  */
-const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as { version: string };
-
-const args = process.argv.slice(2);
-if (args.includes("--version") || args.includes("-v")) {
-  console.log(pkg.version);
-} else {
-  console.log(`brief-board ${pkg.version}. Commands arrive with brief 04.`);
-}
+process.exitCode = await main(
+  process.argv.slice(2),
+  {
+    env: process.env,
+    cwd: process.cwd(),
+    home: homedir(),
+    out: (line) => console.log(line),
+    err: (line) => console.error(line),
+  },
+  new URL("../", import.meta.url),
+);

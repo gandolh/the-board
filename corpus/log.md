@@ -75,3 +75,11 @@ Fastify + better-sqlite3 on 127.0.0.1:8806 with the seven contract routes,
 moves enforced by the shared table, and sync as the one writer that corrects
 status without it. 38 inject tests; the board served from a file under
 `data/`.
+
+## [2026-10-09] done | Brief 04: the brief-board CLI
+
+`create`, `start` (a resume when already In Progress), `move`, `comment`,
+`show` and `list`, with the move checked locally first so agents learn the
+table from the CLI. Address from env, repo `.env`, user config, default; exit 3
+with one line when the board is down. Ran from atrium's repo against a scratch
+board.

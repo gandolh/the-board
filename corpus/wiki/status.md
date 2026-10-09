@@ -1,5 +1,5 @@
 ---
-summary: Snapshot as of 2026-10-09. The repo is the owner's the-board on GitHub and briefs 01-03 are done; 04 to 08 are in todo/. One line per brief, and the order they run in.
+summary: Snapshot as of 2026-10-09. The repo is the owner's the-board on GitHub and briefs 01-04 are done; 05 to 08 are in todo/. One line per brief, and the order they run in.
 updated: 2026-10-09
 ---
 
@@ -20,7 +20,7 @@ tests and serves a placeholder on 127.0.0.1:8806.
   done 2026-10-09. Statuses, the move table, keys, zod schemas for every route.
 - 03 [API server](../briefs/done/03-api-server.md). done 2026-10-09. SQLite storage,
   enforced moves, sync rules.
-- 04 [The brief-board CLI](../briefs/todo/04-cli.md). todo. Every agent
+- 04 [The brief-board CLI](../briefs/done/04-cli.md). done 2026-10-09. Every agent
   command, address lookup, resume, exit 3 when the board is down.
 - 05 [Sync](../briefs/todo/05-sync.md). todo. Reads every corpus and builds
   the sync payload.

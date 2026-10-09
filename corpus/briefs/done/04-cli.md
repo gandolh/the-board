@@ -85,3 +85,29 @@ placeholder) so the command list is complete.
   `~/projects`.
 - Do not run `npm link`. It is a global install and an owner step (brief 08).
 - `npm run typecheck && npm run lint && npm test` pass.
+
+## Outcome (2026-10-09)
+
+Done. `cli/src/`: `main.ts` (dispatch and exit codes), `runtime.ts`
+(arguments, project, author, key), `context.ts` (repo root, board address),
+`client.ts`, `format.ts`, `errors.ts`, and `commands/` (`create`, `moves`
+for start/move/comment, `read` for show/list, and the `sync` and `guide`
+placeholders, with `guide.md` a one-line placeholder for brief 06).
+
+Calls the brief left open:
+- A status argument may be the id, hyphenated, or the label
+  (`ready_for_test`, `ready-for-test`, "Ready for test").
+- A refused local check exits 2, like a board refusal, and prints the allowed
+  moves with the message each needs. `move` and `start` fetch the ticket first.
+- `create`'s `--author` has nothing to carry it: the contract's `PUT` takes no
+  author, so creation is recorded under the server's default.
+- A 4xx that is not the contract's JSON (another service on that port) counts
+  as the board being unreachable.
+- `sync` exits 1 until brief 05.
+
+Verified: 13 tests run every command against `buildApp` on a random port
+(resume, the local message check, the four address sources in order, exit 3
+with exactly one line). From `~/projects/atrium`, the built
+`node cli/dist/index.js` created `atrium-79` from its brief file, started it,
+listed it with `--all`, and exited 2 and 3 where it should. `npm link` was not
+run (brief 08, an owner step). Typecheck, lint and the suite (97) pass.
