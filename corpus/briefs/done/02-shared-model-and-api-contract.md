@@ -80,3 +80,22 @@ shared/src/key.ts  shared/src/api.ts  shared/src/*.test.ts
 - Key tests for hyphenated projects, capitals, padded and unpadded numbers, and
   three-digit numbers.
 - `npm run typecheck && npm test` pass.
+
+## Outcome (2026-10-09)
+
+Done. `shared/src/` holds `status.ts`, `moves.ts`, `key.ts`, `api.ts` and the
+barrel; the scaffold's smoke test is replaced by real ones (46 tests).
+
+Calls the brief left open:
+- **Roles on optional moves.** Every move to Done carries a `conclusion` (the
+  glossary defines it as the optional message on a move to Done), Blocked →
+  Done a `confirmation`, and the rest a `comment`.
+- **`checkMove`** returns `{ok: true, rule}` or `{ok: false, code, allowed}`.
+  A message of only whitespace counts as missing.
+- **Keys.** A project may hold letters, digits, `.`, `_` and `-`, and may end
+  in digits (`3D-sandbox-12`). `keySchema` validates and normalises
+  (`trips-4` → `trips-04`).
+- **History** `from` is null for the event that created a ticket.
+- **Sync response** has `created`, `updated`, `unchanged` and `warnings`.
+- `PUT` takes `tags` with a default of none; `author` is optional everywhere,
+  and brief 03 picks the default.

@@ -61,3 +61,10 @@ The repo is the owner's `gandolh/the-board`, cloned in place. npm workspaces
 audit's sake and `shell-quote` overridden under `concurrently`. A clean-tree
 install, typecheck, lint, test and build pass; the placeholder server answers
 on 127.0.0.1:8806 and the CLI prints its version with plain `node`.
+
+## [2026-10-09] done | Brief 02: shared model and API contract
+
+Statuses, the twelve-row move table with `checkMove`, keys that split on the
+last `-<digits>`, and zod schemas for all seven routes are in `shared`. One test
+per move row, unlisted moves, and the key cases from the brief. Briefs 03, 04
+and 07 can now run against it.

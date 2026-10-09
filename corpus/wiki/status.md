@@ -1,5 +1,5 @@
 ---
-summary: Snapshot as of 2026-10-09. The repo is gandolh/the-board and brief 01's scaffold is in; briefs 02 to 08 are in todo/. One line per brief, and the order they run in.
+summary: Snapshot as of 2026-10-09. The repo is the owner's the-board on GitHub and briefs 01-02 are in; briefs 03 to 08 are in todo/. One line per brief, and the order they run in.
 updated: 2026-10-09
 ---
 
@@ -9,15 +9,15 @@ updated: 2026-10-09
 
 The design was settled in a grill-me session on 2026-10-08. See
 [decisions.md](decisions.md) and [architecture.md](architecture.md). The repo
-is the owner's `gandolh/the-board` (2026-10-09). Brief 01's scaffold builds,
+is the owner's GitHub repository the-board (2026-10-09). Brief 01's scaffold builds,
 tests and serves a placeholder on 127.0.0.1:8806.
 
 ## Briefs
 
 - 01 [Workspace scaffold](../briefs/done/01-workspace-scaffold.md). done 2026-10-09.
   npm workspaces, tooling, placeholder server on 127.0.0.1:8806.
-- 02 [Shared model and API contract](../briefs/todo/02-shared-model-and-api-contract.md).
-  todo. Statuses, the move table, keys, zod schemas for every route.
+- 02 [Shared model and API contract](../briefs/done/02-shared-model-and-api-contract.md).
+  done 2026-10-09. Statuses, the move table, keys, zod schemas for every route.
 - 03 [API server](../briefs/todo/03-api-server.md). todo. SQLite storage,
   enforced moves, sync rules.
 - 04 [The brief-board CLI](../briefs/todo/04-cli.md). todo. Every agent

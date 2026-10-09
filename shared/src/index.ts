@@ -1,8 +1,10 @@
 /**
  * @brief-board/shared: what the server, the board and the CLI must agree on.
- *
- * Brief 02 fills this with the statuses, the allowed moves, the ticket keys and
- * the zod schemas for every route. Until then it carries only the product name,
- * so every package has something real to import.
+ * The statuses and their order, the move table, the key format, and the zod
+ * schema of every route (brief 02). The words come from the glossary in
+ * corpus/wiki/glossary.md.
  */
-export const PRODUCT = "brief-board";
+export * from "./status.js";
+export * from "./moves.js";
+export * from "./key.js";
+export * from "./api.js";
