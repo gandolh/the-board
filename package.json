@@ -1,0 +1,38 @@
+{
+  "name": "brief-board",
+  "version": "0.1.0",
+  "description": "One board for every corpus brief across ~/projects.",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "shared",
+    "server",
+    "web",
+    "cli"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "tsc -b shared && concurrently --names server,web --kill-others-on-fail \"npm run dev -w @brief-board/server\" \"npm run dev -w @brief-board/web\"",
+    "build": "tsc -b && npm run build -w @brief-board/web",
+    "start": "node server/dist/index.js",
+    "test": "vitest run",
+    "typecheck": "tsc -b && tsc -p web --noEmit",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.19.1",
+    "concurrently": "10.0.5",
+    "eslint": "10.9.1",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.69.0",
+    "vitest": "4.1.11"
+  },
+  "license": "MIT",
+  "overrides": {
+    "shell-quote": "1.11.0"
+  }
+}

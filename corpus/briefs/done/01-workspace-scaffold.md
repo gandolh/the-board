@@ -60,3 +60,28 @@ Briefs 02 to 07 own those.
 - `npm start`, then `curl http://127.0.0.1:8806/api/health` returns
   `{"ok":true}`, and `http://127.0.0.1:8806/` shows the placeholder page.
 - `node cli/dist/index.js --version` prints the version.
+
+## Outcome (2026-10-09)
+
+Done. The repo is the owner's `gandolh/the-board`, cloned into this directory
+(its `Initial commit` carried `LICENSE`, `.gitignore` and a one-line README);
+no `git init` was run.
+
+- Pins follow Ward's (`wzd_auth`), the closest house stack: TypeScript 6.0.3,
+  Vitest 4.1.11, ESLint 10.9.1 with typescript-eslint 8.69.0, zod 4.5.4,
+  better-sqlite3 13.0.3, Vite 8.2.2, React 19.2.8, plus `@fastify/static`
+  10.1.5 as newspapper has it. Fastify is **5.12.5**, not Ward's 5.12.1:
+  `npm audit` flags every 5.12.x up to 5.12.4 (five advisories).
+- `concurrently` 10.0.5 pulls `shell-quote` 1.9.0 (critical advisory), and its
+  own fix is a day old, so the root `package.json` overrides `shell-quote` to
+  1.11.0. `npm audit`: 0 vulnerabilities.
+- Each compiled package writes its `tsconfig.tsbuildinfo` into `dist/`. At the
+  package root, deleting `dist/` left the build info behind and `tsc -b`
+  skipped the emit, so a "clean" build produced no CLI.
+- Tests are compiled with the rest (`shared/dist/index.test.js`), so `tsc -b`
+  typechecks them; Vitest only reads `*/src/**`.
+
+Verified from a clean tree (`node_modules` and every `dist/` deleted):
+install, typecheck, lint, test and build all pass. `npm start` answered
+`{"ok":true}` on `/api/health` and served the built page at `/`, and
+`node cli/dist/index.js --version` printed `0.1.0` with only `node` on PATH.

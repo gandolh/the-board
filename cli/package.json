@@ -1,0 +1,16 @@
+{
+  "name": "@brief-board/cli",
+  "version": "0.1.0",
+  "description": "The brief-board command: how agents read and move tickets on the board.",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "brief-board": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "@brief-board/shared": "0.1.0"
+  }
+}

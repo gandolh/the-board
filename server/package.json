@@ -1,0 +1,23 @@
+{
+  "name": "@brief-board/server",
+  "version": "0.1.0",
+  "description": "The brief-board API (Fastify + SQLite), which also serves the built board.",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc -b",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@brief-board/shared": "0.1.0",
+    "@fastify/static": "10.1.5",
+    "better-sqlite3": "13.0.3",
+    "fastify": "5.12.5"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "9.6.0",
+    "tsx": "4.23.13"
+  }
+}

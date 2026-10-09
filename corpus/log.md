@@ -53,3 +53,11 @@ contract, API server, CLI, sync, the guide, read-only UI, and the rollout to
 every project's CLAUDE.md. Order and one-line states are in
 [wiki/status.md](wiki/status.md). Brief 01 waits for the owner to create the
 git repo.
+
+## [2026-10-09] done | Brief 01: workspace scaffold
+
+The repo is the owner's `gandolh/the-board`, cloned in place. npm workspaces
+`shared`, `server`, `web` and `cli` on Ward's pins, with Fastify 5.12.5 for the
+audit's sake and `shell-quote` overridden under `concurrently`. A clean-tree
+install, typecheck, lint, test and build pass; the placeholder server answers
+on 127.0.0.1:8806 and the CLI prints its version with plain `node`.

@@ -1,0 +1,21 @@
+{
+  "name": "@brief-board/shared",
+  "version": "0.1.0",
+  "description": "Statuses, allowed moves and zod schemas shared by the server, the board and the CLI.",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "zod": "4.5.4"
+  }
+}

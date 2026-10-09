@@ -1,6 +1,6 @@
 ---
-summary: Snapshot as of 2026-10-08. No code and no git repo yet; the design is settled and eight briefs are filed in todo/. One line per brief, and the order they run in.
-updated: 2026-10-08
+summary: Snapshot as of 2026-10-09. The repo is gandolh/the-board and brief 01's scaffold is in; briefs 02 to 08 are in todo/. One line per brief, and the order they run in.
+updated: 2026-10-09
 ---
 
 # Status
@@ -8,13 +8,13 @@ updated: 2026-10-08
 ## Where things stand
 
 The design was settled in a grill-me session on 2026-10-08. See
-[decisions.md](decisions.md) and [architecture.md](architecture.md). There is
-no code yet, and no git repo. **Brief 01 waits until the owner creates the
-repo.** No brief runs `git init`.
+[decisions.md](decisions.md) and [architecture.md](architecture.md). The repo
+is the owner's `gandolh/the-board` (2026-10-09). Brief 01's scaffold builds,
+tests and serves a placeholder on 127.0.0.1:8806.
 
 ## Briefs
 
-- 01 [Workspace scaffold](../briefs/todo/01-workspace-scaffold.md). todo.
+- 01 [Workspace scaffold](../briefs/done/01-workspace-scaffold.md). done 2026-10-09.
   npm workspaces, tooling, placeholder server on 127.0.0.1:8806.
 - 02 [Shared model and API contract](../briefs/todo/02-shared-model-and-api-contract.md).
   todo. Statuses, the move table, keys, zod schemas for every route.
