@@ -1,5 +1,5 @@
 ---
-summary: Snapshot as of 2026-10-09. The repo is the owner's the-board on GitHub and briefs 01-05 and 07 are done; 06 and 08 are in todo/. One line per brief, and the order they run in.
+summary: Snapshot as of 2026-10-09. The repo is the owner's the-board on GitHub and briefs 01-07 are done; 08 is in todo/. One line per brief, and the order they run in.
 updated: 2026-10-09
 ---
 
@@ -24,7 +24,7 @@ tests and serves a placeholder on 127.0.0.1:8806.
   command, address lookup, resume, exit 3 when the board is down.
 - 05 [Sync](../briefs/done/05-sync.md). done 2026-10-09. Reads every corpus and builds
   the sync payload.
-- 06 [The guide](../briefs/todo/06-the-guide.md). todo. The rules
+- 06 [The guide](../briefs/done/06-the-guide.md). done 2026-10-09. The rules
   `brief-board guide` prints.
 - 07 [Read-only board UI](../briefs/done/07-read-only-board-ui.md). done 2026-10-09.
   Lanes, six columns, detail panel, polling.

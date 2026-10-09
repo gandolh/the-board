@@ -100,3 +100,10 @@ directory, takes titles from the H1 and summaries from Context or Problem, and
 sends one request. `--dry-run` against `~/projects` saw 14 projects. Close and
 hide counts fold into "updated", because the contract carries no separate
 fields for them.
+
+## [2026-10-09] done | Brief 06: the guide
+
+`brief-board guide` prints the rules in 76 lines: what the board is, filing,
+starting and resuming, blocking only by agreement, picking the finishing
+column, mapping the owner's reports to moves, the down board, the hard rules,
+and the move table rendered from `shared`.

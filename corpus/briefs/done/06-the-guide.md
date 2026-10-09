@@ -64,3 +64,16 @@ server enforces. The guide must cover:
 - Read the output once as a fresh agent would. Every instruction should be
   something you can act on without opening the corpus.
 - `npm run typecheck && npm run lint && npm test` pass.
+
+## Outcome (2026-10-09)
+
+Done. `cli/src/guide.md` is the text, with a `{{moves}}` marker that
+`commands/guide.ts` fills from `shared`'s `MOVES` at print time, one line per
+move with its message role and whether it is required. The printed guide is
+76 lines. Its nine numbered sections follow the brief's nine topics; the test
+checks each heading, every move, and the 80-line ceiling.
+
+Calls made in the text: the move lines use the status ids that `move` takes
+(`ready_for_test`), and the deploy example names vps-deploy's
+`node cli.ts <project> deploy`. Read once as a fresh agent: every step names
+the command to run.
