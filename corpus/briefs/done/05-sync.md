@@ -68,3 +68,28 @@ Sync only reads them.
   newspapper (105) had briefs in `todo/`. Use that as a sanity check, not a
   test.
 - `npm run typecheck && npm run lint && npm test` pass.
+
+## Outcome (2026-10-09)
+
+Done. `cli/src/sync/parse.ts` (title and summary), `cli/src/sync/read.ts`
+(projects directory, discovery, one project's briefs), `cli/src/commands/sync.ts`,
+and fixture corpora under `cli/test/fixtures/projects/`. Brief 04's test of the
+placeholder now tests the real command.
+
+Calls the brief left open:
+- **The report** says created, updated and unchanged, plus every warning. The
+  contract (brief 02) has no separate `closed` and `hidden` counts: a close or
+  a hide counts as `updated`. Splitting them out means adding fields to
+  `syncResponseSchema` and the server, which this brief may not touch.
+- **Headings.** Besides `Task`, `Brief` and a bare number, newspapper's
+  `Wave 0 —` is stripped too. A heading with no number, like public-resource-map's
+  `# Design Brief — Public Resource Map`, stays as written.
+- **Summaries.** `## Project context` (newspapper) counts as Context. A Context
+  section that opens with a sub-heading falls back to the paragraph after the
+  H1. Images become their alt text along with links.
+- `~` at the start of `BRIEF_BOARD_PROJECTS_DIR` means the home directory.
+
+Verified: 14 sync tests plus 3 command tests against `buildApp`; the full
+suite (111), typecheck and lint pass. `sync --dry-run` against `~/projects`
+listed 14 projects. In `todo/`: atrium 79, newspapper 105, brief-board 5, 6
+and 8, and vps-deploy 1 to 7, filed after 2026-10-08.

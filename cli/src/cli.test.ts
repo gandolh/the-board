@@ -191,12 +191,38 @@ describe("errors and exit codes", () => {
     }
   });
 
-  it("prints the version, the placeholder guide, and says sync is not built yet", async () => {
+  it("prints the version and the guide", async () => {
     expect((await run(["--version"])).out).toMatch(/^\d+\.\d+\.\d+$/);
     expect((await run(["guide"])).code).toBe(0);
-    const sync = await run(["sync"]);
-    expect(sync.code).toBe(1);
-    expect(sync.err).toContain("not implemented yet");
+  });
+});
+
+describe("sync", () => {
+  const fixtures = new URL("../test/fixtures/projects/", import.meta.url).pathname;
+  const env = () => ({ BRIEF_BOARD_URL: url, BRIEF_BOARD_PROJECTS_DIR: fixtures });
+
+  it("--dry-run lists each project's briefs and sends nothing", async () => {
+    const res = await run(["sync", "--dry-run"], { env: env() });
+    expect(res.code).toBe(0);
+    expect(res.out).toContain("alpha: 3 brief(s), 1 todo, 1 done, 1 superseded; in todo: 1");
+    expect(res.out).toContain("beta: 2 brief(s), 1 todo, 1 done, 0 superseded; in todo: 7");
+    expect((await run(["show", "alpha-01"], { env: env() })).code).toBe(2);
+  });
+
+  it("sends every project in one request and prints the counts", async () => {
+    const first = await run(["sync"], { env: env() });
+    expect(first.code).toBe(0);
+    expect(first.out).toBe("Synced 2 project(s), 5 brief(s): 2 created, 0 updated, 0 unchanged.");
+    expect((await run(["show", "alpha-01"], { env: env() })).out).toContain("A compass that matches the world");
+    const again = await run(["sync", "--project", "alpha"], { env: env() });
+    expect(again.out).toBe("Synced 1 project(s), 3 brief(s): 0 created, 0 updated, 1 unchanged.");
+  });
+
+  it("refuses an unknown --project, and exits 3 when the board is down", async () => {
+    expect((await run(["sync", "--project", "gamma"], { env: env() })).code).toBe(1);
+    const down = await run(["sync"], { env: { BRIEF_BOARD_URL: `http://127.0.0.1:${await freePort()}`, BRIEF_BOARD_PROJECTS_DIR: fixtures } });
+    expect(down.code).toBe(3);
+    expect(down.errLines).toHaveLength(1);
   });
 });
 

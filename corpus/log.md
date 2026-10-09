@@ -92,3 +92,11 @@ read-only detail panel with markdown, role-labelled comments and history. Polls
 every 10 s, pauses when hidden, and keeps the last data behind a banner when the
 API is down. Light and dark follow the system; at 390 px only lanes scroll
 sideways. `scripts/seed-demo.ts` fills a scratch board.
+
+## [2026-10-09] done | Brief 05: sync
+
+`brief-board sync` reads every project's `corpus/briefs/` under the projects
+directory, takes titles from the H1 and summaries from Context or Problem, and
+sends one request. `--dry-run` against `~/projects` saw 14 projects. Close and
+hide counts fold into "updated", because the contract carries no separate
+fields for them.

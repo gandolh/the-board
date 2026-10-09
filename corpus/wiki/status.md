@@ -1,5 +1,5 @@
 ---
-summary: Snapshot as of 2026-10-09. The repo is the owner's the-board on GitHub and briefs 01-04 and 07 are done; 05, 06 and 08 are in todo/. One line per brief, and the order they run in.
+summary: Snapshot as of 2026-10-09. The repo is the owner's the-board on GitHub and briefs 01-05 and 07 are done; 06 and 08 are in todo/. One line per brief, and the order they run in.
 updated: 2026-10-09
 ---
 
@@ -22,7 +22,7 @@ tests and serves a placeholder on 127.0.0.1:8806.
   enforced moves, sync rules.
 - 04 [The brief-board CLI](../briefs/done/04-cli.md). done 2026-10-09. Every agent
   command, address lookup, resume, exit 3 when the board is down.
-- 05 [Sync](../briefs/todo/05-sync.md). todo. Reads every corpus and builds
+- 05 [Sync](../briefs/done/05-sync.md). done 2026-10-09. Reads every corpus and builds
   the sync payload.
 - 06 [The guide](../briefs/todo/06-the-guide.md). todo. The rules
   `brief-board guide` prints.
