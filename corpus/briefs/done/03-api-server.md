@@ -80,3 +80,31 @@ around it), `cli/`, `web/`, `corpus/`.
 - `npm run typecheck && npm run lint && npm test` pass.
 - `npm run build && npm start` serves `/api/board` on 127.0.0.1:8806 against
   a file under `data/`.
+
+## Outcome (2026-10-09)
+
+Done. `server/src/`: `db.ts` (schema and `user_version` migrations), `store.ts`
+(tickets, tags, comments, history, moves, the board query), `sync.ts`, `app.ts`
+(`buildApp`) and `index.ts`. zod is now a direct server dependency.
+
+Calls the brief left open:
+- **Author** defaults to `agent`; sync writes as `sync`. Creating a ticket
+  records a history event from null to To Do (`via: move` for an agent's
+  `PUT`, `via: sync` for sync).
+- **Tags** are replaced on every `PUT`, deduplicated, and never include the
+  project itself.
+- **Sync** also refreshes title and path for an existing ticket whose brief is
+  in `done/` (the file moved), counts `updated` and `unchanged`, warns on a
+  number used by two briefs, and un-hides a ticket whose brief is no longer in
+  `superseded/`.
+- **Error codes:** `invalid_request`, `invalid_key`, `not_found`,
+  `move_not_allowed`, `message_required`, `internal`. A `PUT` answers 201 when
+  it created the ticket.
+- An unknown path outside `/api` gets the board's `index.html`; under `/api`
+  it is a 404 in the contract's error shape.
+
+Verified: 38 `inject` tests (every move row through the route, with and
+without its message; 400 and 404 bodies; a double create; every sync rule; the
+`doneDays` and `tag` filters; the `index.html` fallback). Typecheck, lint and
+the full suite (84) pass. `npm run build && npm start` created
+`data/brief-board.sqlite` and served `/api/board` on 127.0.0.1:8806.

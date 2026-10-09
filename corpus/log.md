@@ -68,3 +68,10 @@ Statuses, the twelve-row move table with `checkMove`, keys that split on the
 last `-<digits>`, and zod schemas for all seven routes are in `shared`. One test
 per move row, unlisted moves, and the key cases from the brief. Briefs 03, 04
 and 07 can now run against it.
+
+## [2026-10-09] done | Brief 03: API server
+
+Fastify + better-sqlite3 on 127.0.0.1:8806 with the seven contract routes,
+moves enforced by the shared table, and sync as the one writer that corrects
+status without it. 38 inject tests; the board served from a file under
+`data/`.
