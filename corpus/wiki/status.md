@@ -1,0 +1,40 @@
+---
+summary: Snapshot as of 2026-10-08. No code and no git repo yet; the design is settled and eight briefs are filed in todo/. One line per brief, and the order they run in.
+updated: 2026-10-08
+---
+
+# Status
+
+## Where things stand
+
+The design was settled in a grill-me session on 2026-10-08. See
+[decisions.md](decisions.md) and [architecture.md](architecture.md). There is
+no code yet, and no git repo. **Brief 01 waits until the owner creates the
+repo.** No brief runs `git init`.
+
+## Briefs
+
+- 01 [Workspace scaffold](../briefs/todo/01-workspace-scaffold.md). todo.
+  npm workspaces, tooling, placeholder server on 127.0.0.1:8806.
+- 02 [Shared model and API contract](../briefs/todo/02-shared-model-and-api-contract.md).
+  todo. Statuses, the move table, keys, zod schemas for every route.
+- 03 [API server](../briefs/todo/03-api-server.md). todo. SQLite storage,
+  enforced moves, sync rules.
+- 04 [The brief-board CLI](../briefs/todo/04-cli.md). todo. Every agent
+  command, address lookup, resume, exit 3 when the board is down.
+- 05 [Sync](../briefs/todo/05-sync.md). todo. Reads every corpus and builds
+  the sync payload.
+- 06 [The guide](../briefs/todo/06-the-guide.md). todo. The rules
+  `brief-board guide` prints.
+- 07 [Read-only board UI](../briefs/todo/07-read-only-board-ui.md). todo.
+  Lanes, six columns, detail panel, polling.
+- 08 [Roll out to every project](../briefs/todo/08-rollout-to-projects.md).
+  todo. The CLAUDE.md section in 15 repos, owner setup in the README.
+
+## Order
+
+1. 01
+2. 02
+3. 03, 04 and 07 in parallel (all three build on 02's contract)
+4. 05 and 06 (both need the CLI)
+5. 08
