@@ -107,3 +107,11 @@ fields for them.
 starting and resuming, blocking only by agreement, picking the finishing
 column, mapping the owner's reports to moves, the down board, the hard rules,
 and the move table rendered from `shared`.
+
+## [2026-10-09] done | Brief 08: roll out to every project
+
+Thirteen repos got the brief-board section in their CLAUDE.md, each in its own
+one-file commit; brief-board's own is in this commit. vps-deploy was skipped
+because its `corpus/CLAUDE.md` has uncommitted work. The README's owner setup
+covers build, `npm link`, start, config and sync. The board is complete, and
+waits on the owner's setup.

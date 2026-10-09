@@ -93,3 +93,30 @@ Anything else in any other repo. Don't touch `shared/`, `server/`, `cli/` or
 - The path check finds nothing outside this repo.
 - After the owner has run the setup steps, running `brief-board guide` from
   inside sports-app prints the guide.
+
+## Outcome (2026-10-09)
+
+Done, apart from one skipped repo. The list on 2026-10-09 was the brief's
+table exactly: no project had gained a corpus since.
+
+- **Committed** ("Point agents at brief-board for brief progress"), one file
+  each, nothing else staged: 3D-sandbox, atrium, formally-verified-small-robot-scenarios,
+  game-engine, imbatranimOS, just-a-bot, newspapper, presentation-sites,
+  public-resource-map, showcase, sports-app, trips, and wzd_auth (a new
+  `corpus/CLAUDE.md`: a heading and the section). brief-board's own
+  `corpus/CLAUDE.md` is in this brief's commit.
+- **Skipped: vps-deploy.** Its `corpus/CLAUDE.md` already has uncommitted
+  changes (with 11 other uncommitted files in that repo). Add the section
+  there once that work lands.
+- formally-verified-small-robot-scenarios has 11 uncommitted changes of its
+  own; they were left alone, and only `corpus/CLAUDE.md` went into the commit.
+- Every project's corpus lint passed after the change. The path check
+  (`brief-board/`, `127.0.0.1:8806`) found nothing in any changed file.
+- The README's "Owner setup" lists build, `npm link` in `cli/`, `npm start`,
+  the optional `~/.config/brief-board/env`, and `brief-board sync`, and says
+  the board may be down.
+
+**Owed by the owner:** the README's setup steps. Until `npm link` runs, an
+agent following its CLAUDE.md finds no `brief-board` command. Running
+`node cli/dist/index.js guide` from inside sports-app printed the guide, which
+is what `brief-board guide` will do there once linked.

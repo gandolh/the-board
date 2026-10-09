@@ -93,3 +93,8 @@ updated: <YYYY-MM-DD>
 - **No pushes.** Commit locally. The owner pushes.
 - **Deploys and git hooks are owner steps.** Write the exact commands down and
   hand them over.
+
+## brief-board
+
+Brief progress goes on brief-board. Run `brief-board guide` before you
+start or resume a brief, and follow it.

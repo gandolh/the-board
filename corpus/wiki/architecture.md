@@ -1,12 +1,14 @@
 ---
-summary: How brief-board is put together. npm workspaces with a Fastify + SQLite API, a read-only Vite + React board, and the brief-board CLI that agents use; how the CLI finds the board without any repo holding a path; what each project's CLAUDE.md says. Sync runs by hand from the CLI. The owner starts the server by hand on 127.0.0.1:8806.
-updated: 2026-10-08
+summary: How brief-board is put together, as built. npm workspaces with a Fastify + SQLite API, a read-only Vite + React board, and the brief-board CLI that agents use; how the CLI finds the board without any repo holding a path; what each project's CLAUDE.md says. Sync runs by hand from the CLI. The owner starts the server by hand on 127.0.0.1:8806.
+updated: 2026-10-09
 ---
 
 # Architecture
 
-Nothing is built yet. This page describes the agreed shape. The briefs build
-it.
+Built by briefs 01 to 08 (2026-10-09). Code: `shared/src/` (statuses, the
+move table, keys, the API contract), `server/src/` (`app.ts`, `store.ts`,
+`sync.ts`), `cli/src/` (`main.ts`, `commands/`, `sync/`, `guide.md`) and
+`web/src/`.
 
 ## Pieces
 

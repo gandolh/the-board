@@ -1,5 +1,5 @@
 ---
-summary: Snapshot as of 2026-10-09. The repo is the owner's the-board on GitHub and briefs 01-07 are done; 08 is in todo/. One line per brief, and the order they run in.
+summary: Snapshot as of 2026-10-09. The repo is the owner's the-board on GitHub and all eight briefs are done; the owner's setup steps are in the README. One line per brief, and the order they run in.
 updated: 2026-10-09
 ---
 
@@ -28,8 +28,9 @@ tests and serves a placeholder on 127.0.0.1:8806.
   `brief-board guide` prints.
 - 07 [Read-only board UI](../briefs/done/07-read-only-board-ui.md). done 2026-10-09.
   Lanes, six columns, detail panel, polling.
-- 08 [Roll out to every project](../briefs/todo/08-rollout-to-projects.md).
-  todo. The CLAUDE.md section in 15 repos, owner setup in the README.
+- 08 [Roll out to every project](../briefs/done/08-rollout-to-projects.md).
+  done 2026-10-09. The section went into 14 repos; vps-deploy was skipped
+  because its CLAUDE.md has uncommitted work. Owner setup is in the README.
 
 ## Order
 
