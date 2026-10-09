@@ -76,3 +76,35 @@ web/vite.config.ts  scripts/seed-demo.ts
   - the detail panel for a ticket with comments of every role.
 - No element in the UI sends anything but a GET.
 - `npm run typecheck && npm run lint && npm run build` pass.
+
+## Outcome (2026-10-09)
+
+Done. `web/src/`: `App.tsx` (header, filter, banner, tab title), `Board.tsx`
+(sticky column headers, lanes, `orderLanes`), `Card.tsx`, `DetailPanel.tsx`,
+`usePolling.ts`, `api.ts` (the only requests, both GETs), `labels.ts`,
+`time.ts` and `styles.css`. `react-markdown` 10.1.0 with `skipHtml`.
+`scripts/seed-demo.ts` runs with plain `node` (Node 24 strips the types).
+
+Calls the brief left open:
+- **No single ticket can carry all six roles.** A confirmation needs Blocked →
+  Done and a conclusion any other move into Done, and nothing leaves Done. The
+  seed's `paper-kite-21` carries the other five; `paper-kite-22` carries the
+  confirmation.
+- The tag filter works on the polled board in the browser, so its options are
+  every tag on the board. The Blocked count and the tab title stay board-wide
+  while filtering.
+- A lane can be collapsed or expanded by hand either way; the starting state
+  is collapsed exactly when it has nothing open.
+- Below 1100 px the sticky header row gives way to a column name inside each
+  lane, because lanes there scroll sideways on their own and one header row
+  could not stay aligned with all of them.
+- The seed refuses a board that holds any project other than its three, and
+  skips tickets it already made.
+
+Verified (2026-10-09) in agent-browser against a dev server on a scratch
+database, seeded: the board, the collapsed `orchard-app` lane, the `ui` and
+`infra` filters, and the detail panel for `paper-kite-21`, at 1440 and 390 px.
+At 390 px the page is 390 px wide while each lane scrolls its 1360 px of
+columns. With the API stopped, the banner showed and nine cards stayed on
+screen. The tab title read "(1 blocked) brief-board". Typecheck, lint and
+build pass.

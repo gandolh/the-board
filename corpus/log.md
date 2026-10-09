@@ -83,3 +83,12 @@ status without it. 38 inject tests; the board served from a file under
 table from the CLI. Address from env, repo `.env`, user config, default; exit 3
 with one line when the board is down. Ran from atrium's repo against a scratch
 board.
+
+## [2026-10-09] done | Brief 07: read-only board UI
+
+A Jira-style board: sticky column headers, a lane per project (open lanes
+first, Done-only lanes collapsed), cards with their time in the column, and a
+read-only detail panel with markdown, role-labelled comments and history. Polls
+every 10 s, pauses when hidden, and keeps the last data behind a banner when the
+API is down. Light and dark follow the system; at 390 px only lanes scroll
+sideways. `scripts/seed-demo.ts` fills a scratch board.

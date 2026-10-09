@@ -1,10 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-
-// The board itself is brief 07's. This only proves the toolchain end to end.
-function App() {
-  return <h1>brief-board</h1>;
-}
+import { App } from "./App";
+import "./styles.css";
 
 const root = document.getElementById("root");
 if (!root) throw new Error("index.html has no #root");

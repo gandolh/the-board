@@ -15,7 +15,7 @@ Start here. Triage on the summary lines and open at most 2-3 pages.
 - [wiki/glossary.md](wiki/glossary.md) - The board's vocabulary. Ticket vs brief, project, lane, project tag and tag, sync, the guide, the six statuses (To Do, In Progress, Blocked, Ready for test, Ready for deploy, Done), and the messages a move can carry (conclusion, block reason, confirmation, test notes, deploy steps), each with the words they replace.
 - [wiki/open-questions.md](wiki/open-questions.md) - Genuinely unresolved design questions. Empty as of 2026-10-08, after the grill-me session settled the design.
 - [wiki/overview.md](wiki/overview.md) - What brief-board is (one Jira-style board, a lane per project, showing where every corpus brief across ~/projects stands), what it adds on top of the corpus, and what it deliberately leaves to the corpus.
-- [wiki/status.md](wiki/status.md) - Snapshot as of 2026-10-09. The repo is the owner's the-board on GitHub and briefs 01-04 are done; 05 to 08 are in todo/. One line per brief, and the order they run in.
+- [wiki/status.md](wiki/status.md) - Snapshot as of 2026-10-09. The repo is the owner's the-board on GitHub and briefs 01-04 and 07 are done; 05, 06 and 08 are in todo/. One line per brief, and the order they run in.
 
 <!-- END CATALOG -->
 
