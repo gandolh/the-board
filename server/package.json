@@ -14,7 +14,7 @@
     "@brief-board/shared": "0.1.0",
     "@fastify/static": "10.1.5",
     "better-sqlite3": "13.0.3",
-    "fastify": "5.12.5",
+    "fastify": "5.12.7",
     "zod": "4.5.4"
   },
   "devDependencies": {
