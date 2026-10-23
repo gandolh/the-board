@@ -213,7 +213,7 @@ main {
   transition: transform 150ms ease;
 }
 
-.lane-head[aria-expanded="true"] .chevron {
+.lane-head[data-panel-open] .chevron {
   transform: rotate(90deg);
 }
 

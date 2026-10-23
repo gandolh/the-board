@@ -1,3 +1,4 @@
+import { Collapsible } from "@base-ui/react/collapsible";
 import { STATUS_LABELS, STATUSES, type Lane as LaneData, type Ticket } from "@brief-board/shared";
 import { Card } from "./Card";
 
@@ -67,8 +68,12 @@ function Lane({
   const open = lane.tickets.filter(isOpen).length;
   const done = lane.tickets.length - open;
   return (
-    <section className="lane" aria-label={`Project ${lane.project}`}>
-      <button type="button" className="lane-head" aria-expanded={expanded} onClick={() => onToggle(lane.project)}>
+    <Collapsible.Root
+      open={expanded}
+      onOpenChange={() => onToggle(lane.project)}
+      render={<section className="lane" aria-label={`Project ${lane.project}`} />}
+    >
+      <Collapsible.Trigger className="lane-head">
         <svg className="chevron" viewBox="0 0 16 16" aria-hidden="true">
           <path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
@@ -77,23 +82,21 @@ function Lane({
           {open > 0 ? `${open} open · ` : ""}
           {done} done
         </span>
-      </button>
-      {expanded && (
-        <div className="lane-scroll">
-          <div className="lane-cols">
-            {STATUSES.map((status) => (
-              <div key={status} className={`cell col-${status}`}>
-                <div className="cell-head">{STATUS_LABELS[status]}</div>
-                {lane.tickets
-                  .filter((ticket) => ticket.status === status)
-                  .map((ticket) => (
-                    <Card key={ticket.key} ticket={ticket} now={now} onOpen={onOpen} />
-                  ))}
-              </div>
-            ))}
-          </div>
+      </Collapsible.Trigger>
+      <Collapsible.Panel className="lane-scroll">
+        <div className="lane-cols">
+          {STATUSES.map((status) => (
+            <div key={status} className={`cell col-${status}`}>
+              <div className="cell-head">{STATUS_LABELS[status]}</div>
+              {lane.tickets
+                .filter((ticket) => ticket.status === status)
+                .map((ticket) => (
+                  <Card key={ticket.key} ticket={ticket} now={now} onOpen={onOpen} />
+                ))}
+            </div>
+          ))}
         </div>
-      )}
-    </section>
+      </Collapsible.Panel>
+    </Collapsible.Root>
   );
 }

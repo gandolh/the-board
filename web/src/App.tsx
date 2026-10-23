@@ -73,7 +73,7 @@ export function App() {
         )}
       </main>
 
-      {openKey && <DetailPanel ticketKey={openKey} refreshedAt={board.fetchedAt} onClose={close} />}
+      {openKey && <DetailPanel key={openKey} ticketKey={openKey} refreshedAt={board.fetchedAt} onClose={close} />}
     </div>
   );
 }

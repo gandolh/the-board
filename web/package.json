@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@base-ui/react": "1.9.0",
     "@brief-board/shared": "0.1.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
