@@ -115,3 +115,11 @@ one-file commit; brief-board's own is in this commit. vps-deploy was skipped
 because its `corpus/CLAUDE.md` has uncommitted work. The README's owner setup
 covers build, `npm link`, start, config and sync. The board is complete, and
 waits on the owner's setup.
+
+## [2026-10-23] todo | Brief 09 filed: Base UI for the panel and the lanes
+
+The owner asked for Base UI in the apps that still hand-build their widgets.
+[Brief 09](briefs/todo/09-base-ui-widgets.md) moves the detail panel to a
+non-modal Base UI `Dialog` and the lanes to `Collapsible`; the tag filter
+stays a native select. brief-board is down (since 2026-10-13), so this is
+recorded here only.
