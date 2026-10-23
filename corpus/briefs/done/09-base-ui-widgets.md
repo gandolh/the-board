@@ -73,3 +73,21 @@ corpus/wiki/decisions.md  corpus/wiki/status.md
     screenshots before and after.
 - No hand-written Escape or focus code is left in `DetailPanel.tsx`.
 - `bash corpus/lint.sh` passes.
+
+## Outcome (2026-10-23)
+
+Shipped in `9012a73`. The panel is a non-modal `Dialog` with
+`disablePointerDismissal`, so clicking another card switches the ticket
+instead of closing the panel. `App.tsx` keys `DetailPanel` by ticket, so each
+ticket opens fresh: focus lands on Close (`initialFocus`), and Escape returns
+it to the card that opened that ticket. The panel keeps `aria-label="Ticket
+<key>"` as its name rather than `Dialog.Title`, so the name doesn't change
+when the detail loads. The lanes are `Collapsible`, with the chevron on
+`data-panel-open`. The web bundle grew from 122 KB to 143 KB gzipped.
+
+Checked against a seeded demo server on port 8816 (scratch database): typecheck,
+lint, 114 tests and the build pass. In the browser, mouse and Enter open a
+ticket, a second card switches it, Escape and Close return focus to the card,
+and lanes toggle with Enter and Space. Before/after screenshots at 1440 px and
+390 px match, apart from card ages and focus rings. One difference: the Close
+button now shows its focus ring when the panel opens.

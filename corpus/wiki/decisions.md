@@ -1,6 +1,6 @@
 ---
-summary: Locked calls for brief-board, each with date, rejected alternative and reason. One ticket per brief keyed <project>-<NN> with no hand-made tickets; Blocked only by agreement with the owner; which moves are allowed and which need a message; six columns with Ready for test and Ready for deploy as the owner's; the corpus wins over the board; one CLI on PATH that other repos name without a path; a read-only UI; one project tag per ticket decides its lane; sync only by hand; a down board never stops work. Read before proposing to change any of these.
-updated: 2026-10-08
+summary: Locked calls for brief-board, each with date, rejected alternative and reason. One ticket per brief keyed <project>-<NN> with no hand-made tickets; Blocked only by agreement with the owner; which moves are allowed and which need a message; six columns with Ready for test and Ready for deploy as the owner's; the corpus wins over the board; one CLI on PATH that other repos name without a path; a read-only UI; one project tag per ticket decides its lane; sync only by hand; a down board never stops work; Base UI for the UI's widgets. Read before proposing to change any of these.
+updated: 2026-10-23
 ---
 
 # Decisions
@@ -110,3 +110,13 @@ it, the agent tells the owner once and carries on with the brief without the
 board. Moves made while it is down are lost, and sync recovers what the corpus
 knows. Rejected: an always-on container with a restart policy, and agents
 waiting or failing until the board comes back.
+
+## Base UI for the UI's widgets, styled by our own CSS
+_2026-10-23_. The detail panel is a Base UI `Dialog` and the lanes are Base UI
+`Collapsible`s. They keep `styles.css` and key off the attributes Base UI sets
+(`data-panel-open`). The owner asked for this on 2026-10-23, after a survey
+showed most of their other apps already on Base UI. Rejected: keeping the
+hand-built panel, which never gave focus back to the card; and a styled kit
+such as shadcn, which would bring Tailwind into a board that has none. Native
+controls that are already accessible, such as the tag filter's `<select>`,
+stay native.

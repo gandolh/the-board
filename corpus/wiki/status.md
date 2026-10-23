@@ -31,8 +31,8 @@ tests and serves a placeholder on 127.0.0.1:8806.
 - 08 [Roll out to every project](../briefs/done/08-rollout-to-projects.md).
   done 2026-10-09. The section went into 14 repos; vps-deploy was skipped
   because its CLAUDE.md has uncommitted work. Owner setup is in the README.
-- 09 [Base UI for the panel and the lanes](../briefs/todo/09-base-ui-widgets.md).
-  todo, filed 2026-10-23.
+- 09 [Base UI for the panel and the lanes](../briefs/done/09-base-ui-widgets.md).
+  done 2026-10-23. Panel on a non-modal Base UI Dialog, lanes on Collapsible.
 
 ## Order
 

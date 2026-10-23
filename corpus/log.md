@@ -119,7 +119,15 @@ waits on the owner's setup.
 ## [2026-10-23] todo | Brief 09 filed: Base UI for the panel and the lanes
 
 The owner asked for Base UI in the apps that still hand-build their widgets.
-[Brief 09](briefs/todo/09-base-ui-widgets.md) moves the detail panel to a
+[Brief 09](briefs/done/09-base-ui-widgets.md) moves the detail panel to a
 non-modal Base UI `Dialog` and the lanes to `Collapsible`; the tag filter
 stays a native select. brief-board is down (since 2026-10-13), so this is
 recorded here only.
+
+## [2026-10-23] done | Brief 09: Base UI for the panel and the lanes
+
+The detail panel is a non-modal Base UI `Dialog` and the lanes are
+`Collapsible`s (`9012a73`). Focus now returns to the card when the panel
+closes. The decision is in [decisions.md](wiki/decisions.md); details are in
+[the brief](briefs/done/09-base-ui-widgets.md). brief-board is down (since
+2026-10-13), so it isn't on the board.
