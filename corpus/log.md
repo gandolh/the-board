@@ -131,3 +131,7 @@ The detail panel is a non-modal Base UI `Dialog` and the lanes are
 closes. The decision is in [decisions.md](wiki/decisions.md); details are in
 [the brief](briefs/done/09-base-ui-widgets.md). brief-board is down (since
 2026-10-13), so it isn't on the board.
+
+## [2026-10-31] maintenance | README images retaken after brief 09's Base UI move
+
+A README refresh pass with the readme-docs standard. Brief 09 (2026-10-23) put Base UI under the detail panel and the lanes, after the images were taken on 2026-10-09, so `board.webp` and `ticket-detail.webp` were taken again on a throwaway board (port 8807, a temporary database, three made-up projects synced and moved with the CLI) as `docs/images/shots.md` describes. The README is current. Checked: `npm install`, `npm run build` and `npm start`.
