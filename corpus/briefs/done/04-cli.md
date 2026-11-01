@@ -107,7 +107,7 @@ Calls the brief left open:
 
 Verified: 13 tests run every command against `buildApp` on a random port
 (resume, the local message check, the four address sources in order, exit 3
-with exactly one line). From `~/projects/atrium`, the built
+with exactly one line). From `atrium`, the built
 `node cli/dist/index.js` created `atrium-79` from its brief file, started it,
 listed it with `--all`, and exited 2 and 3 where it should. `npm link` was not
 run (brief 08, an owner step). Typecheck, lint and the suite (97) pass.

@@ -63,7 +63,7 @@ Briefs 02 to 07 own those.
 
 ## Outcome (2026-10-09)
 
-Done. The repo is the owner's `gandolh/the-board`, cloned into this directory
+Done. The repo is the owner's `<owner>/the-board`, cloned into this directory
 (its `Initial commit` carried `LICENSE`, `.gitignore` and a one-line README);
 no `git init` was run.
 

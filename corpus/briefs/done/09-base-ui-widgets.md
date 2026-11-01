@@ -16,7 +16,7 @@ The board has two hand-built widgets:
 - `web/src/Board.tsx` `Lane`: the collapsible lane, a button with
   `aria-expanded` that toggles the lane body.
 
-The pattern to copy is `../newspapper/ui/src/components/ui/Modal.tsx`: Base UI
+The pattern to copy is `newspapper/ui/src/components/ui/Modal.tsx`: Base UI
 `Dialog` styled by the app's own stylesheet, with the component's props left
 as they were.
 
