@@ -163,3 +163,11 @@ none), 02 the sub-path, 03 the CLI's bearer token, 04 sign-in, 05 the
 container, the vps-deploy stack on port 8806 and the owner's docs. The
 decisions are recorded as the briefs build them; 05 revisits "A down board
 never stops work". None is built.
+
+## [2026-11-02] build | Brief 01 — Sync finds projects in group folders
+
+[Brief 01](briefs/done/01-sync-group-folders.md), `5c66c61`. Sync looks one
+group folder down for projects and names them by their own directory; two
+projects with one name stop the run. A dry run against the real projects
+directory found 21 projects. Deeper corpora (churchix, the scoala-ramna
+theme) stay unfound, as [sync.md](wiki/sync.md) says.

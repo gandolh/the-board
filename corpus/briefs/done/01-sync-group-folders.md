@@ -59,3 +59,25 @@ a real sync shows that.
 - `brief-board sync --dry-run` against the real projects directory lists the
   grouped projects and sends nothing.
 - `bash corpus/lint.sh` passes.
+
+## Outcome (2026-11-02)
+
+Built in `5c66c61`. `findProjects` in `cli/src/sync/read.ts` walks the
+projects directory: a child with `corpus/briefs/` is a project, any other
+child is looked into once, dot-directories and `node_modules` skipped.
+`readProjects` keeps its signature, narrows by name at either depth, and
+throws a usage error naming both paths when two selected projects share a
+name. With `--project`, only duplicates of that name stop it.
+
+The new fixtures live in their own tree, `cli/test/fixtures/grouped/` (a
+flat project, one a group folder down, a group with no project, one nested
+too deep, one under a dot-directory); the duplicate case builds a temporary
+directory. The existing `projects/` fixtures stay as they were, so
+`cli.test.ts`'s sync counts didn't change. `docs/getting-started.md` got
+half a line about group folders (outside the owned files).
+
+Checks: `npm run typecheck`, `npm run lint`, `npm run build`, and the CLI
+tests (`cli/`: 3 files, 35 tests). The server and web suites were not run;
+nothing there changed. `brief-board sync --dry-run` (the built CLI) against
+the real projects directory listed 21 projects, grouped ones included, and
+sent nothing. The numbering todo stays open until a real sync.

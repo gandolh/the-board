@@ -13,11 +13,20 @@ The decision that sync runs only by hand, and why the corpus wins, is in
 `cli/src/sync/read.ts` and `cli/src/sync/parse.ts`, run from
 `cli/src/commands/sync.ts`.
 
-- **Which projects.** Every directory under the projects directory that has a
-  `corpus/briefs/`, by directory name. The directory is
+- **Which projects.** Every directory with a `corpus/briefs/`, directly under
+  the projects directory or one group folder down (since 2026-11-02; the
+  estate moved its repos into `apps/`, `platform/` and the other groups on
+  2026-11-01). A child without `corpus/briefs/` counts as a group folder and
+  is looked into once; dot-directories and `node_modules` are skipped. A
+  project is named by its own directory, never `group/name`, so its keys match
+  the ones `create` takes from the git root; two projects with one name stop
+  the run with a usage error naming both paths, before anything is sent.
+  Corpora nested deeper are not found: churchix inside presentation-sites and
+  the scoala-ramna theme. The same depth rule as vps-deploy's `SourceRepo`
+  and Ward's local seed. The projects directory is
   `BRIEF_BOARD_PROJECTS_DIR` from the environment or
   `~/.config/brief-board/env` (a leading `~` is the home directory), else
-  `~/projects`. `--project <name>` narrows it to one; `--dry-run` prints the
+  `~/projects`. `--project <name>` narrows it to one, at either depth; `--dry-run` prints the
   counts per project and the open briefs by number, and sends nothing.
 - **Title.** The first H1, without a leading `Task 72 —`, `Brief 99 —`,
   `Task 01:`, a bare `12 -` or newspapper's `Wave 0 —`. A heading with no

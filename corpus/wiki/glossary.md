@@ -1,6 +1,6 @@
 ---
 summary: The board's vocabulary. Ticket vs brief, project, lane, project tag and tag, sync, the guide, the six statuses (To Do, In Progress, Blocked, Ready for test, Ready for deploy, Done), and the messages a move can carry (conclusion, block reason, confirmation, test notes, deploy steps), each with the words they replace.
-updated: 2026-10-08
+updated: 2026-11-02
 ---
 
 # Glossary
@@ -18,8 +18,9 @@ a status and comments, and points at the brief file.
 _Avoid_: issue, card (except for the drawing of a ticket in the UI), story, task
 
 **Project**:
-A repo directory under `~/projects` that has a corpus. Its directory name is
-the first half of every ticket key.
+A repo directory with a corpus (a `corpus/briefs/`), directly under the
+projects directory or one group folder down (`apps/`, `platform/`). Its own
+directory name, never `group/name`, is the first half of every ticket key.
 _Avoid_: repo, workspace
 
 **Lane**:
