@@ -196,3 +196,16 @@ ward-auth's source is at 0.7.0; the brief's 0.3.1 was kept. New page:
 [sign-in.md](wiki/sign-in.md). New decision: "On the VPS at /brief-board,
 behind sign-in like the other apps". The wzd_auth seed entry is an owner step,
 since this run could only read that repo.
+
+## [2026-11-02] build | Brief 05 — The container and the VPS stack
+
+[Brief 05](briefs/done/05-vps-deploy.md). `infrastructure/` builds the
+`brief-board-api` image, checked locally; vps-deploy's `brief-board` stack
+(`9589eab` there) serves the board at `/brief-board/` and the API on loopback
+8806, with `BRIEF_BOARD_TOKEN` a required secret beside the Ward client key.
+`docs/owner-setup.md` has the owner's steps. Not deployed.
+
+**Revisit:** "A down board never stops work" in
+[decisions.md](wiki/decisions.md). The always-on container with a restart
+policy, rejected on 2026-10-08, is now what runs; agents still carry on when
+the board is down, and sync recovers the moves.

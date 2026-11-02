@@ -1,0 +1,47 @@
+# brief-board's API. Build context is the repo root (..) because the image
+# needs the root lockfile and every workspace manifest.
+#
+#   docker compose -f infrastructure/docker-compose.yml up -d brief-board-api
+#
+# `.env` in THIS directory is written by the deploy (vps-deploy's `server`
+# phase, 0600) and is read twice: compose interpolates ${...} below from it,
+# and the service declares it as env_file so the same values reach the process.
+# For a local run, `touch infrastructure/.env` is enough, or copy PUBLIC_ORIGIN,
+# BRIEF_BOARD_TOKEN and the WARD_OIDC_ values from the repo's `.env`. It is
+# git-ignored because it carries the CLI's token and the Ward client key. In a
+# container behind a proxy, also set AUTH_TRUSTED_PROXIES to the proxy's range.
+services:
+  brief-board-api:
+    build:
+      context: ..
+      dockerfile: infrastructure/Dockerfile
+      target: prod
+    image: brief-board-api:1.0
+    ports:
+      # LOOPBACK ONLY. Without the 127.0.0.1 prefix this would be published on
+      # every interface, reachable over plain HTTP past Caddy and its TLS. The
+      # server's HOST is 0.0.0.0 because that is inside the container's network
+      # namespace; this line is what decides who can reach it.
+      - "127.0.0.1:${BRIEF_BOARD_PORT:-8806}:${BRIEF_BOARD_PORT:-8806}"
+    env_file:
+      - .env
+    # These beat env_file. A dev .env copied here (HOST=127.0.0.1, PORT=8806,
+    # BRIEF_BOARD_DB=./data/...) would otherwise leave the server unreachable
+    # from the published port, or writing outside /data. PORT follows
+    # BRIEF_BOARD_PORT so the publish line, the healthcheck and the listening
+    # port always agree.
+    environment:
+      HOST: 0.0.0.0
+      PORT: "${BRIEF_BOARD_PORT:-8806}"
+      BRIEF_BOARD_DB: /data/brief-board.sqlite
+    volumes:
+      # The board's database. Bind-mounted from the host so it survives deploys
+      # and "back up the board" means one path. Defaults to a local dir so a dev
+      # `compose up` works.
+      - ${BRIEF_BOARD_DATA_DIR:-../data}:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- \"http://127.0.0.1:${BRIEF_BOARD_PORT:-8806}/api/health\""]
+      interval: 30s
+      timeout: 3s
+      start_period: 10s

@@ -5,6 +5,7 @@ Start with the [main README](../README.md). This folder holds what it links to.
 | File | What it covers |
 |---|---|
 | [getting-started.md](getting-started.md) | Owner setup: build, link the CLI, start the board, sync, develop |
+| [owner-setup.md](owner-setup.md) | Putting the board on the VPS: Ward, the secrets, the container, the deploy, your account, the CLI |
 | [architecture.md](architecture.md) | The four workspaces and a ticket's life |
 | [images/](images/shots.md) | Screenshots used in the README, and how each was made |
 

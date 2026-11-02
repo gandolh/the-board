@@ -148,7 +148,15 @@ so the seed spreads them over two.
 
 ## Running it
 
-The owner starts the server by hand with `npm start`. It listens on
+On the VPS (since 2026-11-02, not yet deployed) the API is the
+`brief-board-api` container from `infrastructure/`, on loopback port 8806 with
+its database in a bind-mounted `/data`, restarted by Docker; Caddy serves the
+built board at `/brief-board/` and forwards `/brief-board-api/*` to it.
+vps-deploy's `brief-board` stack builds and ships both, and the owner's steps
+are in `docs/owner-setup.md`. The CLI points there with `BRIEF_BOARD_URL` and
+the token in `~/.config/brief-board/env`.
+
+Locally the owner starts the server by hand with `npm start`. It listens on
 127.0.0.1:8806 and serves the API and the built UI from one origin: the
 board at `http://127.0.0.1:8806/brief-board/`, the API at `/api` (and at
 `/brief-board-api/api`, as the browser asks), behind sign-in: a local account
@@ -157,6 +165,6 @@ environment and the repo's `.env` (`.env.example` lists them); `npm start`
 needs `PUBLIC_ORIGIN=http://127.0.0.1:8806`. `npm run dev` serves the board
 from Vite at `http://localhost:5178/brief-board/` through its proxy. The
 database is a SQLite file in the gitignored `data/` directory. Nothing restarts
-the server; a down board never stops agent work, see
+the local server; a down board never stops agent work, see
 [decisions.md](decisions.md). The UI polls the API, and the Done column shows
 the last 14 days. Lanes with nothing open start collapsed.

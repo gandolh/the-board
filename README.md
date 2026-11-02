@@ -6,7 +6,7 @@ A Jira-style board showing where every corpus brief stands across all the projec
   <img src="docs/images/board.webp" width="100%" alt="The board: one lane per project (garden-planner, photo-archive, recipe-box) across six columns from To Do to Done, with one ticket blocked">
 </p>
 
-**Status:** Personal tool, built 2026-10-09 and in use. It runs on the owner's machine only; there is no hosted copy.
+**Status:** Personal tool, built 2026-10-09 and in use. Since 2026-11-02 it is set up to run on the owner's VPS at `/brief-board/` behind sign-in (a local account, or "Sign in with Ward"), and locally for development. Putting it there is in [docs/owner-setup.md](docs/owner-setup.md).
 
 ## What it does
 
@@ -54,6 +54,7 @@ Then put the CLI on your PATH, fill the board, and point agents at it: [docs/get
 ## Docs
 
 - [docs/](docs/README.md): setup, architecture and the images used here
+- [docs/owner-setup.md](docs/owner-setup.md): putting the board on the VPS, step by step
 - [Project wiki](corpus/index.md): decisions, glossary, status and the briefs that built it
 - `brief-board guide` prints the rules agents follow
 

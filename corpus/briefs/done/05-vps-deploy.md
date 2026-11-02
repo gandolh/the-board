@@ -126,3 +126,33 @@ does.
   says Docker wasn't reachable.
 - No domain name, password or key in any file.
 - `bash corpus/lint.sh` passes.
+
+## Outcome (2026-11-02)
+
+Built here and in vps-deploy (`9589eab` there, "Add the brief-board stack").
+Nothing was deployed, pushed or written into `secrets/`.
+
+- **Container.** `infrastructure/Dockerfile`, `docker-compose.yml` and
+  `.dockerignore`, copied from almanac's. One difference: the lockfile's root
+  `zod` (4.6.5) is a dev tool's, so shared's and the server's own `zod`
+  (4.5.4) sit in `shared/node_modules` and `server/node_modules`, and the prod
+  stage copies both. Without that the first build crashed at start on a
+  missing `zod`. `docker build -f infrastructure/Dockerfile .` succeeded
+  (199 MB); a run on a scratch `/data` was healthy, answered health bare,
+  401 signed out, 200 with the token, and the seed made an account. The
+  container and image were removed afterwards.
+- **vps-deploy.** `stacks/brief-board.ts` (a `WebServiceStack`), the
+  checkout in `lib/estate.ts`, the construction, `useWard` and the trailing
+  list in `app.ts`. `node cli.ts synth` added the two routes to the Caddyfile;
+  `node cli.ts --check` and `tsc --noEmit` pass (41 stacks, 52 routes, 20
+  ports). `node cli.ts brief-board all --dry-run` ran clean up to the
+  `server` phase, which stops at the missing `BRIEF_BOARD_TOKEN`, as it
+  should before the owner writes the secrets. The listings (README, docs,
+  vps-deploy's status and log) count 41 stacks; the README's graph sample now
+  shows Ward depending on mail, which it already did.
+- **Here.** `docs/owner-setup.md` (seven steps and Local development), the
+  README's status line and links, the decision revisit, "Running it" in
+  architecture.md, and status.md.
+
+The owner's steps are `docs/owner-setup.md` and [status.md](../../wiki/status.md)
+"Next (owner)".

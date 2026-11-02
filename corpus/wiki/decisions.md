@@ -1,5 +1,5 @@
 ---
-summary: Locked calls for brief-board, each with date, rejected alternative and reason. One ticket per brief keyed <project>-<NN> with no hand-made tickets; Blocked only by agreement with the owner; which moves are allowed and which need a message; six columns with Ready for test and Ready for deploy as the owner's; the corpus wins over the board; one CLI on PATH that other repos name without a path; a read-only UI; one project tag per ticket decides its lane; sync only by hand; a down board never stops work; Base UI for the UI's widgets; the CLI authenticates with one shared token, and the board sits on the VPS behind sign-in (2026-11-02). Read before proposing to change any of these.
+summary: Locked calls for brief-board, each with date, rejected alternative and reason. One ticket per brief keyed <project>-<NN> with no hand-made tickets; Blocked only by agreement with the owner; which moves are allowed and which need a message; six columns with Ready for test and Ready for deploy as the owner's; the corpus wins over the board; one CLI on PATH that other repos name without a path; a read-only UI; one project tag per ticket decides its lane; sync only by hand; a down board never stops work (revisited 2026-11-02: the container now runs always, agents still carry on without it); Base UI for the UI's widgets; the CLI authenticates with one shared token, and the board sits on the VPS behind sign-in (2026-11-02). Read before proposing to change any of these.
 updated: 2026-11-02
 ---
 
@@ -110,6 +110,15 @@ it, the agent tells the owner once and carries on with the brief without the
 board. Moves made while it is down are lost, and sync recovers what the corpus
 knows. Rejected: an always-on container with a restart policy, and agents
 waiting or failing until the board comes back.
+
+**Revisited 2026-11-02**, with the move to the VPS: the always-on container
+with a restart policy, rejected above, is now what runs (`brief-board-api`,
+`restart: unless-stopped`, deployed by vps-deploy). What stays: the board is
+still not a hard dependency. The CLI exits 3 when it can't reach the board or
+the board refuses its token, agents tell the owner once and carry on, moves
+made while it is down are lost, and sync recovers them. Rejected: keeping the
+hand-started server on the owner's machine, which the VPS move exists to
+replace.
 
 ## Base UI for the UI's widgets, styled by our own CSS
 _2026-10-23_. The detail panel is a Base UI `Dialog` and the lanes are Base UI
