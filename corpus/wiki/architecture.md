@@ -1,5 +1,5 @@
 ---
-summary: How brief-board is put together, as built 2026-10-09. npm workspaces with a Fastify + SQLite API, a read-only Vite + React board, and the brief-board CLI that agents use; how the CLI finds the board without any repo holding a path; keys, the CLI's exit codes, the server's error codes, how the board UI polls and lays out, build gotchas, and what each project's CLAUDE.md says. The owner starts the server by hand on 127.0.0.1:8806.
+summary: How brief-board is put together, as built 2026-10-09, with the 2026-11-02 sub-path, token and sign-in. npm workspaces with a Fastify + SQLite API, a read-only Vite + React board, and the brief-board CLI that agents use; how the CLI finds the board without any repo holding a path; keys, the CLI's exit codes, the server's error codes, how the board UI polls and lays out, build gotchas, and what each project's CLAUDE.md says. The owner starts the server by hand on 127.0.0.1:8806.
 updated: 2026-11-02
 ---
 
@@ -38,11 +38,11 @@ the CLI sends `Authorization: Bearer <token>` on every request. A 401
 (`unauthorized`) prints "the board refused the token" and exits 3, like a
 board that can't be reached, so agents follow the guide's "board is down"
 section. The server reads `BRIEF_BOARD_TOKEN` (empty is unset, shorter than
-32 characters refuses to start); set, every `/api/*` route but
-`GET /api/health` needs it, compared as SHA-256 digests with
-`timingSafeEqual`. Unset, the API is open as before. Moving the board to the
-VPS means changing the address in the user-level file and adding the token
-there. No other repo holds a path to brief-board.
+32 characters refuses to start); every `/api/*` route but `GET /api/health`
+needs it or a signed-in browser, and with no token the CLI is shut out
+([sign-in.md](sign-in.md)). Moving the board to the VPS means changing the
+address in the user-level file and adding the token there. No other repo
+holds a path to brief-board.
 
 The CLI works out the project tag from the name of the git root directory, so
 repos need no setting for it.
@@ -87,7 +87,10 @@ directory name; the author is `--author`, else `BRIEF_BOARD_AUTHOR`, else
 `:memory:`). Author defaults to `agent`; tags are replaced on every `PUT`,
 deduplicated, and never include the project. A `PUT` that creates answers
 201. Error codes: `invalid_request`, `invalid_key`, `not_found`,
-`move_not_allowed`, `message_required`, `internal`.
+`move_not_allowed`, `message_required`, `internal`, and `unauthorized` (a 401
+from the sign-in guard, [sign-in.md](sign-in.md)). Since 2026-11-02 the
+vendored `wardAuth` plugin is the one guard in front of every route;
+`config.ts` reads the settings.
 
 Paths (since 2026-11-02, for the sub-path on the VPS): the API is `/api/*`.
 The browser reaches it at `/brief-board-api/api/*`; Caddy strips that prefix
@@ -148,8 +151,11 @@ so the seed spreads them over two.
 The owner starts the server by hand with `npm start`. It listens on
 127.0.0.1:8806 and serves the API and the built UI from one origin: the
 board at `http://127.0.0.1:8806/brief-board/`, the API at `/api` (and at
-`/brief-board-api/api`, as the browser asks). `npm run dev` serves the board
-from Vite at `http://localhost:5173/brief-board/` through its proxy. The
+`/brief-board-api/api`, as the browser asks), behind sign-in: a local account
+from `npm run seed -w @brief-board/server`, or Ward. Settings come from the
+environment and the repo's `.env` (`.env.example` lists them); `npm start`
+needs `PUBLIC_ORIGIN=http://127.0.0.1:8806`. `npm run dev` serves the board
+from Vite at `http://localhost:5178/brief-board/` through its proxy. The
 database is a SQLite file in the gitignored `data/` directory. Nothing restarts
 the server; a down board never stops agent work, see
 [decisions.md](decisions.md). The UI polls the API, and the Done column shows

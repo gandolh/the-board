@@ -186,3 +186,13 @@ set, the API wants `Authorization: Bearer <token>` everywhere but health; the
 CLI reads it from its environment or the user config and exits 3 when the
 board refuses it. New decision: "The CLI authenticates with one shared token"
 ([decisions.md](wiki/decisions.md)).
+
+## [2026-11-02] build | Brief 04 — Sign-in
+
+[Brief 04](briefs/done/04-sign-in.md), `8922605`. The board sits behind the
+vendored ward-auth 0.3.1 guard: a local account from the seed, or Sign in
+with Ward; browser sessions only read, and the CLI's token still writes.
+ward-auth's source is at 0.7.0; the brief's 0.3.1 was kept. New page:
+[sign-in.md](wiki/sign-in.md). New decision: "On the VPS at /brief-board,
+behind sign-in like the other apps". The wzd_auth seed entry is an owner step,
+since this run could only read that repo.

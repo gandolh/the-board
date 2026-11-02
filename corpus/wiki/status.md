@@ -1,5 +1,5 @@
 ---
-summary: Snapshot as of 2026-11-02, per area. The board, CLI, sync and guide built 2026-10-09 and rolled out to every project's CLAUDE.md but vps-deploy's; Base UI under the panel and lanes 2026-10-23. Down since 2026-10-13, waiting on the owner's setup; briefs 01-05 (2026-11-02) move it to the VPS behind sign-in, 01-03 built; the open sync problem after the estate restarted brief numbering; the todos.
+summary: Snapshot as of 2026-11-02, per area. The board, CLI, sync and guide built 2026-10-09 and rolled out to every project's CLAUDE.md but vps-deploy's; Base UI under the panel and lanes 2026-10-23. Down since 2026-10-13, waiting on the owner's setup; briefs 01-05 (2026-11-02) move it to the VPS behind sign-in, 01-04 built; the open sync problem after the estate restarted brief numbering; the todos.
 updated: 2026-11-02
 ---
 
@@ -9,8 +9,8 @@ _2026-11-02_. Everything is on `main` in the owner's GitHub repository
 the-board. The board has been down since 2026-10-13. Brief numbering
 restarted at 01 on 2026-11-02 (see [log.md](../log.md)). Briefs 01 to 05,
 written 2026-11-02, move the board to the VPS at `/brief-board/` behind
-sign-in; 01 (sync in group folders), 02 (the sub-path) and 03 (the CLI's
-token) are built, 04 and 05 are not.
+sign-in; 01 (sync in group folders), 02 (the sub-path), 03 (the CLI's
+token) and 04 (sign-in) are built, 05 is not.
 
 ## By area
 
@@ -25,6 +25,9 @@ token) are built, 04 and 05 are not.
 - **Sync** (2026-10-09; group folders 2026-11-02). Reads every project's
   briefs, flat or one group folder down, and corrects the
   tickets ([sync.md](sync.md)).
+- **Sign-in** (2026-11-02). ward-auth 0.3.1 as the one guard: a local
+  account or Sign in with Ward, read-only browser sessions, the CLI's token
+  for writes ([sign-in.md](sign-in.md)).
 - **Board UI** (2026-10-09, Base UI 2026-10-23). Read-only lanes, six
   columns, the detail panel, polling; README images retaken 2026-10-31.
 - **Rollout** (2026-10-09). Thirteen repos carry the brief-board section in
@@ -35,11 +38,17 @@ token) are built, 04 and 05 are not.
 
 ## Next (owner)
 
-1. The README's owner setup: build, `npm link` in `cli/`, `npm start`, the
+1. Add brief-board to Ward's local seed (`wzd_auth`,
+   `infrastructure/local/seed.mjs`), one commit there:
+   `{ slug: "brief-board", name: "brief-board", repo: "brief-board", envFiles: [".env"], dev: "http://localhost:5178/brief-board/", api: "/brief-board-api" }`
+   in `APPS`, and `| brief-board | http://localhost:5178/brief-board/ | brief-board/.env |`
+   in that folder's README table. Then `node seed.mjs` there writes the
+   board's `WARD_OIDC_*` into its `.env`.
+2. The README's owner setup: build, `npm link` in `cli/`, `npm start`, the
    optional `~/.config/brief-board/env`, then `brief-board sync`. Until
    `npm link` runs, agents following their CLAUDE.md find no `brief-board`
    command.
-2. Before that first sync, settle how sync treats the restarted brief
+3. Before that first sync, settle how sync treats the restarted brief
    numbers ([todos/sync-after-numbering-restart.md](../todos/sync-after-numbering-restart.md)).
 
 ## Open

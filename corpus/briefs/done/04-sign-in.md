@@ -121,3 +121,50 @@ and anything in vps-deploy (that's brief 05).
   local seed. Otherwise the hand-back says it was not tried.
 - No password, token or key in any file.
 - `bash corpus/lint.sh` passes.
+
+## Outcome (2026-11-02)
+
+Built in `8922605`; how it works is in [sign-in.md](../../wiki/sign-in.md).
+
+- **Version.** ward-auth is vendored at 0.3.1, copied from almanac as this
+  brief says. The source package in `wzd_auth` (`shared-library/`) is at
+  0.7.0 (2026-10-27); nothing was upgraded. Almanac keeps an identical copy
+  in `web/vendor/ward/`, and so does the board now: the React hooks are
+  imported from there.
+- **Server.** `wardAuth` is the one guard; brief 03's separate token hook is
+  gone and its `bearerMatches` now sits in `isPublic`. Sessions only read
+  (`read_only_session`, no `endSession`). An `onSend` hook rewrites the
+  guard's `{ error: "unauthorized" }` under `/api` into `{ code, message,
+  reason? }`, so the CLI's "the board refused the token" still shows without
+  touching `cli/src`. `config.ts` (with `config.test.ts`) and `accounts.ts`
+  are new; `index.ts` and `seed.ts` load the repo's `.env`. The app exposes
+  `app.accounts` for the tests.
+- **Web.** `AuthGate.tsx`, `LoginPage.tsx`, `AccountPage.tsx`, `auth.ts`,
+  `route.ts` and `messages.ts`; `api.ts` reports a 401 and `usePolling.ts`
+  doesn't count it as an outage. No Base UI widget was needed: the pages are
+  a form and buttons. Vite dev runs on 5178 with `strictPort` and almanac's
+  Origin rewrite.
+- **Outside the owned files:** `eslint.config.js` ignores `**/vendor/**`;
+  `.gitignore` lets `.env.example` through; `server/src/accounts.ts` is new;
+  `docs/getting-started.md` got the seed, `.env` and the new variables.
+
+Not done: **step 6, the wzd_auth seed and README.** This run could only read
+`wzd_auth`, so it is an owner step ([status.md](../../wiki/status.md)): add
+`{ slug: "brief-board", name: "brief-board", repo: "brief-board",
+envFiles: [".env"], dev: "http://localhost:5178/brief-board/", api:
+"/brief-board-api" }` to `APPS` in `infrastructure/local/seed.mjs`, and the row
+`| brief-board | http://localhost:5178/brief-board/ | brief-board/.env |`
+to that folder's README table, in one commit on `main`.
+
+Checks: `npm run typecheck`, `npm run lint`, `npm run build`, and the server
+and CLI tests (5 files, 93 tests; the server's 48 now run with a token, 5
+new for sign-in, 5 for the config). The web workspace has no tests. By hand,
+on a scratch database with a seeded test account: `/` and `/brief-board/`
+landed on `/brief-board/login`, signing in showed the board with a ticket
+made through the CLI, the account page named the user, and Sign out went
+back to the login page with `/api/board` at 401. The CLI with the token
+created a ticket; without it, it exited 3 with the message. The local Ward
+check reached Ward's "Continue to brief-board" page and came back with
+`access_denied` through the callback; a full Ward sign-in needs a Ward
+password and was not done ([sign-in.md](../../wiki/sign-in.md)). No
+password, token or key is in any file.

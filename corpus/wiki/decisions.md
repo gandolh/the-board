@@ -1,5 +1,5 @@
 ---
-summary: Locked calls for brief-board, each with date, rejected alternative and reason. One ticket per brief keyed <project>-<NN> with no hand-made tickets; Blocked only by agreement with the owner; which moves are allowed and which need a message; six columns with Ready for test and Ready for deploy as the owner's; the corpus wins over the board; one CLI on PATH that other repos name without a path; a read-only UI; one project tag per ticket decides its lane; sync only by hand; a down board never stops work; Base UI for the UI's widgets; the CLI authenticates with one shared token (2026-11-02). Read before proposing to change any of these.
+summary: Locked calls for brief-board, each with date, rejected alternative and reason. One ticket per brief keyed <project>-<NN> with no hand-made tickets; Blocked only by agreement with the owner; which moves are allowed and which need a message; six columns with Ready for test and Ready for deploy as the owner's; the corpus wins over the board; one CLI on PATH that other repos name without a path; a read-only UI; one project tag per ticket decides its lane; sync only by hand; a down board never stops work; Base UI for the UI's widgets; the CLI authenticates with one shared token, and the board sits on the VPS behind sign-in (2026-11-02). Read before proposing to change any of these.
 updated: 2026-11-02
 ---
 
@@ -133,3 +133,16 @@ agent is the owner's and there is nothing to tell apart; and the CLI signing
 in with a local account's password, which means a password in a file and a
 session to keep alive. The browser's sign-in (Ward, or a local account) is a
 separate guard in front of the same API.
+
+## On the VPS at /brief-board, behind sign-in like the other apps
+_2026-11-02_, the owner's call. The board moves to the shared VPS at a
+sub-path of the main domain (`/brief-board/`, the API at `/brief-board-api`),
+and the browser needs a sign-in, like almanac and the estate's other apps:
+"Sign in with Ward", plus a local account in the board's own SQLite so the
+board still opens while Ward is down. A browser session only reads; every
+write is the CLI's, with the shared token, and who gets in through Ward is
+decided by grants in Ward's console. Rejected: open to anyone, which makes
+every brief title and comment public; Ward only, which locks the board
+whenever Ward is down; and a host of its own, which needs a DNS record and
+keeps cookies off the shared origin, a gain the read-only sessions make
+small. How it is built: [sign-in.md](sign-in.md).
