@@ -1,4 +1,5 @@
 import { boardResponseSchema, ticketDetailResponseSchema, type BoardResponse, type TicketDetailResponse } from "@brief-board/shared";
+import { API_BASE } from "./base";
 
 /**
  * The board reads and never writes (decisions.md "The UI is read-only"): the
@@ -9,7 +10,7 @@ import { boardResponseSchema, ticketDetailResponseSchema, type BoardResponse, ty
 
 /** The API's own default keeps 14 days of Done, which is what the board shows. */
 async function get<T>(path: string, parse: (value: unknown) => T, signal?: AbortSignal): Promise<T> {
-  const res = await fetch(path, { method: "GET", headers: { accept: "application/json" }, signal });
+  const res = await fetch(`${API_BASE}${path}`, { method: "GET", headers: { accept: "application/json" }, signal });
   if (!res.ok) throw new Error(`${path} answered ${res.status}`);
   return parse(await res.json());
 }

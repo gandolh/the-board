@@ -29,12 +29,32 @@ import { runSync } from "./sync.js";
  * The brief-board API: the contract in `shared/src/api.ts` and
  * nothing beyond it. It runs on 127.0.0.1 with no sign-in; agents reach it
  * through the CLI, and the read-only board reads it.
+ *
+ * Paths: the API is `/api/*`. The browser reaches it at `/brief-board-api/api/*`;
+ * Caddy strips that prefix in production, and this server strips it too
+ * (`stripApiPrefix`), so the same build works behind Caddy and on its own.
+ * The built board is served at `/brief-board/`, and `/` redirects there.
  */
+
+/** Where the browser reaches the API (web/src/base.ts). */
+export const API_PREFIX = "/brief-board-api";
+/** Where the built board is served. */
+export const BOARD_PATH = "/brief-board/";
+
+/** A URL without a leading `/brief-board-api`, when `/`, `?` or the end follows it; any other URL as it is. */
+export function stripApiPrefix(url: string): string {
+  if (!url.startsWith(API_PREFIX)) return url;
+  const rest = url.slice(API_PREFIX.length);
+  if (rest === "") return "/";
+  if (rest.startsWith("/")) return rest;
+  if (rest.startsWith("?")) return `/${rest}`;
+  return url;
+}
 
 export interface AppOptions {
   /** A file path, or `:memory:` for tests. */
   dbPath: string;
-  /** The built board, served at `/`; skipped when the directory does not exist. */
+  /** The built board, served at `/brief-board/`; skipped when the directory does not exist. */
   webDist?: string;
   /** The clock, for tests. */
   now?: () => Date;
@@ -63,7 +83,7 @@ function parse<S extends z.ZodType>(schema: S, value: unknown, reply: FastifyRep
 export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
   const db = openDatabase(options.dbPath);
   const store = new Store(db, options.now);
-  const app = Fastify({ logger: options.logger ?? false });
+  const app = Fastify({ logger: options.logger ?? false, rewriteUrl: (request) => stripApiPrefix(request.url ?? "/") });
   app.addHook("onClose", async () => db.close());
 
   // Fastify's own 4xx (bad JSON, wrong content type) in the contract's shape.
@@ -189,16 +209,20 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     return body;
   });
 
-  // The built board at `/`; any other non-API path is the board too (index.html).
+  // The built board at `/brief-board/`; any other path under it is the board too (index.html).
   const webDist = options.webDist;
-  if (webDist && existsSync(webDist)) {
-    await app.register(fastifyStatic, { root: webDist });
+  const serving = webDist !== undefined && existsSync(webDist);
+  if (serving) {
+    await app.register(fastifyStatic, { root: webDist, prefix: BOARD_PATH });
   }
+  app.get("/", async (_request, reply) => reply.redirect(BOARD_PATH));
   app.setNotFoundHandler((request, reply) => {
-    if (!request.url.startsWith("/api/") && webDist && existsSync(webDist)) {
+    const path = request.url.split("?")[0]!;
+    if (serving && request.method === "GET" && path === BOARD_PATH.slice(0, -1)) return reply.redirect(BOARD_PATH);
+    if (serving && (request.method === "GET" || request.method === "HEAD") && path.startsWith(BOARD_PATH)) {
       return reply.sendFile("index.html");
     }
-    return fail(reply, 404, { code: "not_found", message: `no route ${request.method} ${request.url.split("?")[0]}` });
+    return fail(reply, 404, { code: "not_found", message: `no route ${request.method} ${path}` });
   });
 
   return app;

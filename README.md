@@ -40,7 +40,7 @@ Requires Node 24 or later.
 ```bash
 npm install
 npm run build
-npm start          # API and board on http://127.0.0.1:8806
+npm start          # board on http://127.0.0.1:8806/brief-board/, API under /api
 ```
 
 Then put the CLI on your PATH, fill the board, and point agents at it: [docs/getting-started.md](docs/getting-started.md).

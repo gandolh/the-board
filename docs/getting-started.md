@@ -34,7 +34,7 @@ From this repo:
 npm start
 ```
 
-It serves the API and the board on <http://127.0.0.1:8806> and keeps its data in `data/brief-board.sqlite` (gitignored). Nothing restarts it.
+It serves the board on <http://127.0.0.1:8806/brief-board/> and the API under `/api` on the same port, and keeps its data in `data/brief-board.sqlite` (gitignored). Nothing restarts it.
 
 | Variable | Default | Purpose |
 |---|---|---|
@@ -68,7 +68,7 @@ Agents check for it, tell you once, and carry on with the brief without it. `bri
 ## Developing
 
 ```bash
-npm run dev        # API on :8806 and the board on Vite's dev server, proxying /api
+npm run dev        # API on :8806 and the board at http://localhost:5173/brief-board/, proxying /brief-board-api
 npm test
 npm run typecheck
 npm run lint
