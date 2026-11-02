@@ -72,3 +72,27 @@ no token configured the server behaves as it does today.
   only, never in a file. The CLI with the same token in its environment can
   `list`. Without the token it exits 3 with the message.
 - `bash corpus/lint.sh` passes.
+
+## Outcome (2026-11-02)
+
+Built in `98395b1`. `buildApp({ token })` adds an `onRequest` guard for
+`/api/*` (after the prefix strip, so `/brief-board-api/api/*` is guarded
+too) with `GET`/`HEAD /api/health` open. `bearerMatches` hashes both sides
+and uses `timingSafeEqual`; a refusal is a 401 `unauthorized`
+(`UNAUTHORIZED` in `shared/src/api.ts`). `index.ts` treats an empty
+`BRIEF_BOARD_TOKEN` as unset, exits 1 on one under 32 characters, and logs
+only whether a token is set. The CLI's `boardToken` reads the environment,
+then `~/.config/brief-board/env`; `BoardClient` sends the header; a 401
+throws `TokenRefused` (exit 3, one line). The guide's exit-code line and
+section 7 name the refused token; it is 67 lines. `cli/src/runtime.ts`
+changed by one line to hand the token to the client (outside the owned
+files), and `docs/getting-started.md` got the variable and the CLI file
+line beside the README's.
+
+Checks: `npm run typecheck`, `npm run lint`, `npm run build`, and the server
+and CLI tests (4 files, 83 tests; 3 new on the server, 5 in the CLI). The
+web suite was not run; `web/` didn't change. By hand: a 5-character token
+stopped the start with exit 1; with a token from `openssl rand -base64 32`
+in the shell only, health answered bare, `brief-board list --all` with the
+token in its environment exited 0, without it exited 3 with the message,
+and the server log held neither the token nor an `authorization` line.

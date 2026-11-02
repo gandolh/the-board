@@ -31,8 +31,18 @@ the board address in this order:
 3. `~/.config/brief-board/env`,
 4. the local default.
 
-Moving the board to the VPS later means changing the user-level file and
-adding a token there. No other repo holds a path to brief-board.
+The token (since 2026-11-02, [decisions.md](decisions.md)) is
+`BRIEF_BOARD_TOKEN` in the environment, else in `~/.config/brief-board/env`;
+never a repo's `.env`, since a secret shouldn't sit in every repo. With one,
+the CLI sends `Authorization: Bearer <token>` on every request. A 401
+(`unauthorized`) prints "the board refused the token" and exits 3, like a
+board that can't be reached, so agents follow the guide's "board is down"
+section. The server reads `BRIEF_BOARD_TOKEN` (empty is unset, shorter than
+32 characters refuses to start); set, every `/api/*` route but
+`GET /api/health` needs it, compared as SHA-256 digests with
+`timingSafeEqual`. Unset, the API is open as before. Moving the board to the
+VPS means changing the address in the user-level file and adding the token
+there. No other repo holds a path to brief-board.
 
 The CLI works out the project tag from the name of the git root directory, so
 repos need no setting for it.

@@ -178,3 +178,11 @@ theme) stay unfound, as [sync.md](wiki/sync.md) says.
 `/brief-board/` and calls the API at `/brief-board-api`; the server strips
 that prefix when reached directly, serves the board under `/brief-board/` and
 redirects `/` there. [architecture.md](wiki/architecture.md) has the paths.
+
+## [2026-11-02] build | Brief 03 — The CLI's token
+
+[Brief 03](briefs/done/03-cli-token.md), `98395b1`. With `BRIEF_BOARD_TOKEN`
+set, the API wants `Authorization: Bearer <token>` everywhere but health; the
+CLI reads it from its environment or the user config and exits 3 when the
+board refuses it. New decision: "The CLI authenticates with one shared token"
+([decisions.md](wiki/decisions.md)).

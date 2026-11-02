@@ -1,6 +1,6 @@
 ---
-summary: Locked calls for brief-board, each with date, rejected alternative and reason. One ticket per brief keyed <project>-<NN> with no hand-made tickets; Blocked only by agreement with the owner; which moves are allowed and which need a message; six columns with Ready for test and Ready for deploy as the owner's; the corpus wins over the board; one CLI on PATH that other repos name without a path; a read-only UI; one project tag per ticket decides its lane; sync only by hand; a down board never stops work; Base UI for the UI's widgets. Read before proposing to change any of these.
-updated: 2026-10-23
+summary: Locked calls for brief-board, each with date, rejected alternative and reason. One ticket per brief keyed <project>-<NN> with no hand-made tickets; Blocked only by agreement with the owner; which moves are allowed and which need a message; six columns with Ready for test and Ready for deploy as the owner's; the corpus wins over the board; one CLI on PATH that other repos name without a path; a read-only UI; one project tag per ticket decides its lane; sync only by hand; a down board never stops work; Base UI for the UI's widgets; the CLI authenticates with one shared token (2026-11-02). Read before proposing to change any of these.
+updated: 2026-11-02
 ---
 
 # Decisions
@@ -120,3 +120,16 @@ hand-built panel, which never gave focus back to the card; and a styled kit
 such as shadcn, which would bring Tailwind into a board that has none. Native
 controls that are already accessible, such as the tag filter's `<select>`,
 stay native.
+
+## The CLI authenticates with one shared token
+_2026-11-02_. Before the board leaves the owner's machine, the API gets one
+shared secret: the server reads `BRIEF_BOARD_TOKEN`, and the CLI sends it as
+`Authorization: Bearer <token>`, read from the environment or
+`~/.config/brief-board/env` and never from a repo's `.env`. A refused token
+exits 3, like a down board. `GET /api/health` stays open for the deploy's
+check. Every agent runs as the owner on the owner's machine, and `--author`
+already names who wrote a comment. Rejected: per-agent tokens, since every
+agent is the owner's and there is nothing to tell apart; and the CLI signing
+in with a local account's password, which means a password in a file and a
+session to keep alive. The browser's sign-in (Ward, or a local account) is a
+separate guard in front of the same API.
