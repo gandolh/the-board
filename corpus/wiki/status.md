@@ -1,13 +1,15 @@
 ---
-summary: Snapshot as of 2026-11-02, per area. The board, CLI, sync and guide built 2026-10-09 and rolled out to every project's CLAUDE.md but vps-deploy's; Base UI under the panel and lanes 2026-10-23. Down since 2026-10-13, waiting on the owner's setup; the open sync problem after the estate restarted brief numbering; the todos.
+summary: Snapshot as of 2026-11-02, per area. The board, CLI, sync and guide built 2026-10-09 and rolled out to every project's CLAUDE.md but vps-deploy's; Base UI under the panel and lanes 2026-10-23. Down since 2026-10-13, waiting on the owner's setup; briefs 01-05 (2026-11-02, not built) move it to the VPS behind sign-in; the open sync problem after the estate restarted brief numbering; the todos.
 updated: 2026-11-02
 ---
 
 # Status
 
 _2026-11-02_. Everything is on `main` in the owner's GitHub repository
-the-board. The board has been down since 2026-10-13. No brief is open; brief
-numbering restarted at 01 on 2026-11-02 (see [log.md](../log.md)).
+the-board. The board has been down since 2026-10-13. Brief numbering
+restarted at 01 on 2026-11-02 (see [log.md](../log.md)). Briefs 01 to 05,
+written 2026-11-02 and not built, move the board to the VPS at
+`/brief-board/` behind sign-in.
 
 ## By area
 

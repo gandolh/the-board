@@ -151,3 +151,15 @@ server's error codes, the board UI's behaviour and the build gotchas.
 New todo: [sync after the numbering restart](todos/sync-after-numbering-restart.md),
 since sync keys tickets by number and every repo now restarts at 01. Code
 comments no longer cite brief numbers.
+
+## [2026-11-02] plan | Briefs 01-05: the board moves to the VPS
+
+The owner asked for the board on the VPS. They chose a sub-path on the main
+domain (`/brief-board/`, the API at `/brief-board-api`) over a host of its
+own, and sign-in like the other apps: "Sign in with Ward", plus a local
+account in the board's SQLite for when Ward is down. Five briefs, run in
+order: 01 sync finds projects in group folders (since 2026-11-01 it finds
+none), 02 the sub-path, 03 the CLI's bearer token, 04 sign-in, 05 the
+container, the vps-deploy stack on port 8806 and the owner's docs. The
+decisions are recorded as the briefs build them; 05 revisits "A down board
+never stops work". None is built.
