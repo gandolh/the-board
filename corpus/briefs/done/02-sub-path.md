@@ -62,3 +62,25 @@ and the local default keeps working.
   works against the default address.
 - `npm run dev` shows the board through Vite's proxy.
 - `bash corpus/lint.sh` passes.
+
+## Outcome (2026-11-02)
+
+Built in `534c8d5`. `web/src/base.ts` holds `API_BASE`; `api.ts` builds both
+GETs from it. Vite's `base` is `BRIEF_BOARD_BASE` (environment or the repo's
+`.env`), default `/brief-board/`, one trailing slash; the dev proxy forwards
+`/brief-board-api` to 127.0.0.1:8806 and strips it. The server strips the
+prefix in `rewriteUrl` (`stripApiPrefix`, exported for the test), serves the
+built board with `@fastify/static` under `/brief-board/`, falls back to
+`index.html` for GET and HEAD there, and redirects `/` and `/brief-board`
+to `/brief-board/`. Paths outside `/brief-board/` that used to get the
+board (`/lanes/atrium`) are now a 404 in the error shape.
+
+Checks: `npm run typecheck`, `npm run lint`, `npm run build`, and the server
+tests (`server/src/app.test.ts`, 40 tests, 3 of them new). The other
+workspaces' suites were not run; nothing there changed. By hand on a scratch
+database: `npm start` answered `/` with a 302 to `/brief-board/`, the board's
+script came from `/brief-board/assets/`, `/brief-board-api/api/health` said
+ok, and `brief-board list` worked against the default address. `npm run dev
+-w @brief-board/web` served the board at `http://localhost:5173/brief-board/`
+and its proxy reached the API. `docs/getting-started.md` got the new
+addresses too (outside the owned files).

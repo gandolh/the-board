@@ -171,3 +171,10 @@ group folder down for projects and names them by their own directory; two
 projects with one name stop the run. A dry run against the real projects
 directory found 21 projects. Deeper corpora (churchix, the scoala-ramna
 theme) stay unfound, as [sync.md](wiki/sync.md) says.
+
+## [2026-11-02] build | Brief 02 — The board at /brief-board/
+
+[Brief 02](briefs/done/02-sub-path.md), `534c8d5`. The board builds for
+`/brief-board/` and calls the API at `/brief-board-api`; the server strips
+that prefix when reached directly, serves the board under `/brief-board/` and
+redirects `/` there. [architecture.md](wiki/architecture.md) has the paths.

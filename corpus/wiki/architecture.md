@@ -77,9 +77,16 @@ directory name; the author is `--author`, else `BRIEF_BOARD_AUTHOR`, else
 `:memory:`). Author defaults to `agent`; tags are replaced on every `PUT`,
 deduplicated, and never include the project. A `PUT` that creates answers
 201. Error codes: `invalid_request`, `invalid_key`, `not_found`,
-`move_not_allowed`, `message_required`, `internal`. Any path outside `/api`
-gets the board's `index.html`; under `/api` an unknown path is a 404 in the
-error shape.
+`move_not_allowed`, `message_required`, `internal`.
+
+Paths (since 2026-11-02, for the sub-path on the VPS): the API is `/api/*`.
+The browser reaches it at `/brief-board-api/api/*`; Caddy strips that prefix
+in production (`handle_path`), and the server strips it too with Fastify's
+`rewriteUrl` (`stripApiPrefix`, only when `/`, `?` or the end follows it), so
+one build answers behind Caddy and on its own, and the CLI's bare `/api`
+keeps working. The built board is served at `/brief-board/`; any path under
+it gets `index.html`, `/` and `/brief-board` redirect to `/brief-board/`,
+and any other unknown path, `/api` included, is a 404 in the error shape.
 
 ## Sync
 
@@ -90,7 +97,11 @@ move. The rules per brief state: [sync.md](sync.md).
 
 ## Board UI
 
-`web/src/`; `api.ts` holds the only requests, both GETs. It polls every 10 s
+`web/src/`; `api.ts` holds the only requests, both GETs, built from
+`API_BASE` in `base.ts` (`/brief-board-api`). Vite's `base` is
+`BRIEF_BOARD_BASE`, default `/brief-board/`, so assets load from
+`/brief-board/assets/`; in dev, Vite proxies `/brief-board-api` to
+127.0.0.1:8806 and strips the prefix as Caddy does. It polls every 10 s
 (`POLL_MS`), pauses while the tab is hidden, and keeps the last data behind a
 banner when the API is down. The tag filter works in the browser on the polled
 board; the Blocked count and the tab title ("(1 blocked) brief-board") stay
@@ -125,7 +136,10 @@ so the seed spreads them over two.
 ## Running it
 
 The owner starts the server by hand with `npm start`. It listens on
-127.0.0.1:8806 and serves the API and the built UI from one origin. The
+127.0.0.1:8806 and serves the API and the built UI from one origin: the
+board at `http://127.0.0.1:8806/brief-board/`, the API at `/api` (and at
+`/brief-board-api/api`, as the browser asks). `npm run dev` serves the board
+from Vite at `http://localhost:5173/brief-board/` through its proxy. The
 database is a SQLite file in the gitignored `data/` directory. Nothing restarts
 the server; a down board never stops agent work, see
 [decisions.md](decisions.md). The UI polls the API, and the Done column shows
