@@ -1,7 +1,7 @@
 import { parseArgs, type ParseArgsConfig } from "node:util";
 import { formatKey, normalizeKey, statusSchema, type Status } from "@brief-board/shared";
 import { BoardClient } from "./client.js";
-import { boardUrl, projectOf, repoRoot, type Context } from "./context.js";
+import { boardToken, boardUrl, projectOf, repoRoot, type Context } from "./context.js";
 import { UsageError } from "./errors.js";
 
 /** Options every command takes. */
@@ -29,7 +29,7 @@ export class Runtime {
   }
 
   client(): BoardClient {
-    this.clientCache ??= new BoardClient(boardUrl(this.ctx, this.root).url);
+    this.clientCache ??= new BoardClient(boardUrl(this.ctx, this.root).url, boardToken(this.ctx));
     return this.clientCache;
   }
 

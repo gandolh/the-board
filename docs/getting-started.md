@@ -41,6 +41,7 @@ It serves the board on <http://127.0.0.1:8806/brief-board/> and the API under `/
 | `HOST` | `127.0.0.1` | Address the server listens on |
 | `PORT` | `8806` | Port the server listens on |
 | `BRIEF_BOARD_DB` | `data/brief-board.sqlite` | SQLite file to use |
+| `BRIEF_BOARD_TOKEN` | unset (the API is open) | The CLI's shared token; at least 32 characters (`openssl rand -base64 32`). Set, every `/api` call but `/api/health` needs `Authorization: Bearer <token>` |
 
 ## 4. Configure the CLI (optional)
 
@@ -52,6 +53,8 @@ BRIEF_BOARD_PROJECTS_DIR=~/projects
 ```
 
 The CLI looks for `BRIEF_BOARD_URL` in the environment, then the current repo's `.env`, then that file, then the default.
+
+If the server runs with `BRIEF_BOARD_TOKEN`, add the same value to this file (or the CLI's environment) as `BRIEF_BOARD_TOKEN=<token>`. The CLI reads the token from those two places only, never from a repo's `.env`. Without it, or with a wrong one, every command prints "the board refused the token" and exits 3.
 
 ## 5. Fill the board
 

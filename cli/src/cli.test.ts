@@ -4,7 +4,7 @@ import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { boardUrl, DEFAULT_BOARD_URL, type Context } from "./context.js";
+import { boardToken, boardUrl, DEFAULT_BOARD_URL, type Context } from "./context.js";
 import { main } from "./main.js";
 
 /**
@@ -17,7 +17,7 @@ interface Server {
   close(): Promise<void>;
 }
 const serverApp = new URL("../../server/src/app.ts", import.meta.url).href;
-const { buildApp } = (await import(serverApp)) as { buildApp: (o: { dbPath: string }) => Promise<Server> };
+const { buildApp } = (await import(serverApp)) as { buildApp: (o: { dbPath: string; token?: string }) => Promise<Server> };
 
 const PACKAGE_ROOT = new URL("../", import.meta.url);
 
@@ -248,6 +248,54 @@ describe("the board address", () => {
   it("reaches the board through the repo's .env with nothing in the environment", async () => {
     writeFileSync(join(repo, ".env"), `BRIEF_BOARD_URL=${url}\n`);
     expect((await run(["list", "--all"], { env: {} })).code).toBe(0);
+  });
+});
+
+describe("the token", () => {
+  const TOKEN = "k".repeat(44);
+  let guarded: Server;
+  let guardedUrl: string;
+  beforeAll(async () => {
+    guarded = await buildApp({ dbPath: ":memory:", token: TOKEN });
+    guardedUrl = await guarded.listen({ host: "127.0.0.1", port: 0 });
+  });
+  afterAll(async () => {
+    await guarded.close();
+  });
+  const userFile = (line: string) => {
+    mkdirSync(join(home, ".config", "brief-board"), { recursive: true });
+    writeFileSync(join(home, ".config", "brief-board", "env"), `${line}\n`);
+  };
+
+  it("is sent when it comes from the environment", async () => {
+    const res = await run(["list", "--all"], { env: { BRIEF_BOARD_URL: guardedUrl, BRIEF_BOARD_TOKEN: TOKEN } });
+    expect(res.code).toBe(0);
+  });
+
+  it("is sent when it comes from the user config", async () => {
+    userFile(`BRIEF_BOARD_TOKEN="${TOKEN}"`);
+    expect(boardToken({ env: {}, cwd: repo, home, out: () => {}, err: () => {} })).toBe(TOKEN);
+    expect((await run(["list", "--all"], { env: { BRIEF_BOARD_URL: guardedUrl } })).code).toBe(0);
+  });
+
+  it("is never read from a repo's .env", async () => {
+    writeFileSync(join(repo, ".env"), `BRIEF_BOARD_URL=${guardedUrl}\nBRIEF_BOARD_TOKEN=${TOKEN}\n`);
+    expect(boardToken({ env: {}, cwd: repo, home, out: () => {}, err: () => {} })).toBeUndefined();
+    const res = await run(["list", "--all"], { env: {} });
+    expect(res.code).toBe(3);
+  });
+
+  it("refused, exits 3 with one line saying where to set it", async () => {
+    for (const env of [{ BRIEF_BOARD_URL: guardedUrl }, { BRIEF_BOARD_URL: guardedUrl, BRIEF_BOARD_TOKEN: "w".repeat(44) }]) {
+      const res = await run(["list", "--all"], { env });
+      expect(res.code).toBe(3);
+      expect(res.errLines).toHaveLength(1);
+      expect(res.err).toContain("the board refused the token: set BRIEF_BOARD_TOKEN in ~/.config/brief-board/env");
+    }
+  });
+
+  it("changes nothing against a board with no token", async () => {
+    expect((await run(["list", "--all"], { env: { BRIEF_BOARD_URL: url, BRIEF_BOARD_TOKEN: TOKEN } })).code).toBe(0);
   });
 });
 

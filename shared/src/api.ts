@@ -72,6 +72,12 @@ export const moveRuleSchema = z.object({
   role: messageRoleSchema,
 }) satisfies z.ZodType<MoveRule>;
 
+/**
+ * The code of a 401: a request the board's guard turned away, because the
+ * CLI's token was missing or wrong.
+ */
+export const UNAUTHORIZED = "unauthorized";
+
 export const errorBodySchema = z.object({
   code: z.string(),
   message: z.string(),

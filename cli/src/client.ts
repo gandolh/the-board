@@ -9,6 +9,7 @@ import {
   type TicketDetailResponse,
   type UpsertTicketRequest,
   type UpsertTicketResponse,
+  UNAUTHORIZED,
 } from "@brief-board/shared";
 import { Rejected, Unreachable } from "./errors.js";
 
@@ -25,16 +26,37 @@ export class ApiRejected extends Rejected {
   }
 }
 
-/** The board's API, as the CLI uses it. A refused or silent connection is `Unreachable`; a 4xx is `ApiRejected`. */
+/**
+ * The board turned the CLI's token away (or got none). Exit 3, like a board
+ * that can't be reached: the agent tells the owner once and carries on.
+ */
+export class TokenRefused extends Error {
+  readonly exitCode = 3;
+  constructor() {
+    super("brief-board: the board refused the token: set BRIEF_BOARD_TOKEN in ~/.config/brief-board/env. Tell the owner and carry on without it.");
+  }
+}
+
+/**
+ * The board's API, as the CLI uses it. A refused or silent connection is
+ * `Unreachable`; a 401 is `TokenRefused`; another 4xx is `ApiRejected`. With a
+ * token, every request carries `Authorization: Bearer <token>`.
+ */
 export class BoardClient {
-  constructor(readonly url: string) {}
+  constructor(
+    readonly url: string,
+    private readonly token?: string,
+  ) {}
 
   private async call<T>(method: string, path: string, body?: unknown): Promise<T> {
+    const headers: Record<string, string> = {};
+    if (body !== undefined) headers["content-type"] = "application/json";
+    if (this.token) headers.authorization = `Bearer ${this.token}`;
     let res: Response;
     try {
       res = await fetch(`${this.url}${path}`, {
         method,
-        headers: body === undefined ? undefined : { "content-type": "application/json" },
+        headers,
         body: body === undefined ? undefined : JSON.stringify(body),
         signal: AbortSignal.timeout(TIMEOUT_MS),
       });
@@ -50,6 +72,7 @@ export class BoardClient {
     }
     if (res.ok) return parsed as T;
     const error = parsed as Partial<ErrorBody> | undefined;
+    if (res.status === 401 && error?.code === UNAUTHORIZED) throw new TokenRefused();
     if (res.status >= 500 || !error?.code) {
       // Something answered, but not the board as the contract describes it.
       if (res.status >= 500) throw new ApiRejected(res.status, { code: "internal", message: `the board failed (${res.status})` });

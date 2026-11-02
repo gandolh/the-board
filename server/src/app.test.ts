@@ -322,3 +322,49 @@ describe("the API prefix", () => {
     expect(stripApiPrefix("/api/health")).toBe("/api/health");
   });
 });
+
+describe("the CLI's token", () => {
+  const TOKEN = "t".repeat(40);
+  const routes = [
+    { name: "a read", method: "GET" as const, url: "/api/board" },
+    { name: "a write", method: "PUT" as const, url: "/api/tickets/atrium-01", payload: { title: "A", summary: "", briefPath: "corpus/briefs/todo/01-a.md" } },
+    { name: "a sync", method: "POST" as const, url: "/api/sync", payload: { projects: [] } },
+  ];
+
+  it("leaves everything open with no token configured", async () => {
+    for (const route of routes) expect((await app.inject(route)).statusCode).toBeLessThan(300);
+  });
+
+  it("needs the right Bearer header on reads, writes and sync once one is configured", async () => {
+    const guarded = await buildApp({ dbPath: ":memory:", token: TOKEN });
+    try {
+      for (const route of routes) {
+        const missing = await guarded.inject(route);
+        expect(missing.statusCode, `${route.name} without a token`).toBe(401);
+        expect(missing.json<ErrorBody>().code).toBe("unauthorized");
+        const wrong = await guarded.inject({ ...route, headers: { authorization: `Bearer ${"x".repeat(40)}` } });
+        expect(wrong.statusCode, `${route.name} with a wrong token`).toBe(401);
+        const short = await guarded.inject({ ...route, headers: { authorization: "Bearer t" } });
+        expect(short.statusCode, `${route.name} with a shorter token`).toBe(401);
+        const bare = await guarded.inject({ ...route, headers: { authorization: TOKEN } });
+        expect(bare.statusCode, `${route.name} without the Bearer scheme`).toBe(401);
+        const right = await guarded.inject({ ...route, headers: { authorization: `Bearer ${TOKEN}` } });
+        expect(right.statusCode, `${route.name} with the token`).toBeLessThan(300);
+      }
+      // Behind the browser's prefix too.
+      expect((await guarded.inject({ url: "/brief-board-api/api/board" })).statusCode).toBe(401);
+    } finally {
+      await guarded.close();
+    }
+  });
+
+  it("keeps health open for the deploy's check", async () => {
+    const guarded = await buildApp({ dbPath: ":memory:", token: TOKEN });
+    try {
+      expect((await guarded.inject({ url: "/api/health" })).json()).toEqual({ ok: true });
+      expect((await guarded.inject({ url: "/brief-board-api/api/health" })).statusCode).toBe(200);
+    } finally {
+      await guarded.close();
+    }
+  });
+});

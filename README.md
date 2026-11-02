@@ -45,6 +45,8 @@ npm start          # board on http://127.0.0.1:8806/brief-board/, API under /api
 
 Then put the CLI on your PATH, fill the board, and point agents at it: [docs/getting-started.md](docs/getting-started.md).
 
+Optional, for a board reachable beyond your own machine: a shared token. Make one with `openssl rand -base64 32`, start the server with `BRIEF_BOARD_TOKEN=<token>` in its environment, and put the same `BRIEF_BOARD_TOKEN=<token>` in `~/.config/brief-board/env` for the CLI. Every `/api` call but `/api/health` then needs it. Never put it in a repo's `.env`.
+
 ## Docs
 
 - [docs/](docs/README.md): setup, architecture and the images used here

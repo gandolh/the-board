@@ -4,6 +4,7 @@ import { guide } from "./commands/guide.js";
 import { comment, move, start } from "./commands/moves.js";
 import { list, show } from "./commands/read.js";
 import { sync } from "./commands/sync.js";
+import { TokenRefused } from "./client.js";
 import type { Context } from "./context.js";
 import { Rejected, Unreachable, UsageError } from "./errors.js";
 import { Runtime } from "./runtime.js";
@@ -12,7 +13,8 @@ import { Runtime } from "./runtime.js";
  * `brief-board`: how agents read and move tickets. It runs inside
  * any project's repo with no setup there. Exit codes: 0 success, 1 a usage
  * mistake, 2 the board (or the local move check) refused, 3 the board is not
- * reachable, which an agent reports once and then works on without the board.
+ * reachable or refused the token, which an agent reports once and then works
+ * on without the board.
  */
 
 const USAGE = `brief-board: track corpus briefs on the board.
@@ -55,7 +57,7 @@ export async function main(argv: string[], ctx: Context, packageRoot: URL): Prom
     await command(new Runtime(ctx), args, packageRoot);
     return 0;
   } catch (err) {
-    if (err instanceof Unreachable) {
+    if (err instanceof Unreachable || err instanceof TokenRefused) {
       ctx.err(err.message);
       return err.exitCode;
     }

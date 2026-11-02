@@ -1,3 +1,4 @@
+import { createHash, timingSafeEqual } from "node:crypto";
 import { existsSync } from "node:fs";
 import fastifyStatic from "@fastify/static";
 import Fastify, { type FastifyInstance, type FastifyReply } from "fastify";
@@ -10,6 +11,7 @@ import {
   STATUS_LABELS,
   syncRequestSchema,
   ticketParamsSchema,
+  UNAUTHORIZED,
   upsertTicketRequestSchema,
   type BoardResponse,
   type CommentResponse,
@@ -56,9 +58,34 @@ export interface AppOptions {
   dbPath: string;
   /** The built board, served at `/brief-board/`; skipped when the directory does not exist. */
   webDist?: string;
+  /**
+   * The shared secret the CLI sends as `Authorization: Bearer <token>`. When
+   * set, every `/api/*` request but `GET /api/health` needs it; unset, the
+   * API is open, as on 127.0.0.1.
+   */
+  token?: string;
   /** The clock, for tests. */
   now?: () => Date;
   logger?: boolean;
+}
+
+function digest(value: string): Buffer {
+  return createHash("sha256").update(value, "utf8").digest();
+}
+
+/**
+ * Whether an `Authorization` header carries the token. Both sides are
+ * hashed first, so the comparison takes the same time whatever the length.
+ */
+export function bearerMatches(header: string | undefined, expected: Buffer): boolean {
+  const match = /^Bearer\s+(\S+)\s*$/i.exec(header ?? "");
+  if (!match) return false;
+  return timingSafeEqual(digest(match[1]!), expected);
+}
+
+/** The one API route anyone may call: vps-deploy's health check has no token. */
+function isOpen(method: string, path: string): boolean {
+  return path === "/api/health" && (method === "GET" || method === "HEAD");
 }
 
 /** Who did it, when the client does not say. */
@@ -95,6 +122,18 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     }
     return fail(reply, status, { code: "invalid_request", message: error.message });
   });
+
+  // The token guard. Fastify's default request log has the method and URL,
+  // never the headers, so the token is not written anywhere.
+  if (options.token) {
+    const expected = digest(options.token);
+    app.addHook("onRequest", async (request, reply) => {
+      const path = request.url.split("?")[0]!;
+      if (!path.startsWith("/api/") || isOpen(request.method, path)) return;
+      if (bearerMatches(request.headers.authorization, expected)) return;
+      return fail(reply, 401, { code: UNAUTHORIZED, message: "the board needs its token: send Authorization: Bearer <token>" });
+    });
+  }
 
   app.get("/api/health", async (): Promise<HealthResponse> => ({ ok: true }));
 

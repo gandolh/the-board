@@ -8,7 +8,8 @@ brief to done/, write the log entry, update the wiki.
 
 Run commands from inside the project's repo. <ticket> is a key, or a brief
 number in this project. Exit codes: 0 done, 1 usage mistake, 2 the board
-refused (the output says what is allowed), 3 the board is down.
+refused (the output says what is allowed), 3 the board is down or refused
+the token (a 401).
 
 ## 2. Filing a brief
 After you write a brief, put it on the board:
@@ -50,9 +51,10 @@ Pick one column:
   or move it to done with a confirmation if nothing is left to do.
 
 ## 7. When the board is down
-A command that prints "the board isn't reachable" exits 3. Tell the owner once,
-make no more board calls this session, and carry on with the brief. Moves made
-while it is down are lost; a later sync restores what the corpus knows.
+A command that prints "the board isn't reachable" or "the board refused the
+token" exits 3. Tell the owner once, make no more board calls this session,
+and carry on with the brief. Moves made while it is down are lost; a later
+sync restores what the corpus knows.
 
 ## 8. Hard rules
 - Never write a path to brief-board into any repo. Repos name the command only.
