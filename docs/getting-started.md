@@ -28,20 +28,29 @@ brief-board --version
 
 ## 3. Start the board
 
-From this repo:
+From this repo, once:
+
+```bash
+cp .env.example .env                  # fill BRIEF_BOARD_TOKEN, and PUBLIC_ORIGIN=http://127.0.0.1:8806
+npm run seed -w @brief-board/server   # your account; asks for a username and password
+```
+
+Then:
 
 ```bash
 npm start
 ```
 
-It serves the board on <http://127.0.0.1:8806/brief-board/> and the API under `/api` on the same port, and keeps its data in `data/brief-board.sqlite` (gitignored). Nothing restarts it.
+It serves the board on <http://127.0.0.1:8806/brief-board/> and the API under `/api` on the same port, and keeps its data in `data/brief-board.sqlite` (gitignored). The board asks you to sign in. The server reads `.env` for whatever its environment leaves unset; `.env.example` lists every variable.
 
 | Variable | Default | Purpose |
 |---|---|---|
 | `HOST` | `127.0.0.1` | Address the server listens on |
 | `PORT` | `8806` | Port the server listens on |
 | `BRIEF_BOARD_DB` | `data/brief-board.sqlite` | SQLite file to use |
-| `BRIEF_BOARD_TOKEN` | unset (the API is open) | The CLI's shared token; at least 32 characters (`openssl rand -base64 32`). Set, every `/api` call but `/api/health` needs `Authorization: Bearer <token>` |
+| `BRIEF_BOARD_TOKEN` | unset (the CLI is shut out) | The CLI's shared token; at least 32 characters (`openssl rand -base64 32`). Every `/api` call but `/api/health` needs it or a signed-in browser |
+| `PUBLIC_ORIGIN` | `http://localhost:5178` | The board's origin as the browser sees it; sign-in from any other is refused |
+| `WARD_OIDC_*` | unset (local accounts only) | "Sign in with Ward"; Ward's local seed writes them |
 
 ## 4. Configure the CLI (optional)
 
@@ -71,7 +80,7 @@ Agents check for it, tell you once, and carry on with the brief without it. `bri
 ## Developing
 
 ```bash
-npm run dev        # API on :8806 and the board at http://localhost:5173/brief-board/, proxying /brief-board-api
+npm run dev        # API on :8806 and the board at http://localhost:5178/brief-board/, proxying /brief-board-api
 npm test
 npm run typecheck
 npm run lint

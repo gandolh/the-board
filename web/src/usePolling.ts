@@ -15,7 +15,8 @@ export interface Polled<T> {
 /**
  * Fetch now and every `POLL_MS`, paused while the tab is hidden and caught up
  * as soon as it is shown again. A failure keeps the last data and sets
- * `failing`; the next success clears it. `load` must be stable (a module
+ * `failing`; the next success clears it. A refused session (`Unauthorized`)
+ * doesn't count as a failure. `load` must be stable (a module
  * function, or memoised), or the polling restarts on every render.
  */
 export function usePolling<T>(load: (signal: AbortSignal) => Promise<T>): Polled<T> {
@@ -35,7 +36,9 @@ export function usePolling<T>(load: (signal: AbortSignal) => Promise<T>): Polled
         const data = await load(controller.signal);
         if (!stopped) setState({ data, fetchedAt: new Date(), failing: false });
       } catch (err) {
-        if (!stopped && (err as Error).name !== "AbortError") setState((s) => ({ ...s, failing: true }));
+        // A 401 is no outage: the gate is taking the page to the login screen (api.ts, auth.ts).
+        const name = (err as Error).name;
+        if (!stopped && name !== "AbortError" && name !== "Unauthorized") setState((s) => ({ ...s, failing: true }));
       }
       if (!stopped && !document.hidden) timer = setTimeout(tick, POLL_MS);
     };

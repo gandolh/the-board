@@ -23,30 +23,44 @@ import {
   type UpsertTicketResponse,
 } from "@brief-board/shared";
 import type { z } from "zod";
+import { createWardClient, wardAuth, type Accounts, type WardClientOptions } from "../vendor/ward/ward-auth.js";
+import { openAccounts, USER_ROLE } from "./accounts.js";
+import { AUTH_ROUTE_PREFIX } from "./config.js";
 import { openDatabase } from "./db.js";
 import { Store } from "./store.js";
 import { runSync } from "./sync.js";
 
 /**
- * The brief-board API: the contract in `shared/src/api.ts` and
- * nothing beyond it. It runs on 127.0.0.1 with no sign-in; agents reach it
- * through the CLI, and the read-only board reads it.
+ * The brief-board API: the contract in `shared/src/api.ts` and nothing
+ * beyond it, behind one guard. Agents reach it through the CLI with the shared
+ * token; the read-only board reads it with a signed-in session.
  *
- * Paths: the API is `/api/*`. The browser reaches it at `/brief-board-api/api/*`;
- * Caddy strips that prefix in production, and this server strips it too
- * (`stripApiPrefix`), so the same build works behind Caddy and on its own.
- * The built board is served at `/brief-board/`, and `/` redirects there.
+ * Paths: the API is `/api/*`, and sign-in is `/auth/*`. The browser reaches
+ * them under `/brief-board-api`; Caddy strips that prefix in production, and
+ * this server strips it too (`stripApiPrefix`), so the same build works behind
+ * Caddy and on its own. The built board is served at `/brief-board/`, and `/`
+ * redirects there.
+ *
+ * The guard is the vendored `wardAuth` plugin, registered before any route:
+ * - `GET /api/health` is open (the deploy's check);
+ * - any `/api/*` request with `Authorization: Bearer <token>` passes;
+ * - otherwise `/api/*` needs a session, and a session may only read
+ *   (`read_only_session`): on a shared origin, a script in another app could
+ *   send the owner's cookie, and this keeps the worst case at reading the board;
+ * - the board's own files are open, so the login page can load.
  */
 
-/** Where the browser reaches the API (web/src/base.ts). */
+/** The API prefix as the browser sees it, unless `BRIEF_BOARD_API_PREFIX` moves it (web/src/base.ts). */
 export const API_PREFIX = "/brief-board-api";
-/** Where the built board is served. */
+/** Where the built board is served, unless `BRIEF_BOARD_BASE` moves it. */
 export const BOARD_PATH = "/brief-board/";
+/** The session cookie's name. Unique in the estate: every app shares one origin. */
+export const SESSION_COOKIE = "brief_board_session";
 
-/** A URL without a leading `/brief-board-api`, when `/`, `?` or the end follows it; any other URL as it is. */
-export function stripApiPrefix(url: string): string {
-  if (!url.startsWith(API_PREFIX)) return url;
-  const rest = url.slice(API_PREFIX.length);
+/** A URL without a leading API prefix, when `/`, `?` or the end follows it; any other URL as it is. */
+export function stripApiPrefix(url: string, prefix: string = API_PREFIX): string {
+  if (!url.startsWith(prefix)) return url;
+  const rest = url.slice(prefix.length);
   if (rest === "") return "/";
   if (rest.startsWith("/")) return rest;
   if (rest.startsWith("?")) return `/${rest}`;
@@ -56,17 +70,42 @@ export function stripApiPrefix(url: string): string {
 export interface AppOptions {
   /** A file path, or `:memory:` for tests. */
   dbPath: string;
-  /** The built board, served at `/brief-board/`; skipped when the directory does not exist. */
+  /** The built board, served at `webBase`; skipped when the directory does not exist. */
   webDist?: string;
   /**
-   * The shared secret the CLI sends as `Authorization: Bearer <token>`. When
-   * set, every `/api/*` request but `GET /api/health` needs it; unset, the
-   * API is open, as on 127.0.0.1.
+   * The shared secret the CLI sends as `Authorization: Bearer <token>`. Unset,
+   * the bearer path is closed, not open: only a signed-in browser gets in.
    */
   token?: string;
+  /** The board's origin as the browser sees it. Default `http://localhost:5178`, the Vite dev server. */
+  publicOrigin?: string;
+  /** The API prefix as the browser sees it, and the session cookie's path. Default `/brief-board-api`. */
+  apiPrefix?: string;
+  /** The board's base path, with a trailing slash. Default `/brief-board/`. */
+  webBase?: string;
+  /** "Sign in with Ward". Unset, local accounts only. */
+  ward?: WardClientOptions;
+  /** Peers besides loopback whose `X-Forwarded-For` the login lockout believes. Default none. */
+  trustedProxies?: readonly string[];
   /** The clock, for tests. */
   now?: () => Date;
   logger?: boolean;
+}
+
+declare module "fastify" {
+  interface FastifyInstance {
+    /** The local accounts, for the seed's tests. */
+    accounts: Accounts;
+  }
+}
+
+/** A path is `prefix` or under it. */
+function isUnder(path: string, prefix: string): boolean {
+  return path === prefix || path.startsWith(`${prefix}/`);
+}
+
+function pathOf(url: string): string {
+  return url.split("?")[0]!;
 }
 
 function digest(value: string): Buffer {
@@ -83,10 +122,11 @@ export function bearerMatches(header: string | undefined, expected: Buffer): boo
   return timingSafeEqual(digest(match[1]!), expected);
 }
 
-/** The one API route anyone may call: vps-deploy's health check has no token. */
-function isOpen(method: string, path: string): boolean {
-  return path === "/api/health" && (method === "GET" || method === "HEAD");
-}
+/** The only API route with no session or token: vps-deploy's health check calls it bare. */
+const PUBLIC_ROUTES: readonly string[] = ["GET /api/health"];
+
+/** A session's methods under `/api`. Writes are the CLI's, with the token. */
+const SESSION_METHODS: ReadonlySet<string> = new Set(["GET", "HEAD"]);
 
 /** Who did it, when the client does not say. */
 const DEFAULT_AUTHOR = "agent";
@@ -110,7 +150,9 @@ function parse<S extends z.ZodType>(schema: S, value: unknown, reply: FastifyRep
 export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
   const db = openDatabase(options.dbPath);
   const store = new Store(db, options.now);
-  const app = Fastify({ logger: options.logger ?? false, rewriteUrl: (request) => stripApiPrefix(request.url ?? "/") });
+  const apiPrefix = options.apiPrefix ?? API_PREFIX;
+  const webBase = options.webBase ?? BOARD_PATH;
+  const app = Fastify({ logger: options.logger ?? false, rewriteUrl: (request) => stripApiPrefix(request.url ?? "/", apiPrefix) });
   app.addHook("onClose", async () => db.close());
 
   // Fastify's own 4xx (bad JSON, wrong content type) in the contract's shape.
@@ -123,17 +165,70 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     return fail(reply, status, { code: "invalid_request", message: error.message });
   });
 
-  // The token guard. Fastify's default request log has the method and URL,
-  // never the headers, so the token is not written anywhere.
-  if (options.token) {
-    const expected = digest(options.token);
-    app.addHook("onRequest", async (request, reply) => {
-      const path = request.url.split("?")[0]!;
-      if (!path.startsWith("/api/") || isOpen(request.method, path)) return;
-      if (bearerMatches(request.headers.authorization, expected)) return;
-      return fail(reply, 401, { code: UNAUTHORIZED, message: "the board needs its token: send Authorization: Bearer <token>" });
-    });
-  }
+  // The guard, first, so every route after it is behind it. Fastify's default
+  // request log has the method and URL, never the headers, so neither the token
+  // nor the cookie is written anywhere.
+  const accounts = openAccounts(db);
+  app.decorate("accounts", accounts);
+  // Checks the settings and imports the key now; talks to Ward only on first use, so the board starts while Ward is down.
+  const ward = options.ward && (await createWardClient(options.ward));
+  const expected = options.token ? digest(options.token) : undefined;
+  await app.register(wardAuth, {
+    accounts,
+    cookieName: SESSION_COOKIE,
+    // The API prefix as the browser sees it: every request that needs the session is under it.
+    cookiePath: apiPrefix,
+    publicOrigin: options.publicOrigin ?? "http://localhost:5178",
+    routePrefix: AUTH_ROUTE_PREFIX,
+    publicRoutes: PUBLIC_ROUTES,
+    isPublic: (request) => {
+      const path = pathOf(request.url);
+      // The CLI: its token, compared in constant time. With no token configured this path is closed.
+      if (isUnder(path, "/api")) return expected !== undefined && bearerMatches(request.headers.authorization, expected);
+      // The plugin's own list says which sign-in routes are open.
+      if (isUnder(path, AUTH_ROUTE_PREFIX)) return false;
+      // The board's files, the redirect to them, and a 404: the login page has to load.
+      return true;
+    },
+    validateSession: (_resolved, request) =>
+      isUnder(pathOf(request.url), "/api") && !SESSION_METHODS.has(request.method)
+        ? { ok: false, reason: "read_only_session" }
+        : { ok: true },
+    trustedProxies: options.trustedProxies ?? [],
+    ...(ward && {
+      ward: {
+        client: ward,
+        loginPath: `${webBase}login`,
+        settingsPath: `${webBase}account`,
+        afterSignInPath: webBase,
+        roleFor: () => USER_ROLE,
+      },
+    }),
+  });
+
+  // The guard answers `{ error: "unauthorized" }`; under `/api` the contract's
+  // error shape is `{ code, message }`, which the CLI reads for "the board
+  // refused the token". The sign-in routes keep the plugin's shape for its hooks.
+  app.addHook("onSend", async (request, reply, payload) => {
+    if (reply.statusCode !== 401 || typeof payload !== "string" || !isUnder(pathOf(request.url), "/api")) return payload;
+    let body: unknown;
+    try {
+      body = JSON.parse(payload);
+    } catch {
+      return payload;
+    }
+    if (typeof body !== "object" || body === null || !("error" in body) || "code" in body) return payload;
+    const reason = (body as { reason?: unknown }).reason;
+    const refused: ErrorBody & { reason?: string } = {
+      code: UNAUTHORIZED,
+      message:
+        reason === "read_only_session"
+          ? "a signed-in browser only reads the board; writes need the CLI's token"
+          : "sign in, or send the CLI's token as Authorization: Bearer <token>",
+      ...(typeof reason === "string" ? { reason } : {}),
+    };
+    return JSON.stringify(refused);
+  });
 
   app.get("/api/health", async (): Promise<HealthResponse> => ({ ok: true }));
 
@@ -248,17 +343,17 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     return body;
   });
 
-  // The built board at `/brief-board/`; any other path under it is the board too (index.html).
+  // The built board at `webBase`; any other path under it is the board too (index.html).
   const webDist = options.webDist;
   const serving = webDist !== undefined && existsSync(webDist);
   if (serving) {
-    await app.register(fastifyStatic, { root: webDist, prefix: BOARD_PATH });
+    await app.register(fastifyStatic, { root: webDist, prefix: webBase });
   }
-  app.get("/", async (_request, reply) => reply.redirect(BOARD_PATH));
+  if (webBase !== "/") app.get("/", async (_request, reply) => reply.redirect(webBase));
   app.setNotFoundHandler((request, reply) => {
-    const path = request.url.split("?")[0]!;
-    if (serving && request.method === "GET" && path === BOARD_PATH.slice(0, -1)) return reply.redirect(BOARD_PATH);
-    if (serving && (request.method === "GET" || request.method === "HEAD") && path.startsWith(BOARD_PATH)) {
+    const path = pathOf(request.url);
+    if (serving && request.method === "GET" && webBase !== "/" && path === webBase.slice(0, -1)) return reply.redirect(webBase);
+    if (serving && (request.method === "GET" || request.method === "HEAD") && path.startsWith(webBase)) {
       return reply.sendFile("index.html");
     }
     return fail(reply, 404, { code: "not_found", message: `no route ${request.method} ${path}` });

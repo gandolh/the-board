@@ -1,15 +1,24 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSession } from "../vendor/ward/ward-auth-react.js";
+import { AccountPage } from "./AccountPage";
 import { fetchBoard } from "./api";
 import { Board, orderLanes } from "./Board";
 import { DetailPanel } from "./DetailPanel";
+import { navigate, pathOf, usePage } from "./route";
 import { clock } from "./time";
 import { usePolling } from "./usePolling";
 
 /**
- * brief-board in the browser: one board, a lane per project, six columns. It
- * only reads; the owner asks an agent to make any move (decisions.md).
+ * brief-board in the browser, behind the sign-in gate (`AuthGate.tsx`): the
+ * board, or the account page. The board only reads; the owner asks an agent
+ * to make any move (decisions.md).
  */
 export function App() {
+  return usePage() === "account" ? <AccountPage /> : <BoardPage />;
+}
+
+/** One board, a lane per project, six columns. */
+function BoardPage() {
   const board = usePolling(fetchBoard);
   const [tag, setTag] = useState("");
   const [openKey, setOpenKey] = useState<string | null>(null);
@@ -55,6 +64,7 @@ export function App() {
         </label>
         <span className={`blocked-count${blocked > 0 ? " has-blocked" : ""}`}>{blocked} blocked</span>
         <span className="updated">{board.fetchedAt ? `Updated ${clock(board.fetchedAt)}` : "Loading…"}</span>
+        <AccountLink />
       </header>
 
       {board.failing && (
@@ -75,5 +85,24 @@ export function App() {
 
       {openKey && <DetailPanel key={openKey} ticketKey={openKey} refreshedAt={board.fetchedAt} onClose={close} />}
     </div>
+  );
+}
+
+/** The signed-in user's name in the header, leading to the account page. */
+function AccountLink() {
+  const session = useSession();
+  const name = session.status === "signed_in" ? session.user.username : "Account";
+  return (
+    <a
+      className="account-link"
+      href={pathOf("account")}
+      onClick={(event) => {
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+        event.preventDefault();
+        navigate("account");
+      }}
+    >
+      {name}
+    </a>
   );
 }

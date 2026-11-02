@@ -21,6 +21,9 @@ const { buildApp } = (await import(serverApp)) as { buildApp: (o: { dbPath: stri
 
 const PACKAGE_ROOT = new URL("../", import.meta.url);
 
+/** The test board's token: it is behind the same guard as the real one, so every command sends it. */
+const TOKEN = "k".repeat(44);
+
 let server: Server;
 let url: string;
 let scratch: string;
@@ -28,7 +31,7 @@ let repo: string;
 let home: string;
 
 beforeAll(async () => {
-  server = await buildApp({ dbPath: ":memory:" });
+  server = await buildApp({ dbPath: ":memory:", token: TOKEN });
   url = await server.listen({ host: "127.0.0.1", port: 0 });
 });
 afterAll(async () => {
@@ -53,7 +56,7 @@ async function run(argv: string[], options: { env?: NodeJS.ProcessEnv; cwd?: str
   const out: string[] = [];
   const err: string[] = [];
   const ctx: Context = {
-    env: options.env ?? { BRIEF_BOARD_URL: url },
+    env: options.env ?? { BRIEF_BOARD_URL: url, BRIEF_BOARD_TOKEN: TOKEN },
     cwd: options.cwd ?? repo,
     home,
     out: (line) => out.push(line),
@@ -142,7 +145,7 @@ describe("start, move and comment", () => {
 
   it("takes the author from BRIEF_BOARD_AUTHOR when --author is absent", async () => {
     const key = await ticket();
-    await run(["start", key], { env: { BRIEF_BOARD_URL: url, BRIEF_BOARD_AUTHOR: "night-shift" } });
+    await run(["start", key], { env: { BRIEF_BOARD_URL: url, BRIEF_BOARD_TOKEN: TOKEN, BRIEF_BOARD_AUTHOR: "night-shift" } });
     expect((await run(["show", key])).out).toMatch(/To Do → In Progress by night-shift/);
   });
 });
@@ -199,7 +202,7 @@ describe("errors and exit codes", () => {
 
 describe("sync", () => {
   const fixtures = new URL("../test/fixtures/projects/", import.meta.url).pathname;
-  const env = () => ({ BRIEF_BOARD_URL: url, BRIEF_BOARD_PROJECTS_DIR: fixtures });
+  const env = () => ({ BRIEF_BOARD_URL: url, BRIEF_BOARD_TOKEN: TOKEN, BRIEF_BOARD_PROJECTS_DIR: fixtures });
 
   it("--dry-run lists each project's briefs and sends nothing", async () => {
     const res = await run(["sync", "--dry-run"], { env: env() });
@@ -247,46 +250,40 @@ describe("the board address", () => {
 
   it("reaches the board through the repo's .env with nothing in the environment", async () => {
     writeFileSync(join(repo, ".env"), `BRIEF_BOARD_URL=${url}\n`);
+    // The token is never a repo's: it comes from the user config.
+    mkdirSync(join(home, ".config", "brief-board"), { recursive: true });
+    writeFileSync(join(home, ".config", "brief-board", "env"), `BRIEF_BOARD_TOKEN=${TOKEN}\n`);
     expect((await run(["list", "--all"], { env: {} })).code).toBe(0);
   });
 });
 
 describe("the token", () => {
-  const TOKEN = "k".repeat(44);
-  let guarded: Server;
-  let guardedUrl: string;
-  beforeAll(async () => {
-    guarded = await buildApp({ dbPath: ":memory:", token: TOKEN });
-    guardedUrl = await guarded.listen({ host: "127.0.0.1", port: 0 });
-  });
-  afterAll(async () => {
-    await guarded.close();
-  });
+  const guardedUrl = () => url;
   const userFile = (line: string) => {
     mkdirSync(join(home, ".config", "brief-board"), { recursive: true });
     writeFileSync(join(home, ".config", "brief-board", "env"), `${line}\n`);
   };
 
   it("is sent when it comes from the environment", async () => {
-    const res = await run(["list", "--all"], { env: { BRIEF_BOARD_URL: guardedUrl, BRIEF_BOARD_TOKEN: TOKEN } });
+    const res = await run(["list", "--all"], { env: { BRIEF_BOARD_URL: guardedUrl(), BRIEF_BOARD_TOKEN: TOKEN } });
     expect(res.code).toBe(0);
   });
 
   it("is sent when it comes from the user config", async () => {
     userFile(`BRIEF_BOARD_TOKEN="${TOKEN}"`);
     expect(boardToken({ env: {}, cwd: repo, home, out: () => {}, err: () => {} })).toBe(TOKEN);
-    expect((await run(["list", "--all"], { env: { BRIEF_BOARD_URL: guardedUrl } })).code).toBe(0);
+    expect((await run(["list", "--all"], { env: { BRIEF_BOARD_URL: guardedUrl() } })).code).toBe(0);
   });
 
   it("is never read from a repo's .env", async () => {
-    writeFileSync(join(repo, ".env"), `BRIEF_BOARD_URL=${guardedUrl}\nBRIEF_BOARD_TOKEN=${TOKEN}\n`);
+    writeFileSync(join(repo, ".env"), `BRIEF_BOARD_URL=${guardedUrl()}\nBRIEF_BOARD_TOKEN=${TOKEN}\n`);
     expect(boardToken({ env: {}, cwd: repo, home, out: () => {}, err: () => {} })).toBeUndefined();
     const res = await run(["list", "--all"], { env: {} });
     expect(res.code).toBe(3);
   });
 
   it("refused, exits 3 with one line saying where to set it", async () => {
-    for (const env of [{ BRIEF_BOARD_URL: guardedUrl }, { BRIEF_BOARD_URL: guardedUrl, BRIEF_BOARD_TOKEN: "w".repeat(44) }]) {
+    for (const env of [{ BRIEF_BOARD_URL: guardedUrl() }, { BRIEF_BOARD_URL: guardedUrl(), BRIEF_BOARD_TOKEN: "w".repeat(44) }]) {
       const res = await run(["list", "--all"], { env });
       expect(res.code).toBe(3);
       expect(res.errLines).toHaveLength(1);
@@ -294,8 +291,16 @@ describe("the token", () => {
     }
   });
 
-  it("changes nothing against a board with no token", async () => {
-    expect((await run(["list", "--all"], { env: { BRIEF_BOARD_URL: url, BRIEF_BOARD_TOKEN: TOKEN } })).code).toBe(0);
+  it("is refused by a board with no token configured, which lets no CLI in", async () => {
+    const tokenless = await buildApp({ dbPath: ":memory:" });
+    try {
+      const tokenlessUrl = await tokenless.listen({ host: "127.0.0.1", port: 0 });
+      const res = await run(["list", "--all"], { env: { BRIEF_BOARD_URL: tokenlessUrl, BRIEF_BOARD_TOKEN: TOKEN } });
+      expect(res.code).toBe(3);
+      expect(res.err).toContain("the board refused the token");
+    } finally {
+      await tokenless.close();
+    }
   });
 });
 

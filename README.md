@@ -39,13 +39,17 @@ Requires Node 24 or later.
 
 ```bash
 npm install
+cp .env.example .env               # then fill BRIEF_BOARD_TOKEN, and PUBLIC_ORIGIN for npm start
+npm run seed -w @brief-board/server   # your local account; asks for a username and password
 npm run build
 npm start          # board on http://127.0.0.1:8806/brief-board/, API under /api
 ```
 
-Then put the CLI on your PATH, fill the board, and point agents at it: [docs/getting-started.md](docs/getting-started.md).
+The board sits behind sign-in: a local account from the seed, or "Sign in with Ward" when Ward's local seed has written the `WARD_OIDC_*` values into `.env`. `npm start` needs `PUBLIC_ORIGIN=http://127.0.0.1:8806` in `.env`; `npm run dev` serves the board at <http://localhost:5178/brief-board/> and needs nothing extra.
 
-Optional, for a board reachable beyond your own machine: a shared token. Make one with `openssl rand -base64 32`, start the server with `BRIEF_BOARD_TOKEN=<token>` in its environment, and put the same `BRIEF_BOARD_TOKEN=<token>` in `~/.config/brief-board/env` for the CLI. Every `/api` call but `/api/health` then needs it. Never put it in a repo's `.env`.
+The CLI gets in with a shared token. Make one with `openssl rand -base64 32`, put it in `.env` as `BRIEF_BOARD_TOKEN`, and put the same `BRIEF_BOARD_TOKEN=<token>` in `~/.config/brief-board/env` for the CLI. Never put it in another repo's `.env`. Without a token the CLI is shut out.
+
+Then put the CLI on your PATH, fill the board, and point agents at it: [docs/getting-started.md](docs/getting-started.md).
 
 ## Docs
 

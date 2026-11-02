@@ -13,33 +13,43 @@ import {
   type TicketDetailResponse,
   type UpsertTicketResponse,
 } from "@brief-board/shared";
-import type { FastifyInstance } from "fastify";
-import { buildApp, stripApiPrefix } from "./app.js";
+import type { FastifyInstance, InjectOptions, LightMyRequestResponse } from "fastify";
+import { seedUser } from "./accounts.js";
+import { buildApp, SESSION_COOKIE, stripApiPrefix } from "./app.js";
+
+/** The CLI's token on every test app; `call` sends it, as the CLI does. */
+const TOKEN = "s".repeat(44);
+const BEARER = { authorization: `Bearer ${TOKEN}` };
 
 let app: FastifyInstance;
 let clock: Date;
 
 beforeEach(async () => {
   clock = new Date("2026-10-09T12:00:00.000Z");
-  app = await buildApp({ dbPath: ":memory:", now: () => clock });
+  app = await buildApp({ dbPath: ":memory:", now: () => clock, token: TOKEN });
 });
 afterEach(async () => {
   await app.close();
 });
 
+/** `app.inject` as the CLI: with the token. */
+function call(options: InjectOptions): Promise<LightMyRequestResponse> {
+  return app.inject({ ...options, headers: { ...BEARER, ...options.headers } });
+}
+
 const put = (key: string, fields: Partial<{ title: string; summary: string; briefPath: string; tags: string[] }> = {}) =>
-  app.inject({
+  call({
     method: "PUT",
     url: `/api/tickets/${key}`,
     payload: { title: "A brief", summary: "", briefPath: "corpus/briefs/todo/01-a.md", ...fields },
   });
 const move = (key: string, to: Status, message?: string) =>
-  app.inject({ method: "POST", url: `/api/tickets/${key}/moves`, payload: { to, message } });
-const detail = async (key: string) => (await app.inject({ url: `/api/tickets/${key}` })).json<TicketDetailResponse>();
-const board = async (query = "") => (await app.inject({ url: `/api/board${query}` })).json<BoardResponse>();
+  call({ method: "POST", url: `/api/tickets/${key}/moves`, payload: { to, message } });
+const detail = async (key: string) => (await call({ url: `/api/tickets/${key}` })).json<TicketDetailResponse>();
+const board = async (query = "") => (await call({ url: `/api/board${query}` })).json<BoardResponse>();
 const sync = async (project: string, briefs: Partial<SyncBrief>[]) =>
   (
-    await app.inject({
+    await call({
       method: "POST",
       url: "/api/sync",
       payload: {
@@ -123,9 +133,9 @@ describe("error bodies", () => {
 
   it("an unknown ticket is 404 not_found, for reads, moves and comments", async () => {
     for (const res of [
-      await app.inject({ url: "/api/tickets/nobody-07" }),
+      await call({ url: "/api/tickets/nobody-07" }),
       await move("nobody-07", "in_progress"),
-      await app.inject({ method: "POST", url: "/api/tickets/nobody-07/comments", payload: { body: "hi" } }),
+      await call({ method: "POST", url: "/api/tickets/nobody-07/comments", payload: { body: "hi" } }),
     ]) {
       expect(res.statusCode).toBe(404);
       expect(res.json<ErrorBody>().code).toBe("not_found");
@@ -133,14 +143,14 @@ describe("error bodies", () => {
   });
 
   it("a malformed key is 400 invalid_key, and a bad body 400 invalid_request", async () => {
-    expect((await app.inject({ url: "/api/tickets/no-number" })).json<ErrorBody>().code).toBe("invalid_key");
-    const res = await app.inject({ method: "PUT", url: "/api/tickets/p-01", payload: { summary: "no title" } });
+    expect((await call({ url: "/api/tickets/no-number" })).json<ErrorBody>().code).toBe("invalid_key");
+    const res = await call({ method: "PUT", url: "/api/tickets/p-01", payload: { summary: "no title" } });
     expect(res.statusCode).toBe(400);
     expect(res.json<ErrorBody>().code).toBe("invalid_request");
   });
 
   it("an unknown API route is a 404 in the same shape", async () => {
-    const res = await app.inject({ url: "/api/nothing" });
+    const res = await call({ url: "/api/nothing" });
     expect(res.statusCode).toBe(404);
     expect(res.json<ErrorBody>().code).toBe("not_found");
   });
@@ -164,7 +174,7 @@ describe("tickets", () => {
   it("returns comments and history oldest first", async () => {
     await put("p-01");
     await move("p-01", "in_progress", "starting");
-    await app.inject({ method: "POST", url: "/api/tickets/p-01/comments", payload: { body: "a note", author: "owner" } });
+    await call({ method: "POST", url: "/api/tickets/p-01/comments", payload: { body: "a note", author: "owner" } });
     const { comments, history } = await detail("p-01");
     expect(comments.map((c) => [c.body, c.role, c.author])).toEqual([
       ["starting", "comment", "agent"],
@@ -250,7 +260,7 @@ describe("sync", () => {
 
   it("does not backfill a ticket for a brief already in done/", async () => {
     expect(await sync("p", [{ number: 5, state: "done" }])).toMatchObject({ created: 0 });
-    expect((await app.inject({ url: "/api/tickets/p-05" })).statusCode).toBe(404);
+    expect((await call({ url: "/api/tickets/p-05" })).statusCode).toBe(404);
   });
 
   it("hides the ticket of a superseded brief", async () => {
@@ -285,7 +295,7 @@ describe("serving the board", () => {
     writeFileSync(join(dir, "index.html"), "<title>brief-board</title>");
     mkdirSync(join(dir, "assets"));
     writeFileSync(join(dir, "assets", "app.js"), "console.log('board')");
-    const served = await buildApp({ dbPath: ":memory:", webDist: dir });
+    const served = await buildApp({ dbPath: ":memory:", webDist: dir, token: TOKEN });
     try {
       const root = await served.inject({ url: "/" });
       expect(root.statusCode).toBe(302);
@@ -295,10 +305,13 @@ describe("serving the board", () => {
       expect((await served.inject({ url: "/brief-board/anything" })).body).toContain("<title>brief-board</title>");
       expect((await served.inject({ url: "/brief-board/assets/app.js" })).body).toContain("board");
       expect((await served.inject({ url: "/lanes/atrium" })).statusCode).toBe(404);
-      const missing = await served.inject({ url: "/api/missing" });
+      const missing = await served.inject({ url: "/api/missing", headers: BEARER });
       expect(missing.statusCode).toBe(404);
       expect(missing.json<ErrorBody>().code).toBe("not_found");
-      expect((await served.inject({ url: "/brief-board-api/api/missing" })).json<ErrorBody>().code).toBe("not_found");
+      expect((await served.inject({ url: "/brief-board-api/api/missing", headers: BEARER })).json<ErrorBody>().code).toBe("not_found");
+      // Signed out, the board's files still load (the login page is one of them), and the API doesn't.
+      expect((await served.inject({ url: "/brief-board/login" })).statusCode).toBe(200);
+      expect((await served.inject({ url: "/api/missing" })).statusCode).toBe(401);
     } finally {
       await served.close();
       rmSync(dir, { recursive: true, force: true });
@@ -310,7 +323,7 @@ describe("the API prefix", () => {
   it("answers under /brief-board-api, as the browser asks, and bare, as Caddy and the CLI ask", async () => {
     expect((await app.inject({ url: "/api/health" })).json()).toEqual({ ok: true });
     expect((await app.inject({ url: "/brief-board-api/api/health" })).json()).toEqual({ ok: true });
-    expect((await app.inject({ url: "/brief-board-api/api/board?doneDays=3" })).statusCode).toBe(200);
+    expect((await call({ url: "/brief-board-api/api/board?doneDays=3" })).statusCode).toBe(200);
   });
 
   it("strips the prefix only when a slash, a query or the end follows it", async () => {
@@ -331,8 +344,18 @@ describe("the CLI's token", () => {
     { name: "a sync", method: "POST" as const, url: "/api/sync", payload: { projects: [] } },
   ];
 
-  it("leaves everything open with no token configured", async () => {
-    for (const route of routes) expect((await app.inject(route)).statusCode).toBeLessThan(300);
+  it("closes the bearer path when no token is configured", async () => {
+    const tokenless = await buildApp({ dbPath: ":memory:" });
+    try {
+      for (const route of routes) {
+        expect((await tokenless.inject(route)).statusCode, `${route.name} with no header`).toBe(401);
+        expect((await tokenless.inject({ ...route, headers: { authorization: "Bearer " } })).statusCode).toBe(401);
+        expect((await tokenless.inject({ ...route, headers: BEARER })).statusCode, `${route.name} with some token`).toBe(401);
+      }
+      expect((await tokenless.inject({ url: "/api/health" })).statusCode).toBe(200);
+    } finally {
+      await tokenless.close();
+    }
   });
 
   it("needs the right Bearer header on reads, writes and sync once one is configured", async () => {
@@ -366,5 +389,70 @@ describe("the CLI's token", () => {
     } finally {
       await guarded.close();
     }
+  });
+});
+
+describe("signing in", () => {
+  const PASSWORD = "p".repeat(12);
+  const signIn = async (): Promise<string> => {
+    await seedUser(app.accounts, { username: "owner", password: PASSWORD });
+    const res = await app.inject({ method: "POST", url: "/brief-board-api/auth/login", payload: { username: "owner", password: PASSWORD } });
+    expect(res.statusCode).toBe(200);
+    const header = res.headers["set-cookie"];
+    const lines = header === undefined ? [] : Array.isArray(header) ? header : [header];
+    const line = lines.find((l) => l.startsWith(`${SESSION_COOKIE}=`));
+    expect(line).toContain("Path=/brief-board-api");
+    return line!.split(";")[0]!;
+  };
+
+  it("refuses the board signed out, in the API's error shape", async () => {
+    const res = await app.inject({ url: "/brief-board-api/api/board" });
+    expect(res.statusCode).toBe(401);
+    expect(res.json<ErrorBody>().code).toBe("unauthorized");
+    expect((await app.inject({ url: "/brief-board-api/auth/session" })).statusCode).toBe(200);
+  });
+
+  it("reads the board and a ticket with a local session", async () => {
+    await call({ method: "PUT", url: "/api/tickets/atrium-01", payload: { title: "A", summary: "", briefPath: "corpus/briefs/todo/01-a.md" } });
+    const cookie = await signIn();
+    const board = await app.inject({ url: "/brief-board-api/api/board", headers: { cookie } });
+    expect(board.statusCode).toBe(200);
+    expect(board.json<BoardResponse>().lanes.map((lane) => lane.project)).toEqual(["atrium"]);
+    expect((await app.inject({ url: "/brief-board-api/api/tickets/atrium-01", headers: { cookie } })).statusCode).toBe(200);
+    const session = await app.inject({ url: "/brief-board-api/auth/session", headers: { cookie } });
+    expect(session.json<{ user: { username: string } }>().user.username).toBe("owner");
+  });
+
+  it("refuses a session's writes and sync, and keeps it signed in", async () => {
+    await call({ method: "PUT", url: "/api/tickets/atrium-01", payload: { title: "A", summary: "", briefPath: "corpus/briefs/todo/01-a.md" } });
+    const cookie = await signIn();
+    const writes: InjectOptions[] = [
+      { method: "PUT", url: "/brief-board-api/api/tickets/atrium-02", payload: { title: "B", summary: "", briefPath: "corpus/briefs/todo/02-b.md" } },
+      { method: "POST", url: "/brief-board-api/api/tickets/atrium-01/comments", payload: { body: "hi" } },
+      { method: "POST", url: "/brief-board-api/api/tickets/atrium-01/moves", payload: { to: "in_progress" } },
+      { method: "POST", url: "/brief-board-api/api/sync", payload: { projects: [] } },
+    ];
+    for (const write of writes) {
+      const res = await app.inject({ ...write, headers: { cookie } });
+      expect(res.statusCode, `${write.method} ${write.url}`).toBe(401);
+      expect(res.json<ErrorBody & { reason?: string }>()).toMatchObject({ code: "unauthorized", reason: "read_only_session" });
+      expect(res.headers["set-cookie"], "the cookie is not cleared").toBeUndefined();
+    }
+    expect((await detail("atrium-01")).comments).toEqual([]);
+    expect((await app.inject({ url: "/brief-board-api/api/board", headers: { cookie } })).statusCode).toBe(200);
+    expect((await app.inject({ url: "/brief-board-api/auth/session", headers: { cookie } })).json<{ user: unknown }>().user).not.toBeNull();
+  });
+
+  it("still lets the token read and write, with or without a cookie", async () => {
+    const cookie = await signIn();
+    const put = { method: "PUT" as const, url: "/api/tickets/atrium-03", payload: { title: "C", summary: "", briefPath: "corpus/briefs/todo/03-c.md" } };
+    expect((await call(put)).statusCode).toBe(201);
+    expect((await app.inject({ ...put, headers: { ...BEARER, cookie } })).statusCode).toBe(200);
+    expect((await call({ url: "/api/board" })).statusCode).toBe(200);
+  });
+
+  it("keeps health open", async () => {
+    expect((await app.inject({ url: "/api/health" })).json()).toEqual({ ok: true });
+    expect((await app.inject({ method: "HEAD", url: "/brief-board-api/api/health" })).statusCode).toBe(200);
   });
 });

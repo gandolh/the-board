@@ -8,7 +8,7 @@ import tseslint from "typescript-eslint";
  * see. The React hooks rules apply to the board only.
  */
 export default tseslint.config(
-  { ignores: ["**/dist/**", "**/node_modules/**", "data/**"] },
+  { ignores: ["**/dist/**", "**/node_modules/**", "data/**", "**/vendor/**"] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
