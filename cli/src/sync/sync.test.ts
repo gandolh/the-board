@@ -3,10 +3,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { UsageError } from "../errors.js";
 import { briefSummary, briefTitle, cut, SUMMARY_MAX } from "./parse.js";
-import { projectsDir, readProjects } from "./read.js";
+import { findProjects, projectsDir, readProjects } from "./read.js";
 
 const FIXTURES = fileURLToPath(new URL("../../test/fixtures/projects/", import.meta.url));
+/** Group folders: a flat project beside them, one a group folder down, an empty group, one too deep, one under a dot-directory. */
+const GROUPED = fileURLToPath(new URL("../../test/fixtures/grouped/", import.meta.url));
 
 describe("brief titles", () => {
   it("strips Task, Brief and Wave numbers before an em dash, a hyphen or a colon", () => {
@@ -94,6 +97,50 @@ describe("reading the corpora", () => {
   it("limits the run to one project", () => {
     expect(readProjects(FIXTURES, "beta").map((p) => p.project)).toEqual(["beta"]);
     expect(readProjects(FIXTURES, "gamma")).toEqual([]);
+  });
+});
+
+describe("group folders", () => {
+  it("finds a project directly under the projects directory and one a group folder down", () => {
+    expect(findProjects(GROUPED)).toEqual([
+      { name: "epsilon", root: join(GROUPED, "apps", "epsilon") },
+      { name: "solo", root: join(GROUPED, "solo") },
+    ]);
+  });
+
+  it("names a grouped project by its own directory, not group/name", () => {
+    const [epsilon] = readProjects(GROUPED, "epsilon");
+    expect(epsilon!.project).toBe("epsilon");
+    expect(epsilon!.briefs.map((b) => [b.number, b.title, b.briefPath])).toEqual([
+      [4, "A project one group folder down", "corpus/briefs/todo/04-grouped.md"],
+    ]);
+  });
+
+  it("finds nothing in a group folder with no project, nothing deeper, nothing under a dot-directory", () => {
+    const names = findProjects(GROUPED).map((p) => p.name);
+    for (const missing of ["websites", "notes", "zeta", "eta", "omega"]) expect(names).not.toContain(missing);
+  });
+
+  it("finds --project at either depth, and not one nested too deep", () => {
+    expect(readProjects(GROUPED, "solo").map((p) => p.project)).toEqual(["solo"]);
+    expect(readProjects(GROUPED, "epsilon").map((p) => p.project)).toEqual(["epsilon"]);
+    expect(readProjects(GROUPED, "eta")).toEqual([]);
+  });
+
+  it("stops on two projects with one name, naming both paths", () => {
+    const dir = mkdtempSync(join(tmpdir(), "brief-board-projects-"));
+    try {
+      for (const root of [join(dir, "apps", "twin"), join(dir, "games", "twin"), join(dir, "solo")]) {
+        mkdirSync(join(root, "corpus", "briefs", "todo"), { recursive: true });
+        writeFileSync(join(root, "corpus", "briefs", "todo", "01-a.md"), "# Task 01 — A\n");
+      }
+      expect(() => readProjects(dir)).toThrow(UsageError);
+      expect(() => readProjects(dir)).toThrow(`${join(dir, "apps", "twin")} and ${join(dir, "games", "twin")}`);
+      expect(() => readProjects(dir, "twin")).toThrow(UsageError);
+      expect(readProjects(dir, "solo").map((p) => p.project)).toEqual(["solo"]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
 

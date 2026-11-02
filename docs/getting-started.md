@@ -5,7 +5,7 @@ These are the owner's steps. `npm link` installs a command globally, so no agent
 ## Prerequisites
 
 - Node 24 or later
-- A projects folder whose repos keep briefs in `corpus/briefs/{todo,done,superseded}/` (defaults to `~/projects`)
+- A projects folder whose repos keep briefs in `corpus/briefs/{todo,done,superseded}/` (defaults to `~/projects`); a repo can sit directly in it or one group folder down (`apps/<repo>`)
 
 ## 1. Build
 
