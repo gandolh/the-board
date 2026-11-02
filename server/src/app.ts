@@ -26,7 +26,7 @@ import { Store } from "./store.js";
 import { runSync } from "./sync.js";
 
 /**
- * The brief-board API (brief 03): the contract in `shared/src/api.ts` and
+ * The brief-board API: the contract in `shared/src/api.ts` and
  * nothing beyond it. It runs on 127.0.0.1 with no sign-in; agents reach it
  * through the CLI, and the read-only board reads it.
  */

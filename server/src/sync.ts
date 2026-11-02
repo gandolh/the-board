@@ -2,7 +2,7 @@ import { formatKey, type SyncRequest, type SyncResponse, type Ticket } from "@br
 import type { Store } from "./store.js";
 
 /**
- * `POST /api/sync` (brief 03). The corpus wins and the board is a view of it
+ * `POST /api/sync`. The corpus wins and the board is a view of it
  * (decisions.md), so sync corrects tickets to match their briefs, and it is the
  * one writer that does so without the move table. It touches only the projects
  * in the payload, and the whole run is one transaction.

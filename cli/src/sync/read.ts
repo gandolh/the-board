@@ -5,7 +5,7 @@ import { BRIEF_STATES, type SyncBrief, type SyncProject } from "@brief-board/sha
 import { briefSummary, briefTitle } from "./parse.js";
 
 /**
- * Read every project's briefs (brief 05). It only reads: a project is any
+ * Read every project's briefs. It only reads: a project is any
  * child of the projects directory with a `corpus/briefs/`, named by its
  * directory; a brief is `corpus/briefs/{todo,done,superseded}/<digits>-<slug>.md`,
  * one level deep. Anything else there (`.gitkeep`, a folder of templates, a

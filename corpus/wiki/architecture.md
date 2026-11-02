@@ -1,11 +1,11 @@
 ---
-summary: How brief-board is put together, as built. npm workspaces with a Fastify + SQLite API, a read-only Vite + React board, and the brief-board CLI that agents use; how the CLI finds the board without any repo holding a path; what each project's CLAUDE.md says. Sync runs by hand from the CLI. The owner starts the server by hand on 127.0.0.1:8806.
-updated: 2026-10-09
+summary: How brief-board is put together, as built 2026-10-09. npm workspaces with a Fastify + SQLite API, a read-only Vite + React board, and the brief-board CLI that agents use; how the CLI finds the board without any repo holding a path; keys, the CLI's exit codes, the server's error codes, how the board UI polls and lays out, build gotchas, and what each project's CLAUDE.md says. The owner starts the server by hand on 127.0.0.1:8806.
+updated: 2026-11-02
 ---
 
 # Architecture
 
-Built by briefs 01 to 08 (2026-10-09). Code: `shared/src/` (statuses, the
+Built on 2026-10-09. Code: `shared/src/` (statuses, the
 move table, keys, the API contract), `server/src/` (`app.ts`, `store.ts`,
 `sync.ts`), `cli/src/` (`main.ts`, `commands/`, `sync/`, `guide.md`) and
 `web/src/`.
@@ -45,12 +45,82 @@ goes in the root CLAUDE.md if the repo has one, otherwise in
 `corpus/CLAUDE.md`. The rules themselves are printed by `brief-board guide`
 and live only in this repo. See the guide entry in [glossary.md](glossary.md).
 
+## Keys
+
+`<project>-<NN>` (`shared/src/key.ts`). The key splits on the last
+`-<digits>`, so a project may itself end in digits (`3D-sandbox-12`), and may
+hold letters, digits, `.`, `_` and `-`. `keySchema` normalises the number to
+two digits (`trips-4` is `trips-04`).
+
+## CLI
+
+`create`, `start` (a resume when the ticket is already In Progress), `move`,
+`comment`, `show`, `list`, `sync` and `guide`. The project is the git root's
+directory name; the author is `--author`, else `BRIEF_BOARD_AUTHOR`, else
+`agent`.
+
+- `move` and `start` fetch the ticket and run the shared move check locally
+  first, so an agent learns the table from the CLI before the board refuses.
+- A status may be given as the id, hyphenated, or the label
+  (`ready_for_test`, `ready-for-test`, "Ready for test").
+- Exit codes (`cli/src/main.ts`): 0 success, 1 a usage mistake, 2 the board
+  or the local check refused (with the allowed moves and their messages), 3
+  the board is unreachable, printed as one line. A 4xx that isn't the
+  contract's JSON (another service on the port) counts as unreachable.
+- `guide` prints `cli/src/guide.md` with the move table filled in from
+  `shared` at print time; a test holds it under 80 lines.
+
+## Server
+
+`server/src/`: `db.ts` (schema, `user_version` migrations), `store.ts`,
+`sync.ts` and `app.ts` (`buildApp({ dbPath })`, which tests call with
+`:memory:`). Author defaults to `agent`; tags are replaced on every `PUT`,
+deduplicated, and never include the project. A `PUT` that creates answers
+201. Error codes: `invalid_request`, `invalid_key`, `not_found`,
+`move_not_allowed`, `message_required`, `internal`. Any path outside `/api`
+gets the board's `index.html`; under `/api` an unknown path is a 404 in the
+error shape.
+
 ## Sync
 
 `brief-board sync` runs on this machine, in the CLI, and only when someone runs
-it. It reads the briefs in every project under the projects directory, which
-defaults to `~/projects` and is set in the user-level config. It pushes the
-result to the API in one request, so it works the same after the VPS move.
+it. It reads the briefs in every project under the projects directory and
+pushes them to the API in one request, so it works the same after the VPS
+move. The rules per brief state: [sync.md](sync.md).
+
+## Board UI
+
+`web/src/`; `api.ts` holds the only requests, both GETs. It polls every 10 s
+(`POLL_MS`), pauses while the tab is hidden, and keeps the last data behind a
+banner when the API is down. The tag filter works in the browser on the polled
+board; the Blocked count and the tab title ("(1 blocked) brief-board") stay
+board-wide. Below 1100 px each lane scrolls sideways on its own and shows its
+own column names, since one sticky header row can't stay aligned with all of
+them. Light and dark follow the system. Ticket markdown goes through
+`react-markdown` with `skipHtml`.
+
+Since 2026-10-23 the detail panel is a non-modal Base UI `Dialog` with
+`disablePointerDismissal`, so clicking another card switches the ticket
+instead of closing the panel. `App.tsx` keys it by ticket, so focus lands on
+Close and Escape returns it to the card that opened it. The panel is named by
+`aria-label="Ticket <key>"`, not `Dialog.Title`, so its name doesn't change
+when the detail loads. Lanes are `Collapsible`s.
+
+`scripts/seed-demo.ts` (plain `node`) fills a scratch board with three
+made-up projects. It refuses a board holding any other project. No one ticket
+can carry all six message roles, because a confirmation needs Blocked → Done,
+so the seed spreads them over two.
+
+## Build gotchas
+
+- Each compiled package writes `tsconfig.tsbuildinfo` into its `dist/`. Left
+  at the package root, deleting `dist/` kept the build info and `tsc -b`
+  skipped the emit, so a "clean" build made no CLI.
+- Tests compile with the rest, so `tsc -b` typechecks them; Vitest reads only
+  `*/src/**`.
+- The root `package.json` overrides `shell-quote` (pulled by `concurrently`)
+  to 1.11.0 for a critical advisory, and Fastify sits above the 5.12.x
+  releases `npm audit` flagged on 2026-10-09.
 
 ## Running it
 

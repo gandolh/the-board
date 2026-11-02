@@ -9,7 +9,7 @@ import { Rejected, Unreachable, UsageError } from "./errors.js";
 import { Runtime } from "./runtime.js";
 
 /**
- * `brief-board`: how agents read and move tickets (brief 04). It runs inside
+ * `brief-board`: how agents read and move tickets. It runs inside
  * any project's repo with no setup there. Exit codes: 0 success, 1 a usage
  * mistake, 2 the board (or the local move check) refused, 3 the board is not
  * reachable, which an agent reports once and then works on without the board.

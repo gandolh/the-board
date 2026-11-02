@@ -3,7 +3,7 @@ import { dirname } from "node:path";
 import Database from "better-sqlite3";
 
 /**
- * The board's SQLite file (brief 03). Tickets, their labels, comments and
+ * The board's SQLite file. Tickets, their labels, comments and
  * history. The schema is versioned with `PRAGMA user_version`: each migration
  * runs once, in order, inside a transaction, and bumps the version.
  *

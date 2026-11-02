@@ -119,7 +119,7 @@ waits on the owner's setup.
 ## [2026-10-23] todo | Brief 09 filed: Base UI for the panel and the lanes
 
 The owner asked for Base UI in the apps that still hand-build their widgets.
-[Brief 09](briefs/done/09-base-ui-widgets.md) moves the detail panel to a
+Brief 09 moves the detail panel to a
 non-modal Base UI `Dialog` and the lanes to `Collapsible`; the tag filter
 stays a native select. brief-board is down (since 2026-10-13), so this is
 recorded here only.
@@ -129,9 +129,25 @@ recorded here only.
 The detail panel is a non-modal Base UI `Dialog` and the lanes are
 `Collapsible`s (`9012a73`). Focus now returns to the card when the panel
 closes. The decision is in [decisions.md](wiki/decisions.md); details are in
-[the brief](briefs/done/09-base-ui-widgets.md). brief-board is down (since
+brief 09. brief-board is down (since
 2026-10-13), so it isn't on the board.
 
 ## [2026-10-31] maintenance | README images retaken after brief 09's Base UI move
 
 A README refresh pass with the readme-docs standard. Brief 09 (2026-10-23) put Base UI under the detail panel and the lanes, after the images were taken on 2026-10-09, so `board.webp` and `ticket-detail.webp` were taken again on a throwaway board (port 8807, a temporary database, three made-up projects synced and moved with the CLI) as `docs/images/shots.md` describes. The README is current. Checked: `npm install`, `npm run build` and `npm start`.
+
+## [2026-11-02] maintenance | Briefs reset
+
+Part of an estate-wide reset. The nine briefs in `briefs/done/` are folded
+into the wiki and deleted; brief numbering restarts at 01. The old briefs read
+like the grilling that fed the first corpus. The last commit that held them is
+`acd7f39`: read one with `git show acd7f39:corpus/briefs/done/05-sync.md`.
+Brief numbers in the entries above refer to that set.
+
+New page: [sync.md](wiki/sync.md), the sync rules per brief state.
+[architecture.md](wiki/architecture.md) gained keys, the CLI's exit codes, the
+server's error codes, the board UI's behaviour and the build gotchas.
+[status.md](wiki/status.md) is a per-area snapshot instead of a brief list.
+New todo: [sync after the numbering restart](todos/sync-after-numbering-restart.md),
+since sync keys tickets by number and every repo now restarts at 01. Code
+comments no longer cite brief numbers.

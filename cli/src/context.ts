@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
 
 /**
- * Where the CLI is running and which board it talks to (brief 04). Agents call
+ * Where the CLI is running and which board it talks to. Agents call
  * it from inside some other project's repo, which holds no setting for it: the
  * project is the git root's directory name, and the address comes from the
  * environment, that repo's `.env`, or the user-level config.

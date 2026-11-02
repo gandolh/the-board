@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-/** How often the board asks again (brief 07). */
+/** How often the board asks again. */
 export const POLL_MS = 10_000;
 
 export interface Polled<T> {

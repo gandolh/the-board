@@ -6,7 +6,7 @@ import { statusSchema } from "./status.js";
 /**
  * The API contract: every route's request and response, as zod schemas. The
  * server validates with them, and the CLI and the board parse with them, so
- * the three cannot drift (briefs 03, 04 and 07 import this and nothing else).
+ * the three cannot drift (the server, the CLI and the web app import this and nothing else).
  * Field names follow the glossary.
  */
 
@@ -186,7 +186,7 @@ export const syncProjectSchema = z.object({
 });
 export type SyncProject = z.infer<typeof syncProjectSchema>;
 
-/** Every project's briefs, read from the corpora in one pass (brief 05) and sent in one request. */
+/** Every project's briefs, read from the corpora in one pass and sent in one request. */
 export const syncRequestSchema = z.object({ projects: z.array(syncProjectSchema) });
 export type SyncRequest = z.infer<typeof syncRequestSchema>;
 

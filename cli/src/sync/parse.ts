@@ -1,5 +1,5 @@
 /**
- * A brief's title and summary, read from its markdown (brief 05). Pure, so the
+ * A brief's title and summary, read from its markdown. Pure, so the
  * odd shapes found across the corpora can be tested one by one.
  */
 

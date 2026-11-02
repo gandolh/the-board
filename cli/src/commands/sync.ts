@@ -4,10 +4,10 @@ import type { Runtime } from "../runtime.js";
 import { projectsDir, readProjects } from "../sync/read.js";
 
 /**
- * `sync [--project <name>] [--dry-run]` (brief 05): make the board match the
+ * `sync [--project <name>] [--dry-run]`: make the board match the
  * corpora. It runs only when someone runs it (decisions.md "Sync runs only by
  * hand"). It reads every project's briefs here, on this machine, and sends them
- * in one request; the server applies the rules (brief 03).
+ * in one request; the server applies the rules.
  */
 export async function sync(rt: Runtime, args: string[]): Promise<void> {
   const { values, positionals } = rt.parse(args, { "dry-run": { type: "boolean" } });

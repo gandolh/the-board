@@ -1,5 +1,5 @@
 /**
- * The three ways a command fails, each with its exit code (brief 04):
+ * The three ways a command fails, each with its exit code:
  * 1 for a usage mistake, 2 when the board refuses (or the local move check
  * does), 3 when the board cannot be reached. 0 is success.
  */

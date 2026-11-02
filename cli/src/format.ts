@@ -9,7 +9,7 @@ import {
 } from "@brief-board/shared";
 
 /**
- * Plain text for agents to read (brief 04). Each failure says what is allowed
+ * Plain text for agents to read. Each failure says what is allowed
  * instead, so an agent learns the rules from the CLI rather than from a 400.
  */
 

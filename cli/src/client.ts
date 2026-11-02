@@ -12,7 +12,7 @@ import {
 } from "@brief-board/shared";
 import { Rejected, Unreachable } from "./errors.js";
 
-/** How long the board gets before the CLI calls it down (brief 04). */
+/** How long the board gets before the CLI calls it down. */
 const TIMEOUT_MS = 2_000;
 
 /** A refusal from the board, with its error body. */

@@ -12,7 +12,7 @@ import {
 import type { Db } from "./db.js";
 
 /**
- * Reads and writes for tickets, comments and history (brief 03). Every write
+ * Reads and writes for tickets, comments and history. Every write
  * that touches more than one row runs in a transaction. Only `sync.ts` changes
  * a status without the move table.
  */

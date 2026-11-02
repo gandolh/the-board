@@ -3,7 +3,7 @@ import { MOVES, type MessageRole } from "@brief-board/shared";
 import type { Runtime } from "../runtime.js";
 
 /**
- * `guide`: the rules agents follow (brief 06). Every project's CLAUDE.md
+ * `guide`: the rules agents follow. Every project's CLAUDE.md
  * points here instead of copying them, so a change to the rules is one edit
  * to `src/guide.md`. The move table is rendered from `shared`, the same table
  * the server enforces, so the guide cannot drift from it.

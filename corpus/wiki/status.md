@@ -1,44 +1,50 @@
 ---
-summary: Snapshot as of 2026-10-09. The repo is the owner's the-board on GitHub and all eight briefs are done; the owner's setup steps are in the README. One line per brief, and the order they run in.
-updated: 2026-10-23
+summary: Snapshot as of 2026-11-02, per area. The board, CLI, sync and guide built 2026-10-09 and rolled out to every project's CLAUDE.md but vps-deploy's; Base UI under the panel and lanes 2026-10-23. Down since 2026-10-13, waiting on the owner's setup; the open sync problem after the estate restarted brief numbering; the todos.
+updated: 2026-11-02
 ---
 
 # Status
 
-## Where things stand
+_2026-11-02_. Everything is on `main` in the owner's GitHub repository
+the-board. The board has been down since 2026-10-13. No brief is open; brief
+numbering restarted at 01 on 2026-11-02 (see [log.md](../log.md)).
 
-The design was settled in a grill-me session on 2026-10-08. See
-[decisions.md](decisions.md) and [architecture.md](architecture.md). The repo
-is the owner's GitHub repository the-board (2026-10-09). Brief 01's scaffold builds,
-tests and serves a placeholder on 127.0.0.1:8806.
+## By area
 
-## Briefs
+- **Shared model** (2026-10-09). Statuses, the twelve-row move table with
+  `checkMove`, keys, the zod contract for every route
+  ([decisions.md](decisions.md), [architecture.md](architecture.md)).
+- **API server** (2026-10-09). Fastify + SQLite on 127.0.0.1:8806, moves
+  enforced by the shared table, serving the built UI.
+- **CLI** (2026-10-09). Every agent command, the address lookup, resume, exit
+  3 when the board is down, and `guide` (76 lines).
+- **Sync** (2026-10-09). Reads every project's briefs and corrects the
+  tickets ([sync.md](sync.md)).
+- **Board UI** (2026-10-09, Base UI 2026-10-23). Read-only lanes, six
+  columns, the detail panel, polling; README images retaken 2026-10-31.
+- **Rollout** (2026-10-09). Thirteen repos carry the brief-board section in
+  their CLAUDE.md. vps-deploy was skipped because its `corpus/CLAUDE.md` had
+  uncommitted work, and on 2026-11-02 it still has no section.
 
-- 01 [Workspace scaffold](../briefs/done/01-workspace-scaffold.md). done 2026-10-09.
-  npm workspaces, tooling, placeholder server on 127.0.0.1:8806.
-- 02 [Shared model and API contract](../briefs/done/02-shared-model-and-api-contract.md).
-  done 2026-10-09. Statuses, the move table, keys, zod schemas for every route.
-- 03 [API server](../briefs/done/03-api-server.md). done 2026-10-09. SQLite storage,
-  enforced moves, sync rules.
-- 04 [The brief-board CLI](../briefs/done/04-cli.md). done 2026-10-09. Every agent
-  command, address lookup, resume, exit 3 when the board is down.
-- 05 [Sync](../briefs/done/05-sync.md). done 2026-10-09. Reads every corpus and builds
-  the sync payload.
-- 06 [The guide](../briefs/done/06-the-guide.md). done 2026-10-09. The rules
-  `brief-board guide` prints.
-- 07 [Read-only board UI](../briefs/done/07-read-only-board-ui.md). done 2026-10-09.
-  Lanes, six columns, detail panel, polling.
-- 08 [Roll out to every project](../briefs/done/08-rollout-to-projects.md).
-  done 2026-10-09. The section went into 14 repos; vps-deploy was skipped
-  because its CLAUDE.md has uncommitted work. Owner setup is in the README.
-- 09 [Base UI for the panel and the lanes](../briefs/done/09-base-ui-widgets.md).
-  done 2026-10-23. Panel on a non-modal Base UI Dialog, lanes on Collapsible.
+114 tests; typecheck, lint and build clean.
 
-## Order
+## Next (owner)
 
-1. 01
-2. 02
-3. 03, 04 and 07 in parallel (all three build on 02's contract)
-4. 05 and 06 (both need the CLI)
-5. 08
-6. 09
+1. The README's owner setup: build, `npm link` in `cli/`, `npm start`, the
+   optional `~/.config/brief-board/env`, then `brief-board sync`. Until
+   `npm link` runs, agents following their CLAUDE.md find no `brief-board`
+   command.
+2. Before that first sync, settle how sync treats the restarted brief
+   numbers ([todos/sync-after-numbering-restart.md](../todos/sync-after-numbering-restart.md)).
+
+## Open
+
+- Sync matches briefs to tickets by number, and every repo restarted its
+  numbering at 01 in 2026-11: new briefs land on old tickets
+  ([sync.md](sync.md)).
+- The sync report folds closes and hides into "updated"; separate counts need
+  contract fields.
+
+## Todos
+
+- [Sync after the estate restarted brief numbering at 01](../todos/sync-after-numbering-restart.md) (`later`)

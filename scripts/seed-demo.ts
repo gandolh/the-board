@@ -1,5 +1,5 @@
 /**
- * Demo data for the board (brief 07): tickets across three made-up projects,
+ * Demo data for the board: tickets across three made-up projects,
  * in every status, with comments of every role, all through the API.
  *
  * Point it at a dev board, never at the real one under data/:

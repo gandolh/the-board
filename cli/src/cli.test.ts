@@ -8,7 +8,7 @@ import { boardUrl, DEFAULT_BOARD_URL, type Context } from "./context.js";
 import { main } from "./main.js";
 
 /**
- * Every command against a real board: brief 03's `buildApp` on a random port.
+ * Every command against a real board: the server's `buildApp` on a random port.
  * It is imported by URL rather than by name so the CLI's TypeScript project
  * does not take in the server's sources; Vitest compiles it all the same.
  */
