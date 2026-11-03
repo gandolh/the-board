@@ -223,3 +223,11 @@ already comes from the login page. Typecheck, lint, 140 tests and the build
 pass. vps-deploy's `npm run setup:brief-board` now runs the owner's steps
 (that repo's log has it); [docs/owner-setup.md](../docs/owner-setup.md) points
 at it and keeps each step by hand. Not deployed.
+
+## [2026-11-03] deploy | Live on the VPS
+
+The owner ran vps-deploy's `npm run setup:brief-board`, signed in and linked
+Ward. The CLI reads the live board ("No tickets"). `brief-board sync
+--dry-run` found 21 projects and three open briefs (imbatranimOS 22, lantern
+01, ro-housing 01); done briefs are not backfilled. The board started empty,
+so the restarted numbers meet no old tickets on the first sync.
