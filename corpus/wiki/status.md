@@ -1,5 +1,5 @@
 ---
-summary: Snapshot as of 2026-11-03, per area. Live on the VPS since 2026-11-03 (empty until the first sync). The board, CLI, sync and guide built 2026-10-09 and rolled out to every project's CLAUDE.md but vps-deploy's; Base UI under the panel and lanes 2026-10-23. Down since 2026-10-13; briefs 01-05 (2026-11-02) built it for the VPS behind sign-in (sync in group folders, the sub-path, the CLI's token, sign-in, the container and the vps-deploy stack), not deployed, with the owner's steps, which vps-deploy's npm run setup:brief-board runs (2026-11-03); ward-auth 0.7.0 with its rename route off (2026-11-03); the numbering question after the estate restarted brief numbering, closed 2026-11-03; open briefs 06 (a Backlog column) and 07 (nested corpora name themselves).
+summary: Snapshot as of 2026-11-03, per area. Live on the VPS since 2026-11-03; first sync 2026-11-03 (23 projects, 30 tickets in To Do). The board, CLI, sync and guide built 2026-10-09 and rolled out to every project's CLAUDE.md but vps-deploy's; Base UI under the panel and lanes 2026-10-23. Down since 2026-10-13; briefs 01-05 (2026-11-02) built it for the VPS behind sign-in (sync in group folders, the sub-path, the CLI's token, sign-in, the container and the vps-deploy stack), not deployed, with the owner's steps, which vps-deploy's npm run setup:brief-board runs (2026-11-03); ward-auth 0.7.0 with its rename route off (2026-11-03); the numbering question after the estate restarted brief numbering, closed 2026-11-03; open briefs 06 (a Backlog column) and 07 (nested corpora name themselves).
 updated: 2026-11-03
 ---
 
@@ -45,20 +45,25 @@ from 2026-10-13. Brief numbering restarted at 01 on 2026-11-02 (see
 
 ## Next (owner)
 
-1. The first `brief-board sync` (`--dry-run` first). The VPS board started
-   empty, so no old ticket shares a number with a new brief, and brief
-   numbers never restart again (the corpus-flow rule since 2026-11-03), so
-   the numbering todo is closed.
-2. For local development only: add brief-board to Ward's local seed
+1. For local development only: add brief-board to Ward's local seed
    (`wzd_auth`, `infrastructure/local/seed.mjs`):
    `{ slug: "brief-board", name: "brief-board", repo: "brief-board", envFiles: [".env"], dev: "http://localhost:5178/brief-board/", api: "/brief-board-api" }`
    in `APPS`, and its row in that folder's README table.
-3. Optional: the X-Forwarded-For check in `docs/owner-setup.md` step 5.
+2. Optional: the X-Forwarded-For check in `docs/owner-setup.md` step 5.
 
 ## Open
 
 - The sync report folds closes and hides into "updated"; separate counts need
   contract fields.
+
+## First sync
+
+Run on 2026-11-03, once the estate's todos had become briefs: 23 projects,
+78 briefs read, 27 tickets created and 3 that already existed left
+unchanged, so 30 tickets in To Do. Done briefs aren't backfilled. churchix
+and scoala-ramna-theme reach the board with brief 07, and Backlog with 06.
+The VPS board started empty, so no old ticket shared a number with a new
+brief.
 
 ## Open briefs
 

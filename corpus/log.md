@@ -243,3 +243,10 @@ one folder deeper names itself, as churchix and scoala-ramna-theme now do in `co
 `sync-after-numbering-restart` is closed, not built: the VPS board started empty, so the first
 sync meets no old ticket, and corpus-flow now says brief numbers never restart. It is deleted;
 [sync.md](wiki/sync.md) and [status.md](wiki/status.md) say so.
+
+## [2026-11-03] sync | The first sync
+
+`brief-board sync --dry-run`, then `brief-board sync`, from this machine against the VPS board:
+23 projects, 78 briefs, 27 created, 0 updated, 3 unchanged (imbatranimOS-22, lantern-01 and
+ro-housing-01 already existed). `brief-board list --all` shows 30 tickets, all To Do.
+[status.md](wiki/status.md) drops the step from the owner's list.
