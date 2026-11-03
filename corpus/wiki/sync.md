@@ -1,5 +1,5 @@
 ---
-summary: How `brief-board sync` turns every project's corpus/briefs/ into tickets, as built 2026-10-09. What the CLI reads (projects directory, titles, summaries, the heading shapes it strips), what the server does per brief state (create, refresh, close, hide, warn), why the report folds closes and hides into "updated", and why briefs restarting at 01 in 2026-11 needed no fix (closed 2026-11-03).
+summary: How `brief-board sync` turns every project's corpus/briefs/ and open corpus/todos/ into tickets, as built 2026-10-09 with todos and Backlog 2026-11-03. What the CLI reads (projects directory, titles, summaries, the heading shapes it strips, which todos are open), what the server does per brief state (create, refresh, close, hide, warn) and per todo (create, refresh, remove), what the dry run compares, why the report folds closes and hides into "updated", and why briefs restarting at 01 in 2026-11 needed no fix (closed 2026-11-03).
 updated: 2026-11-03
 ---
 
@@ -18,7 +18,7 @@ The decision that sync runs only by hand, and why the corpus wins, is in
   estate moved its repos into `apps/`, `platform/` and the other groups on
   2026-11-01). A child without `corpus/briefs/` counts as a group folder and
   is looked into once; dot-directories and `node_modules` are skipped. A
-  project is named by its own directory, never `group/name`, so its keys match
+  project is named by its own directory, never by its group and name joined, so its keys match
   the ones `create` takes from the git root; two projects with one name stop
   the run with a usage error naming both paths, before anything is sent.
   Corpora nested deeper are not found: churchix inside presentation-sites and
@@ -27,7 +27,9 @@ The decision that sync runs only by hand, and why the corpus wins, is in
   `BRIEF_BOARD_PROJECTS_DIR` from the environment or
   `~/.config/brief-board/env` (a leading `~` is the home directory), else
   `~/projects`. `--project <name>` narrows it to one, at either depth; `--dry-run` prints the
-  counts per project and the open briefs by number, and sends nothing.
+  counts per project, the open briefs by number and the open todos, and
+  writes nothing: it reads the board to list the todo tickets a real run
+  would create and remove, and without a board it says it could not compare.
 - **Title.** The first H1, without a leading `Task 72 —`, `Brief 99 —`,
   `Task 01:`, a bare `12 -` or newspapper's `Wave 0 —`. A heading with no
   number (`# Design Brief — Public Resource Map`) stays as written. With no
@@ -37,6 +39,15 @@ The decision that sync runs only by hand, and why the corpus wins, is in
   which is also the fallback when Context opens with a sub-heading. Links and
   images become their text. Cut at 600 characters, at a sentence end where
   possible.
+- **Todos** (2026-11-03). A `.md` file directly in `corpus/todos/`;
+  subfolders, like game-engine's `closed/` archive, are never read. Its status
+  is the frontmatter's `status:`, else a `status:` line (`**Status:**` too)
+  among the first five lines after the title, else none; only the first word
+  counts. Open is anything but `dropped`, `closed`, `promoted` or `done`, and
+  only open todos are sent. Title: the frontmatter's `title:`, else the first
+  H1, else the slug; summary: the first paragraph, as for a brief, with the
+  frontmatter left out. A file name the key can't hold (anything but letters,
+  digits, `.`, `_` and `-`) stops the run, naming the file.
 - Everything goes to the server in **one request**, so sync works the same
   once the board moves off this machine.
 
@@ -59,7 +70,18 @@ the payload. Sync is the one writer that skips the move table.
 Two briefs with one number warn, and the first wins. Sync writes as author
 `sync`.
 
-The report says created, updated and unchanged, plus every warning. A close
+**Todos** are sync's alone. Each open todo has a ticket in Backlog, keyed
+`<project>:<slug>` with no number, created the first time sync sees it and
+kept to the todo's title, summary and path. A todo gone from the payload
+(promoted, dropped or closed) has its ticket deleted with its history; the
+board refuses moves and comments on it, so nothing else goes with it. A
+project sent without the `todos` field, by a CLI from before Backlog, keeps
+its todo tickets as they are, rather than losing them all.
+
+The report says created, updated and unchanged for brief tickets, the same
+plus removed for todo tickets (`todos` in the response), and every warning.
+A CLI that gets no `todos` back says the board ignored them: a board from
+before Backlog drops the field silently. A close
 or a hide counts as "updated": the contract's `syncResponseSchema` has no
 separate fields, and adding them means changing `shared` and the server
 together.

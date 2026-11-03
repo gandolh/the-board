@@ -8,13 +8,13 @@ flowchart LR
   owner["Owner"] -->|reads| web["web<br/>read-only board"]
   cli -->|HTTP| server["server<br/>Fastify + SQLite"]
   web -->|polls /api| server
-  corpora["corpus/briefs/ in every project"] -->|brief-board sync| cli
+  corpora["corpus/briefs/ and todos/ in every project"] -->|brief-board sync| cli
   shared["shared<br/>statuses, moves, API schemas"] -.-> cli & server & web
 ```
 
 - **shared** holds the status names, the move table and the zod schemas. The other three import it, so a rule exists in one place.
 - **server** (`server/src/app.ts`, `store.ts`, `sync.ts`) listens on 127.0.0.1:8806, stores tickets in SQLite, rejects moves the table does not allow, and requires a message where the table says one is needed. It also serves the built board.
-- **web** is a Vite + React board. It never writes. It polls the API; the Done column shows the last 14 days, and lanes with nothing open start collapsed.
+- **web** is a Vite + React board. It never writes. It polls the API; Backlog is the first column, the Done column shows the last 14 days, and lanes with nothing open start collapsed.
 - **cli** (`cli/src/`) is the only client agents use. It finds the board from `BRIEF_BOARD_URL`, the repo's `.env`, `~/.config/brief-board/env` or the default, and takes the project name from the git root directory.
 
 ## A ticket's life
@@ -24,6 +24,8 @@ flowchart LR
 3. The agent runs `brief-board start <n>` when work begins.
 4. It ends with `move <n> done`, or `ready_for_test` / `ready_for_deploy` with a note when the owner has a step left, or `blocked` with a reason.
 5. The brief file moving to `done/` stays the record; sync makes the board agree with it.
+
+Before a brief there may be a todo. Each open todo in `corpus/todos/` has a ticket in Backlog, keyed `<project>:<slug>`, which only sync makes, keeps and removes: no agent moves or comments on it. Promoting the todo deletes its file, so the next sync takes that ticket off and files the brief's in To Do.
 
 ## Going deeper
 

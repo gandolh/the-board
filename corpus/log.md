@@ -250,3 +250,14 @@ sync meets no old ticket, and corpus-flow now says brief numbers never restart. 
 23 projects, 78 briefs, 27 created, 0 updated, 3 unchanged (imbatranimOS-22, lantern-01 and
 ro-housing-01 already existed). `brief-board list --all` shows 30 tickets, all To Do.
 [status.md](wiki/status.md) drops the step from the owner's list.
+
+## [2026-11-03] done | Brief 06, a Backlog column for open todos
+
+[Brief 06](briefs/done/06-a-backlog-column-for-open-todos.md), `93a2f10`. Sync reads each
+project's open todos (top level of `corpus/todos/`) and keeps a sync-owned ticket per todo in
+Backlog, the new first column, keyed `<project>:<slug>` with no number. Moves, comments and
+upserts on one are refused (`sync_owned`) with a pointer to promoting the todo. The schema
+migration rebuilds `tickets` with foreign keys off, since the drop would otherwise cascade into
+comments and history. A dry run against the live board found imbatranimOS's five open todos.
+163 tests; not deployed. The board has to be deployed before the next sync, or it drops the
+todos ([status.md](wiki/status.md)).

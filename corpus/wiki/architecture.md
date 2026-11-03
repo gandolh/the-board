@@ -1,5 +1,5 @@
 ---
-summary: How brief-board is put together, as built 2026-10-09, with the 2026-11-02 sub-path, token and sign-in. npm workspaces with a Fastify + SQLite API, a read-only Vite + React board, and the brief-board CLI that agents use; how the CLI finds the board without any repo holding a path; keys, the CLI's exit codes, the server's error codes, how the board UI polls and lays out, build gotchas, and what each project's CLAUDE.md says. The owner starts the server by hand on 127.0.0.1:8806.
+summary: How brief-board is put together, as built 2026-10-09, with the 2026-11-02 sub-path, token and sign-in, and the 2026-11-03 todo keys. npm workspaces with a Fastify + SQLite API, a read-only Vite + React board, and the brief-board CLI that agents use; how the CLI finds the board without any repo holding a path; keys, the CLI's exit codes, the server's error codes, how the board UI polls and lays out, build gotchas, and what each project's CLAUDE.md says. The owner starts the server by hand on 127.0.0.1:8806.
 updated: 2026-11-02
 ---
 
@@ -62,6 +62,13 @@ and live only in this repo. See the guide entry in [glossary.md](glossary.md).
 hold letters, digits, `.`, `_` and `-`. `keySchema` normalises the number to
 two digits (`trips-4` is `trips-04`).
 
+A todo's ticket (2026-11-03) is `<project>:<slug>`, the todo's file name
+without `.md`; a colon is outside a brief key's alphabet, so `parseKey` turns
+it down whatever the slug ends in, and `parseTodoKey` reads it. The ticket
+routes take either form (`ticketKeySchema`), and such a ticket's `number` is
+null. The CLI sends a key with `encodeURIComponent`; the server reads the
+colon raw or as `%3A`.
+
 ## CLI
 
 `create`, `start` (a resume when the ticket is already In Progress), `move`,
@@ -87,8 +94,12 @@ directory name; the author is `--author`, else `BRIEF_BOARD_AUTHOR`, else
 `:memory:`). Author defaults to `agent`; tags are replaced on every `PUT`,
 deduplicated, and never include the project. A `PUT` that creates answers
 201. Error codes: `invalid_request`, `invalid_key`, `not_found`,
-`move_not_allowed`, `message_required`, `internal`, and `unauthorized` (a 401
-from the sign-in guard, [sign-in.md](sign-in.md)). Since 2026-11-02 the
+`move_not_allowed`, `message_required`, `sync_owned` (a move, comment or
+`PUT` on a todo's ticket, 2026-11-03), `internal`, and `unauthorized` (a 401
+from the sign-in guard, [sign-in.md](sign-in.md)). Migrations run with
+foreign keys off, because rebuilding `tickets` (copy, drop, rename, as
+SQLite changes a CHECK) would otherwise cascade the drop into every comment
+and history row; each checks the keys before it commits. Since 2026-11-02 the
 vendored `wardAuth` plugin is the one guard in front of every route;
 `config.ts` reads the settings.
 

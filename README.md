@@ -10,7 +10,7 @@ A Jira-style board showing where every corpus brief stands across all the projec
 
 ## What it does
 
-- Shows one lane per project and six columns: To Do, In Progress, Blocked, Ready for test, Ready for deploy, Done.
+- Shows one lane per project and seven columns: Backlog (one ticket per open todo, kept by sync), To Do, In Progress, Blocked, Ready for test, Ready for deploy, Done.
 - Lets agents create and move tickets with the `brief-board` command, with a required reason when they block a ticket or hand it to the owner.
 - Keeps comments and history on each ticket, so a later session can see what the last one did.
 - Rebuilds itself from the projects' corpora with `brief-board sync`, so losing the board loses nothing.

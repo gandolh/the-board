@@ -1,5 +1,5 @@
 ---
-summary: Snapshot as of 2026-11-03, per area. Live on the VPS since 2026-11-03; first sync 2026-11-03 (23 projects, 30 tickets in To Do). The board, CLI, sync and guide built 2026-10-09 and rolled out to every project's CLAUDE.md but vps-deploy's; Base UI under the panel and lanes 2026-10-23. Down since 2026-10-13; briefs 01-05 (2026-11-02) built it for the VPS behind sign-in (sync in group folders, the sub-path, the CLI's token, sign-in, the container and the vps-deploy stack), not deployed, with the owner's steps, which vps-deploy's npm run setup:brief-board runs (2026-11-03); ward-auth 0.7.0 with its rename route off (2026-11-03); the numbering question after the estate restarted brief numbering, closed 2026-11-03; open briefs 06 (a Backlog column) and 07 (nested corpora name themselves).
+summary: Snapshot as of 2026-11-03, per area. Live on the VPS since 2026-11-03; first sync 2026-11-03 (23 projects, 30 tickets in To Do). The board, CLI, sync and guide built 2026-10-09 and rolled out to every project's CLAUDE.md but vps-deploy's; Base UI under the panel and lanes 2026-10-23. Down since 2026-10-13; briefs 01-05 (2026-11-02) built it for the VPS behind sign-in (sync in group folders, the sub-path, the CLI's token, sign-in, the container and the vps-deploy stack), not deployed, with the owner's steps, which vps-deploy's npm run setup:brief-board runs (2026-11-03); ward-auth 0.7.0 with its rename route off (2026-11-03); the numbering question after the estate restarted brief numbering, closed 2026-11-03; Backlog for open todos built 2026-11-03 (brief 06), not deployed; open brief 07 (nested corpora name themselves).
 updated: 2026-11-03
 ---
 
@@ -24,9 +24,10 @@ from 2026-10-13. Brief numbering restarted at 01 on 2026-11-02 (see
 - **CLI** (2026-10-09; token 2026-11-02). Every agent command, the address
   and token lookups, resume, exit 3 when the board is down or refuses the
   token, and `guide`.
-- **Sync** (2026-10-09; group folders 2026-11-02). Reads every project's
-  briefs, flat or one group folder down, and corrects the
-  tickets ([sync.md](sync.md)).
+- **Sync** (2026-10-09; group folders 2026-11-02; todos 2026-11-03). Reads
+  every project's briefs and open todos, flat or one group folder down, and
+  corrects the tickets; each open todo has a sync-owned ticket in Backlog
+  ([sync.md](sync.md)).
 - **Sign-in** (2026-11-02; ward-auth 0.7.0 2026-11-03). The vendored
   ward-auth as the one guard, its rename route off: a local
   account or Sign in with Ward, read-only browser sessions, the CLI's token
@@ -35,21 +36,28 @@ from 2026-10-13. Brief numbering restarted at 01 on 2026-11-02 (see
   image (checked locally: healthy, 199 MB); vps-deploy's `brief-board` stack
   serves the board at `/brief-board/` and the API at `/brief-board-api` on
   port 8806. Not deployed ([architecture.md](architecture.md), "Running it").
-- **Board UI** (2026-10-09, Base UI 2026-10-23). Read-only lanes, six
-  columns, the detail panel, polling; README images retaken 2026-10-31.
+- **Board UI** (2026-10-09, Base UI 2026-10-23, Backlog 2026-11-03).
+  Read-only lanes, seven columns with Backlog first, the detail panel,
+  polling; README images retaken 2026-10-31 (they show six columns).
 - **Rollout** (2026-10-09). Thirteen repos carry the brief-board section in
   their CLAUDE.md. vps-deploy was skipped because its `corpus/CLAUDE.md` had
   uncommitted work, and on 2026-11-02 it still has no section.
 
-140 tests (2026-11-03, after ward-auth 0.7.0); typecheck, lint and build clean.
+163 tests (2026-11-03, after Backlog); typecheck, lint and build clean.
 
 ## Next (owner)
 
-1. For local development only: add brief-board to Ward's local seed
+1. Deploy the board with Backlog (brief 06), then sync, in that order: a
+   board from before Backlog ignores the todos. From vps-deploy:
+   `node cli.ts brief-board deploy`; then, from outside a repo,
+   `brief-board sync --dry-run` and `brief-board sync`. The migration
+   rebuilds the tickets table on first start; the board keeps every ticket,
+   comment and history row.
+2. For local development only: add brief-board to Ward's local seed
    (`wzd_auth`, `infrastructure/local/seed.mjs`):
    `{ slug: "brief-board", name: "brief-board", repo: "brief-board", envFiles: [".env"], dev: "http://localhost:5178/brief-board/", api: "/brief-board-api" }`
    in `APPS`, and its row in that folder's README table.
-2. Optional: the X-Forwarded-For check in `docs/owner-setup.md` step 5.
+3. Optional: the X-Forwarded-For check in `docs/owner-setup.md` step 5.
 
 ## Open
 
@@ -67,10 +75,9 @@ brief.
 
 ## Open briefs
 
-Written 2026-11-03 in an estate-wide grill with the owner; not started:
+Written 2026-11-03 in an estate-wide grill with the owner. 06 (Backlog)
+is [done](../briefs/done/06-a-backlog-column-for-open-todos.md); not started:
 
-- [06, a Backlog column for open todos](../briefs/todo/06-a-backlog-column-for-open-todos.md)
-  ([decisions.md](decisions.md), "One ticket per brief", revisited);
 - [07, a nested corpus names itself](../briefs/todo/07-a-nested-corpus-names-itself.md)
   (churchix and scoala-ramna-theme, through `corpus/board-name`).
 

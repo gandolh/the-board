@@ -92,3 +92,45 @@ the brief key's alphabet.
   a short walk on the local board).
 - Typecheck, lint, build and the repo's tests pass. Running sync against the
   live board and deploying are the owner's steps.
+
+## Outcome (2026-11-03)
+
+Built in `93a2f10`; how sync handles todos is in [sync.md](../../wiki/sync.md).
+
+- **Shared.** `backlog` is the first status; no move-table row enters or
+  leaves it. `parseTodoKey` / `formatTodoKey` and `ticketKeySchema` (either
+  form, for the ticket routes); `parseKey` still turns `p:walls-step-2` down.
+  A ticket's `number` is nullable; the sync request's `todos` is optional, so
+  an older CLI's payload leaves todo tickets alone instead of removing them
+  all. The response counts todo tickets apart (`todos`), and a new error
+  code, `sync_owned`, refuses a move, comment or `PUT` on a todo's ticket.
+- **Server.** Migration 2 rebuilds `tickets` with `number` nullable, `backlog`
+  in the status check and `CHECK ((number IS NULL) = (status = 'backlog'))`.
+  `migrate` runs with foreign keys off, as SQLite's rebuild recipe says:
+  with them on, the drop would have cascaded into every comment and history
+  row. A test upgrades a version-1 file and finds every row.
+- **CLI.** `readTodos` reads the top level of `corpus/todos/`; status from
+  frontmatter, else a `status:` (or `**Status:**`) line among the first five
+  after the title. A file name the key can't hold stops the run. The dry run
+  reads the board to list the todo tickets it would create and remove.
+  `show` says `Todo:` for a todo's path; `start` and `move` on one explain
+  that sync owns it. The guide's two new lines keep it at 80.
+- **Board.** Seven columns, Backlog first (a khaki that reads at 4.4:1 on
+  white); a todo's card shows its slug; the panel names the todo file and
+  says how the ticket leaves Backlog. A static-render test holds the column
+  order and the card's cell; there was no local walk, since the tests cover
+  the markup.
+- **Outside the file list:** `cli/src/runtime.ts`, `format.ts` and
+  `commands/read.ts` (todo keys in every command, the refusal text, `list`'s
+  sort with no number), `web/src/styles.css` (the seventh column), and the
+  README's column list and `corpus/wiki/architecture.md` (keys, error codes,
+  the migration).
+- A dry run on this machine against the live board, read-only: 23 projects;
+  imbatranimOS's five open todos would get Backlog tickets; postern's and
+  shelfmark's dropped todos and game-engine's `closed/` archive are left out.
+
+163 tests (from 140), typecheck, lint and build pass. The corpus lint keeps
+one warning it already had, glossary.md's `group/name`, which this brief may
+not edit. Deploying and the real
+sync are the owner's, in that order ([status.md](../../wiki/status.md), "Next
+(owner)").
