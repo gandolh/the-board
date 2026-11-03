@@ -8,7 +8,11 @@ import { briefSummary, briefTitle, cut, SUMMARY_MAX, todoIsOpen, todoStatus, tod
 import { findProjects, projectsDir, readProjects, readTodos } from "./read.js";
 
 const FIXTURES = fileURLToPath(new URL("../../test/fixtures/projects/", import.meta.url));
-/** Group folders: a flat project beside them, one a group folder down, an empty group, one too deep, one under a dot-directory. */
+/**
+ * Group folders: a flat project beside them, one a group folder down, an empty
+ * group, a corpus inside a grouped repo and a repo in a plain folder (both at
+ * depth three, each with a board-name), one too deep, one under a dot-directory.
+ */
 const GROUPED = fileURLToPath(new URL("../../test/fixtures/grouped/", import.meta.url));
 
 describe("brief titles", () => {
@@ -155,11 +159,44 @@ describe("todos", () => {
 });
 
 describe("group folders", () => {
-  it("finds a project directly under the projects directory and one a group folder down", () => {
+  it("finds a project directly under the projects directory, one a group folder down, and two at depth three", () => {
     expect(findProjects(GROUPED)).toEqual([
       { name: "epsilon", root: join(GROUPED, "apps", "epsilon") },
+      { name: "inner-site", root: join(GROUPED, "websites", "sites-repo", "inner") },
+      { name: "plain-theme", root: join(GROUPED, "websites", "plain", "theme") },
+      { name: "sites-repo", root: join(GROUPED, "websites", "sites-repo") },
       { name: "solo", root: join(GROUPED, "solo") },
     ]);
+  });
+
+  it("files a corpus inside a project under its board-name, and the project keeps its own", () => {
+    const [inner] = readProjects(GROUPED, "inner-site");
+    expect(inner!.briefs.map((b) => [b.number, b.title, b.briefPath])).toEqual([
+      [1, "A corpus inside a repo", "corpus/briefs/todo/01-inner.md"],
+    ]);
+    const [parent] = readProjects(GROUPED, "sites-repo");
+    expect(parent!.briefs.map((b) => b.title)).toEqual(["The repo around a nested corpus"]);
+    expect(readProjects(GROUPED, "inner")).toEqual([]);
+  });
+
+  it("files a repo in a plain folder under its board-name, not its folder's name", () => {
+    expect(readProjects(GROUPED, "plain-theme").map((p) => p.briefs.map((b) => b.number))).toEqual([[2]]);
+    expect(readProjects(GROUPED, "theme")).toEqual([]);
+  });
+
+  it("stops on a board-name a key cannot hold, naming the file", () => {
+    const dir = mkdtempSync(join(tmpdir(), "brief-board-names-"));
+    try {
+      const root = join(dir, "websites", "site", "nested");
+      mkdirSync(join(root, "corpus", "briefs", "todo"), { recursive: true });
+      for (const bad of ["two words", "ends-with-", ""]) {
+        writeFileSync(join(root, "corpus", "board-name"), `${bad}\n`);
+        expect(() => readProjects(dir)).toThrow(UsageError);
+        expect(() => readProjects(dir)).toThrow(join(root, "corpus", "board-name"));
+      }
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it("names a grouped project by its own directory, not group/name", () => {

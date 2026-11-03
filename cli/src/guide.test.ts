@@ -33,6 +33,10 @@ describe("the guide", () => {
     expect(guide).toContain("never move or comment on one. Promoting the todo to a brief takes it off.");
   });
 
+  it("says where a corpus whose folder name isn't its board name puts the name", () => {
+    expect(guide).toContain("A corpus whose folder name isn't\nits board name puts the name alone in corpus/board-name.");
+  });
+
   it("stays short enough to read before every brief", () => {
     expect(guide.split("\n").length).toBeLessThanOrEqual(80);
   });

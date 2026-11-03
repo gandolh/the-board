@@ -16,7 +16,7 @@ export async function sync(rt: Runtime, args: string[]): Promise<void> {
   const dir = projectsDir(rt.ctx.env, rt.ctx.home);
   const projects = readProjects(dir, values.project);
   if (values.project && projects.length === 0) {
-    throw new UsageError(`no project "${values.project}" with a corpus/briefs/ under ${dir} or one group folder down`);
+    throw new UsageError(`no project "${values.project}" with a corpus/briefs/ up to three folders under ${dir}`);
   }
 
   if (values["dry-run"]) {

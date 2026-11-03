@@ -1,11 +1,12 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
+import { corpusRoot, readBoardName } from "./board-name.js";
 
 /**
  * Where the CLI is running and which board it talks to. Agents call
  * it from inside some other project's repo, which holds no setting for it: the
- * project is the git root's directory name, the address comes from the
+ * project is the git root's directory name (or its corpus's `board-name`), the address comes from the
  * environment, that repo's `.env`, or the user-level config, and the token
  * from the environment or the user-level config only.
  */
@@ -80,8 +81,12 @@ export function boardToken(ctx: Context): string | undefined {
   return ctx.env.BRIEF_BOARD_TOKEN?.trim() || readVarFrom(userConfig(ctx), "BRIEF_BOARD_TOKEN");
 }
 
-/** The project tag: `--project`, or the git root's directory name. */
-export function projectOf(root: string | null, flag: string | undefined): string | null {
+/**
+ * The project tag: `--project`; else the `board-name` of the nearest corpus
+ * from `cwd` up to the git root; else the git root's directory name.
+ */
+export function projectOf(cwd: string, root: string | null, flag: string | undefined): string | null {
   if (flag) return flag;
-  return root ? basename(root) : null;
+  if (!root) return null;
+  return readBoardName(corpusRoot(cwd, root)) ?? basename(root);
 }

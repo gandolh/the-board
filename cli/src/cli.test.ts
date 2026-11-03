@@ -200,6 +200,47 @@ describe("errors and exit codes", () => {
   });
 });
 
+describe("a corpus nested in a repo", () => {
+  /** A corpus one folder inside the repo, named in its board-name, like churchix in presentation-sites. */
+  function nested(number: number): string {
+    const dir = join(repo, "site");
+    mkdirSync(join(dir, "corpus", "briefs", "todo"), { recursive: true });
+    mkdirSync(join(dir, "src"), { recursive: true });
+    writeFileSync(join(dir, "corpus", "board-name"), "nested-site\n");
+    writeFileSync(join(dir, "corpus", "briefs", "todo", `${number}-nested.md`), `# Task ${number} — Nested\n`);
+    return dir;
+  }
+
+  it("infers its board-name from anywhere inside it, and finds the brief in its own corpus", async () => {
+    const number = next++;
+    const dir = nested(number);
+    const res = await run(["create", String(number), "--title", "Nested", "--summary", "S"], { cwd: join(dir, "src") });
+    expect(res.out).toBe(`Created nested-site-${number} (To Do): Nested`);
+    expect((await run(["show", `nested-site-${number}`])).out).toContain(`Brief:   corpus/briefs/todo/${number}-nested.md`);
+  });
+
+  it("is the git root's name outside the nested corpus, and --project wins over both", async () => {
+    const number = next++;
+    nested(number);
+    writeFileSync(join(repo, "corpus", "briefs", "todo", `${number}-plain.md`), `# Task ${number}\n`);
+    expect((await run(["create", String(number), "--title", "Plain", "--summary", "S"])).out).toBe(
+      `Created sports-app-${number} (To Do): Plain`,
+    );
+    const flagged = await run(["create", String(number), "--project", "chosen", "--title", "Flag", "--summary", "S"], {
+      cwd: join(repo, "site"),
+    });
+    expect(flagged.out).toBe(`Created chosen-${number} (To Do): Flag`);
+  });
+
+  it("refuses a board-name a key cannot hold", async () => {
+    const dir = nested(next++);
+    writeFileSync(join(dir, "corpus", "board-name"), "not a name\n");
+    const res = await run(["show", "7"], { cwd: dir });
+    expect(res.code).toBe(1);
+    expect(res.err).toContain(join(dir, "corpus", "board-name"));
+  });
+});
+
 describe("sync", () => {
   const fixtures = new URL("../test/fixtures/projects/", import.meta.url).pathname;
   const env = () => ({ BRIEF_BOARD_URL: url, BRIEF_BOARD_TOKEN: TOKEN, BRIEF_BOARD_PROJECTS_DIR: fixtures });

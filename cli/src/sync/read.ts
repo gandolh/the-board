@@ -2,15 +2,17 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { BRIEF_STATES, TODO_SLUG, type SyncBrief, type SyncProject, type SyncTodo } from "@brief-board/shared";
+import { readBoardName } from "../board-name.js";
 import { UsageError } from "../errors.js";
 import { briefSummary, briefTitle, todoIsOpen, todoSummary, todoTitle } from "./parse.js";
 
 /**
  * Read every project's briefs. It only reads: a project is a directory with
- * a `corpus/briefs/`, either directly under the projects directory or one
- * group folder down (`apps/`, `platform/`, ...), named by its own directory
- * name, never `group/name`, so its key matches the one `create` takes from
- * the git root. Nothing deeper is looked at. A brief is
+ * a `corpus/briefs/` one, two or three levels under the projects directory
+ * (`solo/`, `apps/atrium/`, `websites/presentation-sites/churchix/`), named by
+ * its `corpus/board-name` when it has one and else by its own directory name,
+ * never the group's, so its key matches the one `create` infers. Nothing
+ * deeper is looked at. A brief is
  * `corpus/briefs/{todo,done,superseded}/<digits>-<slug>.md`, one level deep.
  * Anything else there (`.gitkeep`, a folder of templates, a non-markdown
  * file) is skipped.
@@ -114,31 +116,33 @@ function subdirs(dir: string): string[] {
 
 const byName = (a: string, b: string) => a.localeCompare(b, undefined, { sensitivity: "base" });
 
+/** How deep a project may sit: a repo in a folder in a group, or a corpus inside a grouped repo. */
+const MAX_DEPTH = 3;
+
 /**
- * Every project under `dir`: a child with a `corpus/briefs/` is one;
- * any other child is a group folder, and each of its children with a
- * `corpus/briefs/` is one. Alphabetical by name.
+ * Every project under `dir`, at depth one to three, alphabetical by name.
+ * Discovery looks into every directory down to that depth, projects as well
+ * as plain folders, so a corpus inside a repo (churchix in
+ * presentation-sites) and a repo in a plain folder (the scoala-ramna theme)
+ * are found, each beside the repo around it.
  */
 export function findProjects(dir: string): ProjectRoot[] {
   const found: ProjectRoot[] = [];
-  for (const name of subdirs(dir)) {
-    const path = join(dir, name);
-    if (isProject(path)) {
-      found.push({ name, root: path });
-      continue;
+  const walk = (path: string, depth: number): void => {
+    for (const name of subdirs(path)) {
+      const child = join(path, name);
+      if (isProject(child)) found.push({ name: readBoardName(child) ?? name, root: child });
+      if (depth < MAX_DEPTH) walk(child, depth + 1);
     }
-    for (const inner of subdirs(path)) {
-      const innerPath = join(path, inner);
-      if (isProject(innerPath)) found.push({ name: inner, root: innerPath });
-    }
-  }
+  };
+  walk(dir, 1);
   return found.sort((a, b) => byName(a.name, b.name) || byName(a.root, b.root));
 }
 
 /**
  * Every project under `dir` with its briefs, alphabetically, or just the one
- * named `only`, at either depth. Two projects sharing a name would share
- * their tickets' keys, so that stops the run before anything is read or sent.
+ * named `only`, at any depth. Two projects sharing a name would share their
+ * tickets' keys, so that stops the run before anything is read or sent.
  */
 export function readProjects(dir: string, only?: string): SyncProject[] {
   const roots = findProjects(dir).filter((project) => only === undefined || project.name === only);
@@ -146,7 +150,7 @@ export function readProjects(dir: string, only?: string): SyncProject[] {
   for (const { name, root } of roots) {
     const first = seen.get(name);
     if (first !== undefined) {
-      throw new UsageError(`two projects are named "${name}": ${first} and ${root}. Rename one; ticket keys come from the directory name.`);
+      throw new UsageError(`two projects are named "${name}": ${first} and ${root}. Rename one, or give one a corpus/board-name; ticket keys come from the name.`);
     }
     seen.set(name, root);
   }

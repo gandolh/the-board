@@ -41,8 +41,9 @@ export async function create(rt: Runtime, args: string[]): Promise<void> {
 
   let briefPath = values.brief;
   if (!briefPath) {
-    if (!rt.root) throw new UsageError("not inside a git repo: pass --brief <path>");
-    briefPath = findBrief(rt.root, number) ?? undefined;
+    const dir = rt.corpusDir();
+    if (!dir) throw new UsageError("not inside a git repo: pass --brief <path>");
+    briefPath = findBrief(dir, number) ?? undefined;
     if (!briefPath) throw new UsageError(`no brief numbered ${number} in corpus/briefs/: file the brief first, or pass --brief <path>`);
   }
 

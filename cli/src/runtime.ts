@@ -1,6 +1,7 @@
 import { parseArgs, type ParseArgsConfig } from "node:util";
 import { formatKey, normalizeTicketKey, statusSchema, type Status } from "@brief-board/shared";
 import { BoardClient } from "./client.js";
+import { corpusRoot } from "./board-name.js";
 import { boardToken, boardUrl, projectOf, repoRoot, type Context } from "./context.js";
 import { UsageError } from "./errors.js";
 
@@ -35,9 +36,18 @@ export class Runtime {
 
   /** The project tag, or a usage error outside a git repo without `--project`. */
   project(flag: string | undefined): string {
-    const project = projectOf(this.root, flag);
+    const project = projectOf(this.ctx.cwd, this.root, flag);
     if (!project) throw new UsageError("not inside a git repo: pass --project <name>");
     return project;
+  }
+
+  /**
+   * Where this command's corpus lives: the nearest directory with a
+   * `corpus/` up to the git root (a nested corpus such as churchix), else the
+   * git root; null outside a repo.
+   */
+  corpusDir(): string | null {
+    return this.root === null ? null : corpusRoot(this.ctx.cwd, this.root);
   }
 
   /** `--author`, else `BRIEF_BOARD_AUTHOR`, else `agent`. */
