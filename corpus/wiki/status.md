@@ -1,5 +1,5 @@
 ---
-summary: Snapshot as of 2026-11-03, per area. Live on the VPS since 2026-11-03 (empty until the first sync). The board, CLI, sync and guide built 2026-10-09 and rolled out to every project's CLAUDE.md but vps-deploy's; Base UI under the panel and lanes 2026-10-23. Down since 2026-10-13; briefs 01-05 (2026-11-02) built it for the VPS behind sign-in (sync in group folders, the sub-path, the CLI's token, sign-in, the container and the vps-deploy stack), not deployed, with the owner's steps, which vps-deploy's npm run setup:brief-board runs (2026-11-03); ward-auth 0.7.0 with its rename route off (2026-11-03); the open sync problem after the estate restarted brief numbering; the todos.
+summary: Snapshot as of 2026-11-03, per area. Live on the VPS since 2026-11-03 (empty until the first sync). The board, CLI, sync and guide built 2026-10-09 and rolled out to every project's CLAUDE.md but vps-deploy's; Base UI under the panel and lanes 2026-10-23. Down since 2026-10-13; briefs 01-05 (2026-11-02) built it for the VPS behind sign-in (sync in group folders, the sub-path, the CLI's token, sign-in, the container and the vps-deploy stack), not deployed, with the owner's steps, which vps-deploy's npm run setup:brief-board runs (2026-11-03); ward-auth 0.7.0 with its rename route off (2026-11-03); the numbering question after the estate restarted brief numbering, closed 2026-11-03; open briefs 06 (a Backlog column) and 07 (nested corpora name themselves).
 updated: 2026-11-03
 ---
 
@@ -46,9 +46,9 @@ from 2026-10-13. Brief numbering restarted at 01 on 2026-11-02 (see
 ## Next (owner)
 
 1. The first `brief-board sync` (`--dry-run` first). The VPS board started
-   empty, so no old ticket shares a number with a new brief; the numbering
-   question in [todos/sync-after-numbering-restart.md](../todos/sync-after-numbering-restart.md)
-   comes back only if a project restarts its numbers again.
+   empty, so no old ticket shares a number with a new brief, and brief
+   numbers never restart again (the corpus-flow rule since 2026-11-03), so
+   the numbering todo is closed.
 2. For local development only: add brief-board to Ward's local seed
    (`wzd_auth`, `infrastructure/local/seed.mjs`):
    `{ slug: "brief-board", name: "brief-board", repo: "brief-board", envFiles: [".env"], dev: "http://localhost:5178/brief-board/", api: "/brief-board-api" }`
@@ -57,12 +57,18 @@ from 2026-10-13. Brief numbering restarted at 01 on 2026-11-02 (see
 
 ## Open
 
-- Sync matches briefs to tickets by number, and every repo restarted its
-  numbering at 01 in 2026-11: new briefs land on old tickets
-  ([sync.md](sync.md)).
 - The sync report folds closes and hides into "updated"; separate counts need
   contract fields.
 
+## Open briefs
+
+Written 2026-11-03 in an estate-wide grill with the owner; not started:
+
+- [06, a Backlog column for open todos](../briefs/todo/06-a-backlog-column-for-open-todos.md)
+  ([decisions.md](decisions.md), "One ticket per brief", revisited);
+- [07, a nested corpus names itself](../briefs/todo/07-a-nested-corpus-names-itself.md)
+  (churchix and scoala-ramna-theme, through `corpus/board-name`).
+
 ## Todos
 
-- [Sync after the estate restarted brief numbering at 01](../todos/sync-after-numbering-restart.md) (`later`)
+None.

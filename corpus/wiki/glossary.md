@@ -1,6 +1,6 @@
 ---
-summary: The board's vocabulary. Ticket vs brief, project, lane, project tag and tag, sync, the guide, the six statuses (To Do, In Progress, Blocked, Ready for test, Ready for deploy, Done), and the messages a move can carry (conclusion, block reason, confirmation, test notes, deploy steps), each with the words they replace.
-updated: 2026-11-02
+summary: The board's vocabulary. Ticket vs brief vs todo, project, lane, project tag and tag, sync, the guide, the statuses (Backlog, To Do, In Progress, Blocked, Ready for test, Ready for deploy, Done), and the messages a move can carry (conclusion, block reason, confirmation, test notes, deploy steps), each with the words they replace.
+updated: 2026-11-03
 ---
 
 # Glossary
@@ -12,15 +12,23 @@ A numbered work spec in a project's `corpus/briefs/`. The brief holds the spec,
 and the board never does.
 _Avoid_: task, spec (for the file itself)
 
+**Todo**:
+A captured idea in a project's `corpus/todos/`, prose, not yet a spec. Open
+until it is promoted to a brief, dropped or closed.
+_Avoid_: backlog item, idea (for the file); "to do" (that is the status)
+
 **Ticket**:
-The board's record of one brief, keyed `<project>-<NN>`. It holds a summary,
-a status and comments, and points at the brief file.
+The board's record of one brief, keyed `<project>-<NN>`, or of one open todo,
+keyed by project and slug. It holds a summary, a status and comments, and
+points at the brief or todo file.
 _Avoid_: issue, card (except for the drawing of a ticket in the UI), story, task
 
 **Project**:
 A repo directory with a corpus (a `corpus/briefs/`), directly under the
-projects directory or one group folder down (`apps/`, `platform/`). Its own
-directory name, never `group/name`, is the first half of every ticket key.
+projects directory, one group folder down (`apps/`, `platform/`), or one more
+down. Its name is the first half of every ticket key: its own directory name,
+never `group/name`, unless the corpus names itself (churchix,
+scoala-ramna-theme).
 _Avoid_: repo, workspace
 
 **Lane**:
@@ -43,11 +51,16 @@ guide`. Every project's CLAUDE.md points at it instead of copying it.
 _Avoid_: instructions, playbook
 
 **Sync**:
-Reading `corpus/briefs/todo/` in every project and creating the tickets
-that don't exist yet.
+Reading every project's `corpus/briefs/` and open `corpus/todos/`, and
+correcting the tickets to match.
 _Avoid_: import, scan
 
 ## Statuses
+
+**Backlog**:
+The first column: one ticket per open todo. Only sync puts tickets there and
+takes them off; no agent moves one. In the API: `backlog`.
+_Avoid_: icebox, ideas
 
 **To Do**, **In Progress**:
 Ready to start, being worked by an agent. In the API: `todo`, `in_progress`.

@@ -148,7 +148,7 @@ New page: [sync.md](wiki/sync.md), the sync rules per brief state.
 [architecture.md](wiki/architecture.md) gained keys, the CLI's exit codes, the
 server's error codes, the board UI's behaviour and the build gotchas.
 [status.md](wiki/status.md) is a per-area snapshot instead of a brief list.
-New todo: [sync after the numbering restart](todos/sync-after-numbering-restart.md),
+New todo: sync after the numbering restart (closed 2026-11-03),
 since sync keys tickets by number and every repo now restarts at 01. Code
 comments no longer cite brief numbers.
 
@@ -231,3 +231,15 @@ Ward. The CLI reads the live board ("No tickets"). `brief-board sync
 --dry-run` found 21 projects and three open briefs (imbatranimOS 22, lantern
 01, ro-housing 01); done briefs are not backfilled. The board started empty,
 so the restarted numbers meet no old tickets on the first sync.
+
+## [2026-11-03] decision | A Backlog column and self-naming corpora; briefs 06-07; the numbering todo closed
+
+From an estate-wide grill with the owner about every open todo. Two calls, recorded in
+[decisions.md](wiki/decisions.md) and [glossary.md](wiki/glossary.md): open todos get sync-owned
+tickets in a new first column, Backlog (a revisit of "One ticket per brief"), and a corpus nested
+one folder deeper names itself, as churchix and scoala-ramna-theme now do in `corpus/board-name`.
+[Brief 06](briefs/todo/06-a-backlog-column-for-open-todos.md) builds the Backlog column and
+[brief 07](briefs/todo/07-a-nested-corpus-names-itself.md) the deeper sync and the name. The todo
+`sync-after-numbering-restart` is closed, not built: the VPS board started empty, so the first
+sync meets no old ticket, and corpus-flow now says brief numbers never restart. It is deleted;
+[sync.md](wiki/sync.md) and [status.md](wiki/status.md) say so.

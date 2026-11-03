@@ -1,6 +1,6 @@
 ---
-summary: How `brief-board sync` turns every project's corpus/briefs/ into tickets, as built 2026-10-09. What the CLI reads (projects directory, titles, summaries, the heading shapes it strips), what the server does per brief state (create, refresh, close, hide, warn), why the report folds closes and hides into "updated", and the open problem that briefs restarting at 01 in 2026-11 land on old tickets.
-updated: 2026-11-02
+summary: How `brief-board sync` turns every project's corpus/briefs/ into tickets, as built 2026-10-09. What the CLI reads (projects directory, titles, summaries, the heading shapes it strips), what the server does per brief state (create, refresh, close, hide, warn), why the report folds closes and hides into "updated", and why briefs restarting at 01 in 2026-11 needed no fix (closed 2026-11-03).
+updated: 2026-11-03
 ---
 
 # Sync
@@ -64,7 +64,7 @@ or a hide counts as "updated": the contract's `syncResponseSchema` has no
 separate fields, and adding them means changing `shared` and the server
 together.
 
-## Open: briefs restarting at 01
+## Closed: briefs restarting at 01
 
 On 2026-11-01 the estate's repos began deleting their briefs and restarting
 numbering at 01 ([log.md](../log.md)). Keys are `<project>-<NN>`, so a new
@@ -72,5 +72,6 @@ brief 01 maps to the old ticket 01. If that ticket is Done, sync leaves it
 with a warning and the new brief never gets a card. If it is in any other
 status, sync rewrites its title and path, so the new brief takes over the old
 ticket's history. Every old ticket whose brief was deleted warns on each run.
-The board has been down since 2026-10-13. The fix is a todo:
-[todos/sync-after-numbering-restart.md](../todos/sync-after-numbering-restart.md).
+The VPS board started empty on 2026-11-03, so the first sync meets no old
+ticket, and since 2026-11-03 brief numbers never restart (corpus-flow's
+rule), so the numbering todo was closed rather than built.

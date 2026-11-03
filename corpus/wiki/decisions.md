@@ -1,6 +1,6 @@
 ---
-summary: Locked calls for brief-board, each with date, rejected alternative and reason. One ticket per brief keyed <project>-<NN> with no hand-made tickets; Blocked only by agreement with the owner; which moves are allowed and which need a message; six columns with Ready for test and Ready for deploy as the owner's; the corpus wins over the board; one CLI on PATH that other repos name without a path; a read-only UI; one project tag per ticket decides its lane; sync only by hand; a down board never stops work (revisited 2026-11-02: the container now runs always, agents still carry on without it); Base UI for the UI's widgets; the CLI authenticates with one shared token, and the board sits on the VPS behind sign-in (2026-11-02). Read before proposing to change any of these.
-updated: 2026-11-02
+summary: Locked calls for brief-board, each with date, rejected alternative and reason. One ticket per brief keyed <project>-<NN> with no hand-made tickets (revisited 2026-11-03: open todos get sync-owned tickets in a Backlog column); Blocked only by agreement with the owner; which moves are allowed and which need a message; six columns with Ready for test and Ready for deploy as the owner's; the corpus wins over the board; one CLI on PATH that other repos name without a path; a read-only UI; one project tag per ticket decides its lane; sync only by hand; a down board never stops work (revisited 2026-11-02: the container now runs always, agents still carry on without it); Base UI for the UI's widgets; the CLI authenticates with one shared token, and the board sits on the VPS behind sign-in (2026-11-02); a corpus nested deeper names itself, as churchix and scoala-ramna-theme do (2026-11-03). Read before proposing to change any of these.
+updated: 2026-11-03
 ---
 
 # Decisions
@@ -17,6 +17,15 @@ sync command reads `corpus/briefs/todo/` in every project and creates missing
 tickets. Rejected: Jira-style tickets created by hand in the UI with their own
 numbering. Those would make the board a second backlog that drifts from the
 corpus. To get a ticket, file a todo or a brief.
+
+**Revisited 2026-11-03**, in a grill with the owner: open todos get tickets
+too. Sync also reads each project's `corpus/todos/` and gives every open todo
+(not dropped, not closed) a ticket in a new first column, Backlog, keyed by
+project and slug in a form no brief key can take. Only sync makes, moves or
+removes those tickets; promoting a todo removes its file, so the next sync
+takes its ticket off and the brief's ticket appears in To Do. What stays: no
+ticket made by hand, and the corpus is the only source. Rejected: a count of
+todos per lane, which is lighter but hides what they are.
 
 ## Blocked happens by agreement, so nothing notifies the owner
 _2026-10-08_. An agent asks the owner before it moves a ticket to Blocked. Most
@@ -57,7 +66,8 @@ turns into noise on the happy path.
 
 ## Six columns, two of them the owner's
 _2026-10-08_. The columns are To Do, In Progress, Blocked, Ready for test, Ready
-for deploy, Done. Ready for test holds work the owner has to try. Ready for
+for deploy, Done. (Backlog comes first since 2026-11-03; see "One ticket per
+brief".) Ready for test holds work the owner has to try. Ready for
 deploy holds finished work that isn't deployed yet, because deploys are an
 owner step. Rejected: four columns with owner follow-ups written into a Done
 ticket's conclusion, where they get lost once the card is in Done.
@@ -155,3 +165,12 @@ every brief title and comment public; Ward only, which locks the board
 whenever Ward is down; and a host of its own, which needs a DNS record and
 keeps cookies off the shared origin, a gain the read-only sessions make
 small. How it is built: [sign-in.md](sign-in.md).
+
+## A corpus nested deeper names itself
+_2026-11-03_, in a grill with the owner. Sync also looks one folder deeper
+(a repo in a folder in a group), and a corpus whose folder name is not its board name
+says its name in one line that both sync and the CLI read. churchix (a corpus
+inside the presentation-sites repo) is `churchix`, not `presentation-sites`,
+so its tickets never share keys with that repo's; the scoala-ramna theme (a
+repo in a folder named `theme`) is `scoala-ramna-theme`. Rejected: leaving
+both off the board, which keeps their briefs invisible there.

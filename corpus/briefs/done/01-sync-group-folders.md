@@ -16,7 +16,7 @@ known by its directory name.
 The board's database is gone. The old checkout and its `data/` were deleted
 on 2026-11-01, and the VPS board (brief 05) starts empty, so the first sync
 has no old tickets for the restarted brief numbers to land on. Leave
-[the numbering todo](../../todos/sync-after-numbering-restart.md) open until
+the numbering todo (closed 2026-11-03) open until
 a real sync shows that.
 
 ## Files you OWN
