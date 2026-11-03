@@ -451,6 +451,14 @@ describe("signing in", () => {
     expect((await call({ url: "/api/board" })).statusCode).toBe(200);
   });
 
+  it("has no rename route, so a session cannot change its username", async () => {
+    const cookie = await signIn();
+    const res = await app.inject({ method: "POST", url: "/brief-board-api/auth/username", payload: { username: "someone" }, headers: { cookie } });
+    expect(res.statusCode).toBe(404);
+    const session = await app.inject({ url: "/brief-board-api/auth/session", headers: { cookie } });
+    expect(session.json<{ user: { username: string } }>().user.username).toBe("owner");
+  });
+
   it("keeps health open", async () => {
     expect((await app.inject({ url: "/api/health" })).json()).toEqual({ ok: true });
     expect((await app.inject({ method: "HEAD", url: "/brief-board-api/api/health" })).statusCode).toBe(200);

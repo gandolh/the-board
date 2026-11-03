@@ -47,6 +47,8 @@ import { runSync } from "./sync.js";
  * - otherwise `/api/*` needs a session, and a session may only read
  *   (`read_only_session`): on a shared origin, a script in another app could
  *   send the owner's cookie, and this keeps the worst case at reading the board;
+ * - the library's rename route (`POST /auth/username`) is off: it sits outside
+ *   `/api`, so the read-only rule would not cover it, and the board offers no rename;
  * - the board's own files are open, so the login page can load.
  */
 
@@ -181,6 +183,8 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     publicOrigin: options.publicOrigin ?? "http://localhost:5178",
     routePrefix: AUTH_ROUTE_PREFIX,
     publicRoutes: PUBLIC_ROUTES,
+    // A session only reads; see the guard's notes above.
+    allowRename: false,
     isPublic: (request) => {
       const path = pathOf(request.url);
       // The CLI: its token, compared in constant time. With no token configured this path is closed.
