@@ -4,8 +4,8 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { UsageError } from "../errors.js";
-import { briefSummary, briefTitle, cut, SUMMARY_MAX } from "./parse.js";
-import { findProjects, projectsDir, readProjects } from "./read.js";
+import { briefSummary, briefTitle, cut, SUMMARY_MAX, todoIsOpen, todoStatus, todoTitle } from "./parse.js";
+import { findProjects, projectsDir, readProjects, readTodos } from "./read.js";
 
 const FIXTURES = fileURLToPath(new URL("../../test/fixtures/projects/", import.meta.url));
 /** Group folders: a flat project beside them, one a group folder down, an empty group, one too deep, one under a dot-directory. */
@@ -97,6 +97,60 @@ describe("reading the corpora", () => {
   it("limits the run to one project", () => {
     expect(readProjects(FIXTURES, "beta").map((p) => p.project)).toEqual(["beta"]);
     expect(readProjects(FIXTURES, "gamma")).toEqual([]);
+  });
+});
+
+describe("todos", () => {
+  it("reads a status from frontmatter, from a plain line under the title, or not at all", () => {
+    expect(todoStatus("---\ntitle: T\nstatus: open\n---\n\n# T\n")).toBe("open");
+    expect(todoStatus("---\nstatus: 'dropped'\n---\n")).toBe("dropped");
+    expect(todoStatus("# T\n\nstatus: done\n\nText.")).toBe("done");
+    expect(todoStatus("# T\n\n**Status:** Promoted to brief 12\n")).toBe("promoted");
+    expect(todoStatus("# T\n\nText that mentions a status: later.\n")).toBeNull();
+    expect(todoStatus("Just prose.")).toBeNull();
+  });
+
+  it("is open unless dropped, closed, promoted or done", () => {
+    for (const status of ["open", "parked", "grill-first"]) expect(todoIsOpen(`---\nstatus: ${status}\n---\n`)).toBe(true);
+    for (const status of ["dropped", "closed", "promoted", "done"]) expect(todoIsOpen(`---\nstatus: ${status}\n---\n`)).toBe(false);
+    expect(todoIsOpen("No status here.")).toBe(true);
+  });
+
+  it("titles a todo from frontmatter, else its H1, else its slug", () => {
+    expect(todoTitle("---\ntitle: From frontmatter\n---\n\n# From the heading\n", "s")).toBe("From frontmatter");
+    expect(todoTitle("# From the heading\n", "s")).toBe("From the heading");
+    expect(todoTitle("Prose only.", "a-slug")).toBe("a-slug");
+  });
+
+  it("sends the open ones directly in corpus/todos/, and never a subfolder's", () => {
+    expect(readTodos(join(FIXTURES, "alpha"))).toEqual([
+      { slug: "no-status", title: "no-status", summary: "Just prose, no heading and no status.", path: "corpus/todos/no-status.md" },
+      {
+        slug: "plain-line-open",
+        title: "A plain status line",
+        summary: "The first paragraph after the status line.",
+        path: "corpus/todos/plain-line-open.md",
+      },
+      {
+        slug: "walls-step-2",
+        title: "Walls meet at every step",
+        summary: "A slug that ends in digits. Its ticket key must never read as a brief number.",
+        path: "corpus/todos/walls-step-2.md",
+      },
+    ]);
+  });
+
+  it("finds none in a project with no corpus/todos/, and stops on a file name a key cannot hold", () => {
+    expect(readProjects(FIXTURES, "beta")[0]!.todos).toEqual([]);
+    const dir = mkdtempSync(join(tmpdir(), "brief-board-todos-"));
+    try {
+      mkdirSync(join(dir, "corpus", "todos"), { recursive: true });
+      writeFileSync(join(dir, "corpus", "todos", "two words.md"), "# T\n");
+      expect(() => readTodos(dir)).toThrow(UsageError);
+      expect(() => readTodos(dir)).toThrow("two words.md");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
 

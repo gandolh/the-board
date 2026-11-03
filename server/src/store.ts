@@ -20,7 +20,7 @@ import type { Db } from "./db.js";
 interface TicketRow {
   key: string;
   project: string;
-  number: number;
+  number: number | null;
   title: string;
   summary: string;
   summary_source: SummarySource;
@@ -90,8 +90,9 @@ export class Store {
     return row ? this.toTicket(row) : null;
   }
 
+  /** A project's tickets: its todos' (no number) first by key, then its briefs' by number. */
   projectTickets(project: string): Ticket[] {
-    return (this.db.prepare("SELECT * FROM tickets WHERE project = ? ORDER BY number").all(project) as TicketRow[]).map((row) =>
+    return (this.db.prepare("SELECT * FROM tickets WHERE project = ? ORDER BY number, key").all(project) as TicketRow[]).map((row) =>
       this.toTicket(row),
     );
   }
@@ -104,10 +105,14 @@ export class Store {
     for (const tag of labels) insert.run(key, tag);
   }
 
+  /**
+   * A new ticket: a brief's in To Do, or, with no number, a todo's in Backlog.
+   * The schema holds that pairing too.
+   */
   insertTicket(fields: {
     key: string;
     project: string;
-    number: number;
+    number: number | null;
     title: string;
     summary: string;
     summarySource: SummarySource;
@@ -116,13 +121,19 @@ export class Store {
     via: "move" | "sync";
   }): void {
     const at = this.now();
+    const status: Status = fields.number === null ? "backlog" : "todo";
     this.db
       .prepare(
         `INSERT INTO tickets (key, project, number, title, summary, summary_source, brief_path, status, hidden, created_at, updated_at, status_changed_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, 'todo', 0, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)`,
       )
-      .run(fields.key, fields.project, fields.number, fields.title, fields.summary, fields.summarySource, fields.briefPath, at, at, at);
-    this.addHistory(fields.key, null, "todo", fields.author, fields.via);
+      .run(fields.key, fields.project, fields.number, fields.title, fields.summary, fields.summarySource, fields.briefPath, status, at, at, at);
+    this.addHistory(fields.key, null, status, fields.author, fields.via);
+  }
+
+  /** Remove a ticket with its labels, comments and history. Only sync does, for a todo that is gone. */
+  deleteTicket(key: string): void {
+    this.db.prepare("DELETE FROM tickets WHERE key = ?").run(key);
   }
 
   /** Update the fields given; bumps `updated_at`. */
@@ -226,7 +237,7 @@ export class Store {
          WHERE t.hidden = 0
            AND (t.status <> 'done' OR t.status_changed_at >= @cutoff)
            AND (@tag IS NULL OR EXISTS (SELECT 1 FROM ticket_tags g WHERE g.ticket_key = t.key AND g.tag = @tag))
-         ORDER BY t.project COLLATE NOCASE, t.project, t.number`,
+         ORDER BY t.project COLLATE NOCASE, t.project, t.number, t.key`,
       )
       .all({ cutoff, tag: tag ?? null }) as TicketRow[];
     const lanes: Lane[] = [];

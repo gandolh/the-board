@@ -3,8 +3,8 @@ import { STATUS_LABELS, STATUSES, type Lane as LaneData, type Ticket } from "@br
 import { Card } from "./Card";
 
 /**
- * The board: the six column headers once at the top, sticky, and a lane per
- * project tag under them. Lanes with open tickets come first, then the rest,
+ * The board: the column headers once at the top, sticky, Backlog first, and a
+ * lane per project tag under them. Lanes with open tickets come first, then the rest,
  * each group alphabetical. A lane with nothing open starts collapsed.
  */
 

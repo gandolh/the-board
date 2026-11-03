@@ -39,6 +39,12 @@ export function allowedMoves(from: Status): string[] {
 
 /** Why a move was refused, and what would be allowed. */
 export function refusal(key: string, from: Status, to: Status, check: Extract<MoveCheck, { ok: false }>): string[] {
+  if (from === "backlog") {
+    return [
+      `${key} is a todo's ticket in Backlog, and only sync changes it.`,
+      "Promote the todo to a brief instead: the next sync takes this ticket off and files the brief's in To Do.",
+    ];
+  }
   if (check.code === "message_required") {
     const rule = movesFrom(from).find((candidate) => candidate.to === to);
     return [`${key}: ${label(from)} → ${label(to)} needs a ${ROLE_WORDS[rule?.role ?? "comment"]}. Pass it with -m "...".`];
@@ -57,7 +63,7 @@ export function ticketDetail({ ticket, comments, history }: TicketDetailResponse
     `${ticket.key}: ${ticket.title}`,
     `Status:  ${label(ticket.status)}${ticket.hidden ? " (hidden: the brief was superseded)" : ""}`,
     `Tags:    ${ticket.tags.length ? ticket.tags.join(", ") : "none"}`,
-    `Brief:   ${ticket.briefPath}`,
+    `${ticket.number === null ? "Todo: " : "Brief:"}   ${ticket.briefPath}`,
     "",
     "Summary:",
     ticket.summary.trim() ? `  ${ticket.summary.trim().replace(/\n/g, "\n  ")}` : "  (none)",

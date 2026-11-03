@@ -8,7 +8,9 @@ import { when } from "./time";
 
 /**
  * A ticket's detail, in a side panel. Read-only: the only buttons copy text
- * (the owner pastes a key into a new session) or close the panel. It reloads
+ * (the owner pastes a key into a new session) or close the panel. A todo's
+ * ticket names its todo file where a brief's names the brief, and says how it
+ * leaves Backlog. It reloads
  * whenever the board does, so it never shows an older state than the cards.
  *
  * A non-modal Base UI dialog, mounted while a ticket is open: the board stays
@@ -83,11 +85,14 @@ export function DetailPanel({ ticketKey, refreshedAt, onClose }: { ticketKey: st
                     ))
                   )}
                 </dd>
-                <dt>Brief</dt>
+                <dt>{shown.ticket.number === null ? "Todo" : "Brief"}</dt>
                 <dd className="brief-path">
                   <code>{shown.ticket.briefPath}</code> <CopyButton text={shown.ticket.briefPath} label="Copy path" />
                 </dd>
               </dl>
+              {shown.ticket.status === "backlog" && (
+                <p className="muted">Sync keeps this ticket to its todo. It leaves Backlog when the todo is promoted to a brief.</p>
+              )}
 
               <h3>Summary</h3>
               <div className="markdown">

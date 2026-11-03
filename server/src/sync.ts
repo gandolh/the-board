@@ -1,4 +1,4 @@
-import { formatKey, type SyncRequest, type SyncResponse, type Ticket } from "@brief-board/shared";
+import { formatKey, formatTodoKey, type SyncRequest, type SyncResponse, type SyncTodo, type Ticket } from "@brief-board/shared";
 import type { Store } from "./store.js";
 
 /**
@@ -19,6 +19,12 @@ import type { Store } from "./store.js";
  * - `superseded`, a ticket: hide it.
  * A ticket whose brief is missing from its project's payload gets a warning and
  * no change.
+ *
+ * Todos (2026-11-03) are sync's alone: each open todo has a ticket in Backlog,
+ * made when sync first sees it, kept to the todo's title, summary and path,
+ * and deleted once the todo is gone from the payload (promoted, dropped or
+ * closed). A project sent without `todos`, by a CLI from before Backlog, keeps
+ * its todo tickets as they are.
  */
 
 const SYNC_AUTHOR = "sync";
@@ -27,10 +33,18 @@ const CLOSABLE: Ticket["status"][] = ["todo", "in_progress", "blocked"];
 
 export function runSync(store: Store, request: SyncRequest): SyncResponse {
   return store.db.transaction(() => {
-    const result: SyncResponse = { created: 0, updated: 0, unchanged: 0, warnings: [] };
+    const result: SyncResponse = {
+      created: 0,
+      updated: 0,
+      unchanged: 0,
+      todos: { created: 0, updated: 0, unchanged: 0, removed: 0 },
+      warnings: [],
+    };
 
-    for (const { project, briefs } of request.projects) {
-      const existing = new Map(store.projectTickets(project).map((ticket) => [ticket.number, ticket]));
+    for (const { project, briefs, todos } of request.projects) {
+      const tickets = store.projectTickets(project);
+      if (todos) syncTodos(store, project, todos, tickets.filter((ticket) => ticket.number === null), result.todos);
+      const existing = new Map(tickets.filter((ticket) => ticket.number !== null).map((ticket) => [ticket.number!, ticket]));
       const seen = new Set<number>();
 
       for (const brief of briefs) {
@@ -86,12 +100,53 @@ export function runSync(store: Store, request: SyncRequest): SyncResponse {
         else result.unchanged++;
       }
 
-      for (const ticket of existing.values()) {
-        if (!seen.has(ticket.number)) {
+      for (const [number, ticket] of existing) {
+        if (!seen.has(number)) {
           result.warnings.push(`${ticket.key}: no brief with this number in ${project}'s corpus; nothing changed`);
         }
       }
     }
     return result;
   })();
+}
+
+/** One project's todo tickets, made to match its open todos. */
+function syncTodos(store: Store, project: string, todos: SyncTodo[], tickets: Ticket[], counts: SyncResponse["todos"]): void {
+  const existing = new Map(tickets.map((ticket) => [ticket.key, ticket]));
+  const seen = new Set<string>();
+  for (const todo of todos) {
+    const key = formatTodoKey(project, todo.slug);
+    seen.add(key);
+    const ticket = existing.get(key);
+    if (!ticket) {
+      store.insertTicket({
+        key,
+        project,
+        number: null,
+        title: todo.title,
+        summary: todo.summary,
+        summarySource: "sync",
+        briefPath: todo.path,
+        author: SYNC_AUTHOR,
+        via: "sync",
+      });
+      counts.created++;
+      continue;
+    }
+    const changes: Parameters<Store["updateTicket"]>[1] = {};
+    if (ticket.title !== todo.title) changes.title = todo.title;
+    if (ticket.summary !== todo.summary) changes.summary = todo.summary;
+    if (ticket.briefPath !== todo.path) changes.briefPath = todo.path;
+    if (Object.keys(changes).length > 0) {
+      store.updateTicket(key, changes);
+      counts.updated++;
+    } else {
+      counts.unchanged++;
+    }
+  }
+  for (const ticket of tickets) {
+    if (seen.has(ticket.key)) continue;
+    store.deleteTicket(ticket.key);
+    counts.removed++;
+  }
 }

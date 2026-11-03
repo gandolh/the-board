@@ -5,6 +5,8 @@ A view of brief progress across every project in ~/projects. Each ticket mirrors
 one corpus brief and is keyed <project>-<number>, like atrium-82. The corpus is
 the record. Do the corpus-flow steps every time, board or no board: move the
 brief to done/, write the log entry, update the wiki.
+Open todos have tickets in Backlog, keyed <project>:<slug>, owned by sync:
+never move or comment on one. Promoting the todo to a brief takes it off.
 
 Run commands from inside the project's repo. <ticket> is a key, or a brief
 number in this project. Exit codes: 0 done, 1 usage mistake, 2 the board

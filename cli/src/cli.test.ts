@@ -207,18 +207,44 @@ describe("sync", () => {
   it("--dry-run lists each project's briefs and sends nothing", async () => {
     const res = await run(["sync", "--dry-run"], { env: env() });
     expect(res.code).toBe(0);
-    expect(res.out).toContain("alpha: 3 brief(s), 1 todo, 1 done, 1 superseded; in todo: 1");
-    expect(res.out).toContain("beta: 2 brief(s), 1 todo, 1 done, 0 superseded; in todo: 7");
+    expect(res.out).toContain("alpha: 3 brief(s), 1 todo, 1 done, 1 superseded; in todo: 1; 3 open todo(s)");
+    expect(res.out).toContain("beta: 2 brief(s), 1 todo, 1 done, 0 superseded; in todo: 7\n");
+    expect(res.out).toContain("Todo tickets it would create: alpha:no-status, alpha:plain-line-open, alpha:walls-step-2");
+    expect(res.out).toContain("Todo tickets it would remove: none");
     expect((await run(["show", "alpha-01"], { env: env() })).code).toBe(2);
   });
 
   it("sends every project in one request and prints the counts", async () => {
     const first = await run(["sync"], { env: env() });
     expect(first.code).toBe(0);
-    expect(first.out).toBe("Synced 2 project(s), 5 brief(s): 2 created, 0 updated, 0 unchanged.");
+    expect(first.out).toBe(
+      [
+        "Synced 2 project(s), 5 brief(s): 2 created, 0 updated, 0 unchanged.",
+        "Todo tickets, for 3 open todo(s): 3 created, 0 updated, 0 unchanged, 0 removed.",
+      ].join("\n"),
+    );
     expect((await run(["show", "alpha-01"], { env: env() })).out).toContain("A compass that matches the world");
     const again = await run(["sync", "--project", "alpha"], { env: env() });
-    expect(again.out).toBe("Synced 1 project(s), 3 brief(s): 0 created, 0 updated, 1 unchanged.");
+    expect(again.out).toBe(
+      [
+        "Synced 1 project(s), 3 brief(s): 0 created, 0 updated, 1 unchanged.",
+        "Todo tickets, for 3 open todo(s): 0 created, 0 updated, 3 unchanged, 0 removed.",
+      ].join("\n"),
+    );
+  });
+
+  it("shows a todo's ticket by its key, and refuses to move or comment on it", async () => {
+    await run(["sync"], { env: env() });
+    const shown = await run(["show", "alpha:walls-step-2"], { env: env() });
+    expect(shown.out).toContain("alpha:walls-step-2: Walls meet at every step");
+    expect(shown.out).toContain("Status:  Backlog");
+    expect(shown.out).toContain("Todo:    corpus/todos/walls-step-2.md");
+    const started = await run(["start", "alpha:walls-step-2"], { env: env() });
+    expect(started.code).toBe(2);
+    expect(started.err).toContain("Promote the todo to a brief instead");
+    const commented = await run(["comment", "alpha:walls-step-2", "-m", "a note"], { env: env() });
+    expect(commented.code).toBe(2);
+    expect(commented.err).toContain("Promote the todo to a brief instead");
   });
 
   it("refuses an unknown --project, and exits 3 when the board is down", async () => {

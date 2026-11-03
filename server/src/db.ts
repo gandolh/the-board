@@ -8,11 +8,12 @@ import Database from "better-sqlite3";
  * runs once, in order, inside a transaction, and bumps the version.
  *
  * A ticket's key is its primary key, in canonical form (`atrium-03`), and
- * `(project, number)` is unique too: one ticket per brief.
+ * `(project, number)` is unique too: one ticket per brief. A todo's ticket
+ * (`atrium:night-mode`) has no number and sits in Backlog, and only it does.
  */
 export type Db = Database.Database;
 
-const MIGRATIONS: string[] = [
+export const MIGRATIONS: string[] = [
   `
   CREATE TABLE tickets (
     key TEXT PRIMARY KEY,
@@ -56,6 +57,30 @@ const MIGRATIONS: string[] = [
   );
   CREATE INDEX history_by_ticket ON history (ticket_key, id);
   `,
+  // 2026-11-03: Backlog, and todo tickets with no number. SQLite cannot change
+  // a CHECK in place, so the table is rebuilt: copy, drop, rename.
+  `
+  CREATE TABLE tickets_new (
+    key TEXT PRIMARY KEY,
+    project TEXT NOT NULL,
+    number INTEGER,
+    title TEXT NOT NULL,
+    summary TEXT NOT NULL,
+    summary_source TEXT NOT NULL CHECK (summary_source IN ('agent', 'sync')),
+    brief_path TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('backlog', 'todo', 'in_progress', 'blocked', 'ready_for_test', 'ready_for_deploy', 'done')),
+    hidden INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    status_changed_at TEXT NOT NULL,
+    UNIQUE (project, number),
+    CHECK ((number IS NULL) = (status = 'backlog'))
+  );
+  INSERT INTO tickets_new (key, project, number, title, summary, summary_source, brief_path, status, hidden, created_at, updated_at, status_changed_at)
+    SELECT key, project, number, title, summary, summary_source, brief_path, status, hidden, created_at, updated_at, status_changed_at FROM tickets;
+  DROP TABLE tickets;
+  ALTER TABLE tickets_new RENAME TO tickets;
+  `,
 ];
 
 /** Open (or create) the database at `path`, or `:memory:`, and bring its schema up to date. */
@@ -68,12 +93,27 @@ export function openDatabase(path: string): Db {
   return db;
 }
 
+/**
+ * Foreign keys are off while migrations run, as SQLite's own recipe for
+ * rebuilding a table says: with them on, dropping the old `tickets` would
+ * cascade into every tag, comment and history row. The pragma is a no-op
+ * inside a transaction, so it wraps the run, and each migration checks the
+ * keys before it commits.
+ */
 function migrate(db: Db): void {
   const current = db.pragma("user_version", { simple: true }) as number;
-  for (let version = current; version < MIGRATIONS.length; version++) {
-    db.transaction(() => {
-      db.exec(MIGRATIONS[version]!);
-      db.pragma(`user_version = ${version + 1}`);
-    })();
+  if (current >= MIGRATIONS.length) return;
+  db.pragma("foreign_keys = OFF");
+  try {
+    for (let version = current; version < MIGRATIONS.length; version++) {
+      db.transaction(() => {
+        db.exec(MIGRATIONS[version]!);
+        const broken = db.pragma("foreign_key_check") as unknown[];
+        if (broken.length > 0) throw new Error(`migration ${version + 1} left ${broken.length} broken foreign key(s)`);
+        db.pragma(`user_version = ${version + 1}`);
+      })();
+    }
+  } finally {
+    db.pragma("foreign_keys = ON");
   }
 }

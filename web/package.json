@@ -1,7 +1,7 @@
 {
   "name": "@brief-board/web",
   "version": "0.1.0",
-  "description": "The read-only board: a lane per project, six columns.",
+  "description": "The read-only board: a lane per project, seven columns, Backlog first.",
   "private": true,
   "type": "module",
   "scripts": {

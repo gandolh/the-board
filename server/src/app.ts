@@ -9,6 +9,7 @@ import {
   moveRequestSchema,
   parseKey,
   STATUS_LABELS,
+  SYNC_OWNED,
   syncRequestSchema,
   ticketParamsSchema,
   UNAUTHORIZED,
@@ -247,12 +248,25 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
   function keyOf(params: unknown, reply: FastifyReply): string | undefined {
     const parsed = ticketParamsSchema.safeParse(params);
     if (parsed.success) return parsed.data.key;
-    void fail(reply, 400, { code: "invalid_key", message: "a ticket key is <project>-<number>, like atrium-03" });
+    void fail(reply, 400, {
+      code: "invalid_key",
+      message: "a ticket key is <project>-<number>, like atrium-03, or <project>:<todo> for a todo's",
+    });
     return undefined;
   }
 
   const notFound = (reply: FastifyReply, key: string) =>
     fail(reply, 404, { code: "not_found", message: `no ticket ${key}; file a brief, then sync or PUT it` });
+
+  /**
+   * A todo's ticket in Backlog belongs to sync: it goes when the todo is
+   * promoted, and anything written on it would go with it.
+   */
+  const syncOwned = (reply: FastifyReply, key: string, what: string) =>
+    fail(reply, 400, {
+      code: SYNC_OWNED,
+      message: `${key} is a todo's ticket in Backlog, and only sync ${what}. Promote the todo to a brief instead: the next sync takes this ticket off and files the brief's in To Do.`,
+    });
 
   app.get("/api/tickets/:key", async (request, reply) => {
     const key = keyOf(request.params, reply);
@@ -268,7 +282,9 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     if (!key) return reply;
     const fields = parse(upsertTicketRequestSchema, request.body, reply);
     if (!fields) return reply;
-    const { project, number } = parseKey(key)!;
+    const brief = parseKey(key);
+    if (!brief) return syncOwned(reply, key, "makes or changes it");
+    const { project, number } = brief;
     const created = db.transaction(() => {
       const existing = store.getTicket(key);
       if (existing) {
@@ -304,6 +320,7 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     if (!key) return reply;
     const move = parse(moveRequestSchema, request.body, reply);
     if (!move) return reply;
+    if (store.getTicket(key)?.status === "backlog") return syncOwned(reply, key, "moves it");
     const result = store.move(key, move.to, move.message, move.author ?? DEFAULT_AUTHOR);
     if (!result) return notFound(reply, key);
     if (!result.ok) {
@@ -329,7 +346,9 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     if (!key) return reply;
     const fields = parse(commentRequestSchema, request.body, reply);
     if (!fields) return reply;
-    if (!store.getTicket(key)) return notFound(reply, key);
+    const ticket = store.getTicket(key);
+    if (!ticket) return notFound(reply, key);
+    if (ticket.status === "backlog") return syncOwned(reply, key, "writes on it");
     const comment = store.addComment(key, {
       author: fields.author ?? DEFAULT_AUTHOR,
       body: fields.body,

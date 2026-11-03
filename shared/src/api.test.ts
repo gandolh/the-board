@@ -41,4 +41,27 @@ describe("the API contract", () => {
     expect(syncRequestSchema.safeParse({ projects: [{ project: "p", briefs: [{ ...brief, state: "done" }] }] }).success).toBe(true);
     expect(syncRequestSchema.safeParse({ projects: [{ project: "p", briefs: [{ ...brief, state: "archived" }] }] }).success).toBe(false);
   });
+
+  it("takes a project's open todos, or none from an older CLI, and a todo ticket with no number", () => {
+    const todo = { slug: "linux-apps-sound", title: "Sound", summary: "", path: "corpus/todos/linux-apps-sound.md" };
+    expect(syncRequestSchema.parse({ projects: [{ project: "p", briefs: [] }] }).projects[0]!.todos).toBeUndefined();
+    expect(syncRequestSchema.safeParse({ projects: [{ project: "p", briefs: [], todos: [todo] }] }).success).toBe(true);
+    expect(syncRequestSchema.safeParse({ projects: [{ project: "p", briefs: [], todos: [{ ...todo, slug: "a:b" }] }] }).success).toBe(false);
+    const ticket = ticketSchema.parse({
+      key: "p:linux-apps-sound",
+      project: "p",
+      number: null,
+      title: "Sound",
+      summary: "",
+      summarySource: "sync",
+      briefPath: "corpus/todos/linux-apps-sound.md",
+      tags: [],
+      status: "backlog",
+      hidden: false,
+      createdAt: now,
+      updatedAt: now,
+      statusChangedAt: now,
+    });
+    expect(ticket.number).toBeNull();
+  });
 });

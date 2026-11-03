@@ -71,6 +71,8 @@ const sync = async (project: string, briefs: Partial<SyncBrief>[]) =>
 
 /** A route to each status from To Do, through the table. */
 const PATH_TO: Record<Status, [Status, string?][]> = {
+  // Never reached through the table: only sync puts a ticket in Backlog.
+  backlog: [],
   todo: [],
   in_progress: [["in_progress"]],
   blocked: [["in_progress"], ["blocked", "owner decides"]],
@@ -286,6 +288,100 @@ describe("sync", () => {
     await put("other-01");
     expect((await sync("p", [{ number: 1 }])).warnings).toEqual([]);
     expect((await detail("other-01")).ticket.status).toBe("todo");
+  });
+});
+
+describe("todos and Backlog", () => {
+  const todo = (slug: string, title = `Todo ${slug}`) => ({ slug, title, summary: `About ${slug}`, path: `corpus/todos/${slug}.md` });
+  const syncTodos = async (project: string, todos: ReturnType<typeof todo>[] | undefined, briefs: Partial<SyncBrief>[] = []) =>
+    (
+      await call({
+        method: "POST",
+        url: "/api/sync",
+        payload: {
+          projects: [
+            {
+              project,
+              briefs: briefs.map((b) => ({
+                title: `Brief ${b.number}`,
+                summary: "",
+                briefPath: `corpus/briefs/todo/${b.number}-x.md`,
+                state: "todo",
+                ...b,
+              })),
+              ...(todos ? { todos } : {}),
+            },
+          ],
+        },
+      })
+    ).json<SyncResponse>();
+
+  it("gives an open todo a ticket in Backlog, keyed <project>:<slug>, with no number", async () => {
+    const result = await syncTodos("p", [todo("walls-step-2")]);
+    expect(result.todos).toEqual({ created: 1, updated: 0, unchanged: 0, removed: 0 });
+    expect(result.created).toBe(0);
+    const { ticket, history } = await detail("p:walls-step-2");
+    expect(ticket).toMatchObject({ number: null, status: "backlog", title: "Todo walls-step-2", briefPath: "corpus/todos/walls-step-2.md" });
+    expect(history).toMatchObject([{ from: null, to: "backlog", via: "sync" }]);
+    const [lane] = (await board()).lanes;
+    expect(lane!.tickets.map((t) => t.key)).toEqual(["p:walls-step-2"]);
+  });
+
+  it("keeps a todo's ticket to its title, summary and path", async () => {
+    await syncTodos("p", [todo("a")]);
+    expect((await syncTodos("p", [todo("a")])).todos).toEqual({ created: 0, updated: 0, unchanged: 1, removed: 0 });
+    expect((await syncTodos("p", [todo("a", "A better title")])).todos).toEqual({ created: 0, updated: 1, unchanged: 0, removed: 0 });
+    expect((await detail("p:a")).ticket.title).toBe("A better title");
+  });
+
+  it("takes the ticket off when the todo is promoted, and files the brief's in To Do", async () => {
+    await syncTodos("p", [todo("night-mode"), todo("stays")]);
+    const result = await syncTodos("p", [todo("stays")], [{ number: 3, title: "Night mode" }]);
+    expect(result.todos).toEqual({ created: 0, updated: 0, unchanged: 1, removed: 1 });
+    expect(result.created).toBe(1);
+    expect((await call({ url: "/api/tickets/p:night-mode" })).statusCode).toBe(404);
+    expect((await detail("p-03")).ticket.status).toBe("todo");
+    const [lane] = (await board()).lanes;
+    expect(lane!.tickets.map((t) => [t.key, t.status])).toEqual([
+      ["p:stays", "backlog"],
+      ["p-03", "todo"],
+    ]);
+  });
+
+  it("leaves a project's todo tickets alone when a CLI from before Backlog sends no todos", async () => {
+    await syncTodos("p", [todo("a")]);
+    expect((await syncTodos("p", undefined, [{ number: 1 }])).todos).toEqual({ created: 0, updated: 0, unchanged: 0, removed: 0 });
+    expect((await detail("p:a")).ticket.status).toBe("backlog");
+  });
+
+  it("refuses a move, a comment or an upsert on a todo's ticket, and says to promote the todo", async () => {
+    await syncTodos("p", [todo("a")]);
+    for (const res of [
+      await move("p:a", "todo"),
+      await move("p:a", "in_progress", "start"),
+      await call({ method: "POST", url: "/api/tickets/p:a/comments", payload: { body: "note" } }),
+      await put("p:a"),
+    ]) {
+      expect(res.statusCode).toBe(400);
+      const body = res.json<ErrorBody>();
+      expect(body.code).toBe("sync_owned");
+      expect(body.message).toContain("Promote the todo to a brief");
+    }
+    const { ticket, comments } = await detail("p:a");
+    expect(ticket.status).toBe("backlog");
+    expect(comments).toEqual([]);
+  });
+
+  it("refuses a brief's ticket a move into Backlog", async () => {
+    await put("p-01");
+    expect((await move("p-01", "backlog", "back")).json<ErrorBody>().code).toBe("move_not_allowed");
+  });
+
+  it("reads a todo key with the colon raw or encoded", async () => {
+    await syncTodos("p", [todo("a")]);
+    expect((await call({ url: "/api/tickets/p:a" })).statusCode).toBe(200);
+    expect((await call({ url: "/api/tickets/p%3Aa" })).json<TicketDetailResponse>().ticket.key).toBe("p:a");
+    expect((await call({ url: "/api/tickets/p:a:b" })).json<ErrorBody>().code).toBe("invalid_key");
   });
 });
 

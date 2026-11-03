@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { keySchema } from "./key.js";
+import { TODO_SLUG, ticketKeySchema } from "./key.js";
 import { messageRoleSchema, type MoveRule } from "./moves.js";
 import { statusSchema } from "./status.js";
 
@@ -22,11 +22,15 @@ export const ticketSchema = z.object({
   key: z.string(),
   /** The project tag: the lane, and the first half of the key. Never changes. */
   project: z.string(),
-  number: z.number().int().nonnegative(),
+  /** The brief's number; null on a todo's ticket, which lives in Backlog. */
+  number: z.number().int().nonnegative().nullable(),
   title: z.string(),
   summary: z.string(),
   summarySource: summarySourceSchema,
-  /** The brief file, relative to the project's repo root, e.g. `corpus/briefs/todo/12-x.md`. */
+  /**
+   * The brief file, relative to the project's repo root, e.g.
+   * `corpus/briefs/todo/12-x.md`; on a todo's ticket, the todo's file.
+   */
   briefPath: z.string(),
   /** Labels, without the project tag. They filter the board and never make lanes. */
   tags: z.array(z.string()),
@@ -78,6 +82,12 @@ export const moveRuleSchema = z.object({
  */
 export const UNAUTHORIZED = "unauthorized";
 
+/**
+ * The code of a write refused because sync owns the ticket: a move, a comment
+ * or an upsert on a todo's ticket in Backlog.
+ */
+export const SYNC_OWNED = "sync_owned";
+
 export const errorBodySchema = z.object({
   code: z.string(),
   message: z.string(),
@@ -117,7 +127,7 @@ export type BoardResponse = z.infer<typeof boardResponseSchema>;
 
 // --- GET /api/tickets/:key -----------------------------------------------------
 
-export const ticketParamsSchema = z.object({ key: keySchema });
+export const ticketParamsSchema = z.object({ key: ticketKeySchema });
 
 export const ticketDetailResponseSchema = z.object({
   ticket: ticketSchema,
@@ -186,9 +196,24 @@ export const syncBriefSchema = z.object({
 });
 export type SyncBrief = z.infer<typeof syncBriefSchema>;
 
+/** An open todo: a `.md` file directly in `corpus/todos/` that is not dropped, closed, promoted or done. */
+export const syncTodoSchema = z.object({
+  slug: z.string().regex(TODO_SLUG),
+  title: z.string().min(1),
+  summary: z.string(),
+  /** Relative to the project's repo root, e.g. `corpus/todos/linux-apps-sound.md`. */
+  path: z.string().min(1),
+});
+export type SyncTodo = z.infer<typeof syncTodoSchema>;
+
 export const syncProjectSchema = z.object({
   project: z.string().min(1),
   briefs: z.array(syncBriefSchema),
+  /**
+   * The project's open todos. A CLI from before Backlog leaves this out, and
+   * then sync leaves the project's todo tickets alone rather than remove them.
+   */
+  todos: z.array(syncTodoSchema).optional(),
 });
 export type SyncProject = z.infer<typeof syncProjectSchema>;
 
@@ -196,10 +221,15 @@ export type SyncProject = z.infer<typeof syncProjectSchema>;
 export const syncRequestSchema = z.object({ projects: z.array(syncProjectSchema) });
 export type SyncRequest = z.infer<typeof syncRequestSchema>;
 
+const count = z.number().int().nonnegative();
+
 export const syncResponseSchema = z.object({
-  created: z.number().int().nonnegative(),
-  updated: z.number().int().nonnegative(),
-  unchanged: z.number().int().nonnegative(),
+  /** Brief tickets. */
+  created: count,
+  updated: count,
+  unchanged: count,
+  /** Todo tickets, counted apart. */
+  todos: z.object({ created: count, updated: count, unchanged: count, removed: count }),
   warnings: z.array(z.string()),
 });
 export type SyncResponse = z.infer<typeof syncResponseSchema>;

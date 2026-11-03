@@ -70,3 +70,58 @@ export function briefSummary(markdown: string): string {
   }
   return paragraph ? cut(unlink(paragraph)) : "";
 }
+
+/* ── todos ──────────────────────────────────────────────────────────── */
+
+/** A todo is open unless its status says otherwise. */
+const CLOSED_TODO = new Set(["dropped", "closed", "promoted", "done"]);
+
+/** The YAML frontmatter's `key: value` lines, and the markdown after it. Values lose their quotes. */
+export function frontmatter(markdown: string): { fields: Map<string, string>; body: string } {
+  const lines = markdown.split(/\r?\n/);
+  const fields = new Map<string, string>();
+  if (lines[0]?.trim() !== "---") return { fields, body: markdown };
+  const end = lines.findIndex((line, i) => i > 0 && line.trim() === "---");
+  if (end === -1) return { fields, body: markdown };
+  for (const line of lines.slice(1, end)) {
+    const match = /^([A-Za-z_][\w-]*)\s*:\s*(.*?)\s*$/.exec(line);
+    if (match) fields.set(match[1]!.toLowerCase(), match[2]!.replace(/^(['"])(.*)\1$/, "$2"));
+  }
+  return { fields, body: lines.slice(end + 1).join("\n") };
+}
+
+/**
+ * A todo's status, lower case: the frontmatter's `status:`, else a
+ * `status:` line (`**Status:**` too) among the first lines after the title,
+ * else null. Only its first word counts.
+ */
+export function todoStatus(markdown: string): string | null {
+  const { fields, body } = frontmatter(markdown);
+  const word = (value: string) => /[A-Za-z]+/.exec(value.replace(/\*/g, ""))?.[0]?.toLowerCase() ?? null;
+  const declared = fields.get("status");
+  if (declared !== undefined) return word(declared);
+  const lines = body.split(/\r?\n/);
+  const title = lines.findIndex((line) => /^#\s+/.test(line));
+  const near = lines.slice(title + 1).filter((line) => line.trim() !== "").slice(0, 5);
+  const line = near.find((candidate) => /^\s*\**status\**\s*:/i.test(candidate));
+  return line === undefined ? null : word(line.replace(/^\s*\**status\**\s*:/i, ""));
+}
+
+/** Open: no status, or one that is not dropped, closed, promoted or done. */
+export function todoIsOpen(markdown: string): boolean {
+  const status = todoStatus(markdown);
+  return status === null || !CLOSED_TODO.has(status);
+}
+
+/** The frontmatter's `title:`, else the first `# ` heading, else the slug. */
+export function todoTitle(markdown: string, slug: string): string {
+  const { fields, body } = frontmatter(markdown);
+  const title = fields.get("title")?.trim();
+  if (title) return title;
+  return /^#\s+(.+?)\s*#*\s*$/m.exec(body)?.[1]?.trim() || slug;
+}
+
+/** The first paragraph, as a brief's summary is found, with the frontmatter left out. */
+export function todoSummary(markdown: string): string {
+  return briefSummary(frontmatter(markdown).body);
+}

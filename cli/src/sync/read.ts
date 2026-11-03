@@ -1,9 +1,9 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { BRIEF_STATES, type SyncBrief, type SyncProject } from "@brief-board/shared";
+import { BRIEF_STATES, TODO_SLUG, type SyncBrief, type SyncProject, type SyncTodo } from "@brief-board/shared";
 import { UsageError } from "../errors.js";
-import { briefSummary, briefTitle } from "./parse.js";
+import { briefSummary, briefTitle, todoIsOpen, todoSummary, todoTitle } from "./parse.js";
 
 /**
  * Read every project's briefs. It only reads: a project is a directory with
@@ -14,6 +14,9 @@ import { briefSummary, briefTitle } from "./parse.js";
  * `corpus/briefs/{todo,done,superseded}/<digits>-<slug>.md`, one level deep.
  * Anything else there (`.gitkeep`, a folder of templates, a non-markdown
  * file) is skipped.
+ *
+ * A todo is a `.md` file directly in `corpus/todos/`; subfolders, such as a
+ * `closed/` archive, are never read. Only open ones are sent (`todoIsOpen`).
  */
 
 const BRIEF_FILE = /^(\d+)-(.+)\.md$/;
@@ -45,7 +48,28 @@ function isDir(path: string): boolean {
   }
 }
 
-/** One project's briefs, in number order within each state. */
+/**
+ * A project's open todos, by slug. A todo's file name is its ticket's key, so
+ * one the key cannot hold stops the run, naming the file.
+ */
+export function readTodos(root: string): SyncTodo[] {
+  const dir = join(root, "corpus", "todos");
+  if (!isDir(dir)) return [];
+  const todos: SyncTodo[] = [];
+  for (const name of readdirSync(dir).sort()) {
+    if (!name.endsWith(".md") || !statSync(join(dir, name)).isFile()) continue;
+    const slug = name.slice(0, -".md".length);
+    if (!TODO_SLUG.test(slug)) {
+      throw new UsageError(`${join(dir, name)}: a todo's file name becomes its ticket key; use letters, digits, dots, dashes and underscores only`);
+    }
+    const markdown = readFileSync(join(dir, name), "utf8");
+    if (!todoIsOpen(markdown)) continue;
+    todos.push({ slug, title: todoTitle(markdown, slug), summary: todoSummary(markdown), path: `corpus/todos/${name}` });
+  }
+  return todos;
+}
+
+/** One project's briefs, in number order within each state, and its open todos. */
 export function readProject(root: string, project: string): SyncProject {
   const briefs: SyncBrief[] = [];
   for (const state of BRIEF_STATES) {
@@ -64,7 +88,7 @@ export function readProject(root: string, project: string): SyncProject {
       });
     }
   }
-  return { project, briefs };
+  return { project, briefs, todos: readTodos(root) };
 }
 
 /** A project's name and where it is. */

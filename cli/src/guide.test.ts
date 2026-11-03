@@ -28,6 +28,11 @@ describe("the guide", () => {
     }
   });
 
+  it("says Backlog belongs to sync, and promoting the todo is the way out", () => {
+    expect(guide).toContain("Open todos have tickets in Backlog, keyed <project>:<slug>, owned by sync:");
+    expect(guide).toContain("never move or comment on one. Promoting the todo to a brief takes it off.");
+  });
+
   it("stays short enough to read before every brief", () => {
     expect(guide.split("\n").length).toBeLessThanOrEqual(80);
   });

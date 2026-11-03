@@ -14,6 +14,7 @@
   --shadow: 0 1px 1px rgb(9 30 66 / 0.25), 0 0 1px rgb(9 30 66 / 0.31);
   --banner-bg: #fff7d6;
   --banner-text: #533f04;
+  --backlog: #86765a;
   --todo: #8590a2;
   --in_progress: #0c66e4;
   --blocked: #c9372c;
@@ -40,6 +41,7 @@
     --shadow: 0 1px 1px rgb(0 0 0 / 0.5), 0 0 1px rgb(0 0 0 / 0.5);
     --banner-bg: #332e1b;
     --banner-text: #f5cd47;
+    --backlog: #bfa983;
     --todo: #8c9bab;
     --in_progress: #579dff;
     --blocked: #f87168;
@@ -153,7 +155,7 @@ main {
 .columns-head,
 .lane-cols {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -183,6 +185,7 @@ main {
   font-variant-numeric: tabular-nums;
 }
 
+.col-backlog { --col: var(--backlog); }
 .col-todo { --col: var(--todo); }
 .col-in_progress { --col: var(--in_progress); }
 .col-blocked { --col: var(--blocked); }
@@ -399,6 +402,7 @@ main {
   background: color-mix(in srgb, var(--status) 14%, transparent);
 }
 
+.status-backlog { --status: var(--backlog); }
 .status-todo { --status: var(--todo); }
 .status-in_progress { --status: var(--in_progress); }
 .status-blocked { --status: var(--blocked); }
@@ -494,7 +498,7 @@ main {
   }
 
   .lane-cols {
-    grid-template-columns: repeat(6, 220px);
+    grid-template-columns: repeat(7, 220px);
   }
 
   .cell-head {

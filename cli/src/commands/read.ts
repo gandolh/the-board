@@ -21,8 +21,13 @@ export async function list(rt: Runtime, args: string[]): Promise<void> {
   for (const lane of lanes) {
     if (project !== null && lane.project !== project) continue;
     const tickets = lane.tickets.filter((ticket) => !status || ticket.status === status);
-    // Board order: by column, then number.
-    tickets.sort((a, b) => statusSchema.options.indexOf(a.status) - statusSchema.options.indexOf(b.status) || a.number - b.number);
+    // Board order: by column, then number, and a todo's tickets (no number) by key.
+    tickets.sort(
+      (a, b) =>
+        statusSchema.options.indexOf(a.status) - statusSchema.options.indexOf(b.status) ||
+        (a.number ?? -1) - (b.number ?? -1) ||
+        a.key.localeCompare(b.key),
+    );
     for (const ticket of tickets) {
       rt.out(ticketLine(ticket));
       shown++;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatKey, keySchema, normalizeKey, parseKey } from "./key.js";
+import { formatKey, formatTodoKey, keySchema, normalizeKey, parseKey, parseTodoKey, ticketKeySchema } from "./key.js";
 
 describe("ticket keys", () => {
   it("splits on the last hyphen before the number", () => {
@@ -36,5 +36,32 @@ describe("ticket keys", () => {
     expect(keySchema.parse("newspapper-105")).toBe("newspapper-105");
     expect(keySchema.parse("trips-4")).toBe("trips-04");
     expect(keySchema.safeParse("no-number").success).toBe(false);
+  });
+});
+
+describe("todo keys", () => {
+  it("round-trips <project>:<slug>", () => {
+    expect(formatTodoKey("imbatranimOS", "linux-apps-sound")).toBe("imbatranimOS:linux-apps-sound");
+    expect(parseTodoKey("imbatranimOS:linux-apps-sound")).toEqual({ project: "imbatranimOS", slug: "linux-apps-sound" });
+    expect(parseTodoKey("3D-sandbox:walls-step-2")).toEqual({ project: "3D-sandbox", slug: "walls-step-2" });
+  });
+
+  it("never reads as a brief key, even when the slug ends in digits", () => {
+    for (const key of ["3D-sandbox:walls-step-2", "atrium:12", "p:step-07"]) {
+      expect(parseKey(key)).toBeNull();
+      expect(keySchema.safeParse(key).success).toBe(false);
+    }
+  });
+
+  it("refuses what is not a todo key", () => {
+    for (const bad of ["atrium", "atrium:", ":slug", "atrium-12", "a:b:c", "a:has space", ""]) {
+      expect(parseTodoKey(bad)).toBeNull();
+    }
+  });
+
+  it("the ticket routes take either form, a brief key normalised", () => {
+    expect(ticketKeySchema.parse("trips-4")).toBe("trips-04");
+    expect(ticketKeySchema.parse("trips:a-new-city")).toBe("trips:a-new-city");
+    expect(ticketKeySchema.safeParse("trips").success).toBe(false);
   });
 });

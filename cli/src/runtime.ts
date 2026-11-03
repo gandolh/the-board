@@ -1,5 +1,5 @@
 import { parseArgs, type ParseArgsConfig } from "node:util";
-import { formatKey, normalizeKey, statusSchema, type Status } from "@brief-board/shared";
+import { formatKey, normalizeTicketKey, statusSchema, type Status } from "@brief-board/shared";
 import { BoardClient } from "./client.js";
 import { boardToken, boardUrl, projectOf, repoRoot, type Context } from "./context.js";
 import { UsageError } from "./errors.js";
@@ -45,11 +45,11 @@ export class Runtime {
     return flag?.trim() || this.ctx.env.BRIEF_BOARD_AUTHOR?.trim() || "agent";
   }
 
-  /** A full key, or a bare number meaning this project. */
+  /** A full key (a brief's, or a todo's `<project>:<slug>`), or a bare number meaning this project. */
   ticketKey(arg: string | undefined, projectFlag: string | undefined): string {
     if (!arg) throw new UsageError("which ticket? Give a key (atrium-83) or a brief number (83)");
     if (/^\d+$/.test(arg)) return formatKey(this.project(projectFlag), Number.parseInt(arg, 10));
-    const key = normalizeKey(arg);
+    const key = normalizeTicketKey(arg);
     if (!key) throw new UsageError(`"${arg}" is not a ticket key: use <project>-<number>, or the brief number alone`);
     return key;
   }

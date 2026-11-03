@@ -29,7 +29,8 @@ export interface MoveRule {
 /**
  * Every allowed move (decisions.md "Which moves are allowed, and which need a
  * message"), as data. Anything not here is refused, and so is a required
- * message left out. Sync is the one writer that bypasses this table.
+ * message left out. Sync is the one writer that bypasses this table. No row
+ * enters or leaves Backlog: a todo's ticket goes when the todo is promoted.
  */
 export const MOVES: readonly MoveRule[] = [
   { from: "todo", to: "in_progress", message: "optional", role: "comment" },

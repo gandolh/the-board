@@ -54,4 +54,13 @@ describe("moves the table does not list", () => {
   it("nothing moves out of Done", () => {
     expect(movesFrom("done")).toEqual([]);
   });
+
+  it("nothing enters or leaves Backlog, which belongs to sync", () => {
+    expect(movesFrom("backlog")).toEqual([]);
+    expect(MOVES.filter((rule) => rule.to === "backlog")).toEqual([]);
+    for (const status of STATUSES) {
+      expect(checkMove(status, "backlog", "a message")).toMatchObject({ ok: false, code: "move_not_allowed" });
+      expect(checkMove("backlog", status, "a message")).toMatchObject({ ok: false, code: "move_not_allowed" });
+    }
+  });
 });
