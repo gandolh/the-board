@@ -1,8 +1,20 @@
 # Owner setup
 
-Everything you do by hand to put brief-board on the VPS. Nothing in the repo
-deploys or writes a secret for you. Commands run on your machine unless a step
-says otherwise. The deploy builds the API image on the VPS; Caddy serves the
+Everything it takes to put brief-board on the VPS. vps-deploy's script runs
+steps 1, 2, 4, 5 and 7 for you. It asks its questions first (which steps, the
+sudo password, your board account's username and password), then runs them
+without waiting for input:
+
+```
+cd path/to/vps-deploy
+npm run setup:brief-board -- --plan   # local checks and the steps, nothing changed
+npm run setup:brief-board             # preview, dry run or apply
+```
+
+It ends with what stays by hand: step 6's link, the lockout check in step 5,
+and the sync question before the first sync. The steps below are what it does,
+for doing one by hand or reading what went wrong. Nothing in this repo deploys
+or writes a secret. Commands run on your machine unless a step says otherwise. The deploy builds the API image on the VPS; Caddy serves the
 board and forwards `/brief-board-api/` to the container on `127.0.0.1:8806`.
 Running it on your own machine is under [Local development](#local-development)
 and in [getting-started.md](getting-started.md).
@@ -11,6 +23,10 @@ and in [getting-started.md](getting-started.md).
 no path.
 
 ## 1. Register the board in production Ward
+
+The script does this and step 2 with `npm run setup -- --stack brief-board`
+in vps-deploy, through Ward's console API, and grants your Ward account a role
+on the app (step 6's grant). By hand:
 
 The adoption guide is `wzd_auth/shared-library/README.md`. Almanac and
 Shelfmark were registered the same way.
