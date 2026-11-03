@@ -15,7 +15,7 @@ flowchart LR
 - **shared** holds the status names, the move table and the zod schemas. The other three import it, so a rule exists in one place.
 - **server** (`server/src/app.ts`, `store.ts`, `sync.ts`) listens on 127.0.0.1:8806, stores tickets in SQLite, rejects moves the table does not allow, and requires a message where the table says one is needed. It also serves the built board.
 - **web** is a Vite + React board. It never writes. It polls the API; Backlog is the first column, the Done column shows the last 14 days, and lanes with nothing open start collapsed.
-- **cli** (`cli/src/`) is the only client agents use. It finds the board from `BRIEF_BOARD_URL`, the repo's `.env`, `~/.config/brief-board/env` or the default, and takes the project name from the git root directory.
+- **cli** (`cli/src/`) is the only client agents use. It finds the board from `BRIEF_BOARD_URL`, the repo's `.env`, `~/.config/brief-board/env` or the default, and takes the project name from the nearest corpus's `corpus/board-name`, else the git root directory.
 
 ## A ticket's life
 

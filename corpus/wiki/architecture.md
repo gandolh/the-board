@@ -72,8 +72,11 @@ colon raw or as `%3A`.
 ## CLI
 
 `create`, `start` (a resume when the ticket is already In Progress), `move`,
-`comment`, `show`, `list`, `sync` and `guide`. The project is the git root's
-directory name; the author is `--author`, else `BRIEF_BOARD_AUTHOR`, else
+`comment`, `show`, `list`, `sync` and `guide`. The project is `--project`,
+else the `corpus/board-name` of the nearest `corpus/` from the working
+directory up to the git root (2026-11-03, for a nested corpus such as
+churchix), else the git root's directory name; `create` looks for the brief in
+that same corpus. The author is `--author`, else `BRIEF_BOARD_AUTHOR`, else
 `agent`.
 
 - `move` and `start` fetch the ticket and run the shared move check locally

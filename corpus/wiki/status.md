@@ -1,5 +1,5 @@
 ---
-summary: Snapshot as of 2026-11-03, per area. Live on the VPS since 2026-11-03; first sync 2026-11-03 (23 projects, 30 tickets in To Do). The board, CLI, sync and guide built 2026-10-09 and rolled out to every project's CLAUDE.md but vps-deploy's; Base UI under the panel and lanes 2026-10-23. Down since 2026-10-13; briefs 01-05 (2026-11-02) built it for the VPS behind sign-in (sync in group folders, the sub-path, the CLI's token, sign-in, the container and the vps-deploy stack), not deployed, with the owner's steps, which vps-deploy's npm run setup:brief-board runs (2026-11-03); ward-auth 0.7.0 with its rename route off (2026-11-03); the numbering question after the estate restarted brief numbering, closed 2026-11-03; Backlog for open todos built 2026-11-03 (brief 06), not deployed; open brief 07 (nested corpora name themselves).
+summary: Snapshot as of 2026-11-03, per area. Live on the VPS since 2026-11-03; first sync 2026-11-03 (23 projects, 30 tickets in To Do). The board, CLI, sync and guide built 2026-10-09 and rolled out to every project's CLAUDE.md but vps-deploy's; Base UI under the panel and lanes 2026-10-23. Down since 2026-10-13; briefs 01-05 (2026-11-02) built it for the VPS behind sign-in (sync in group folders, the sub-path, the CLI's token, sign-in, the container and the vps-deploy stack), not deployed, with the owner's steps, which vps-deploy's npm run setup:brief-board runs (2026-11-03); ward-auth 0.7.0 with its rename route off (2026-11-03); the numbering question after the estate restarted brief numbering, closed 2026-11-03; Backlog for open todos (brief 06) and nested corpora naming themselves (brief 07, churchix and scoala-ramna-theme) built 2026-11-03, not deployed; no open briefs.
 updated: 2026-11-03
 ---
 
@@ -24,8 +24,9 @@ from 2026-10-13. Brief numbering restarted at 01 on 2026-11-02 (see
 - **CLI** (2026-10-09; token 2026-11-02). Every agent command, the address
   and token lookups, resume, exit 3 when the board is down or refuses the
   token, and `guide`.
-- **Sync** (2026-10-09; group folders 2026-11-02; todos 2026-11-03). Reads
-  every project's briefs and open todos, flat or one group folder down, and
+- **Sync** (2026-10-09; group folders 2026-11-02; todos and depth three
+  2026-11-03). Reads every project's briefs and open todos, up to three
+  folders deep, named by `corpus/board-name` where a corpus has one, and
   corrects the tickets; each open todo has a sync-owned ticket in Backlog
   ([sync.md](sync.md)).
 - **Sign-in** (2026-11-02; ward-auth 0.7.0 2026-11-03). The vendored
@@ -43,7 +44,7 @@ from 2026-10-13. Brief numbering restarted at 01 on 2026-11-02 (see
   their CLAUDE.md. vps-deploy was skipped because its `corpus/CLAUDE.md` had
   uncommitted work, and on 2026-11-02 it still has no section.
 
-163 tests (2026-11-03, after Backlog); typecheck, lint and build clean.
+170 tests (2026-11-03, after briefs 06 and 07); typecheck, lint and build clean.
 
 ## Next (owner)
 
@@ -52,7 +53,8 @@ from 2026-10-13. Brief numbering restarted at 01 on 2026-11-02 (see
    `node cli.ts brief-board deploy`; then, from outside a repo,
    `brief-board sync --dry-run` and `brief-board sync`. The migration
    rebuilds the tickets table on first start; the board keeps every ticket,
-   comment and history row.
+   comment and history row. The same sync brings churchix and
+   scoala-ramna-theme on (brief 07; the CLI already infers their names).
 2. For local development only: add brief-board to Ward's local seed
    (`wzd_auth`, `infrastructure/local/seed.mjs`):
    `{ slug: "brief-board", name: "brief-board", repo: "brief-board", envFiles: [".env"], dev: "http://localhost:5178/brief-board/", api: "/brief-board-api" }`
@@ -69,17 +71,16 @@ from 2026-10-13. Brief numbering restarted at 01 on 2026-11-02 (see
 Run on 2026-11-03, once the estate's todos had become briefs: 23 projects,
 78 briefs read, 27 tickets created and 3 that already existed left
 unchanged, so 30 tickets in To Do. Done briefs aren't backfilled. churchix
-and scoala-ramna-theme reach the board with brief 07, and Backlog with 06.
+and scoala-ramna-theme reach the board, and Backlog fills, on the next sync
+after the deploy (briefs 06 and 07; a dry run finds 25 projects).
 The VPS board started empty, so no old ticket shared a number with a new
 brief.
 
 ## Open briefs
 
-Written 2026-11-03 in an estate-wide grill with the owner. 06 (Backlog)
-is [done](../briefs/done/06-a-backlog-column-for-open-todos.md); not started:
-
-- [07, a nested corpus names itself](../briefs/todo/07-a-nested-corpus-names-itself.md)
-  (churchix and scoala-ramna-theme, through `corpus/board-name`).
+None. The two written 2026-11-03 in an estate-wide grill with the owner are
+done: [06, a Backlog column](../briefs/done/06-a-backlog-column-for-open-todos.md)
+and [07, a nested corpus names itself](../briefs/done/07-a-nested-corpus-names-itself.md).
 
 ## Todos
 

@@ -1,5 +1,5 @@
 ---
-summary: How `brief-board sync` turns every project's corpus/briefs/ and open corpus/todos/ into tickets, as built 2026-10-09 with todos and Backlog 2026-11-03. What the CLI reads (projects directory, titles, summaries, the heading shapes it strips, which todos are open), what the server does per brief state (create, refresh, close, hide, warn) and per todo (create, refresh, remove), what the dry run compares, why the report folds closes and hides into "updated", and why briefs restarting at 01 in 2026-11 needed no fix (closed 2026-11-03).
+summary: How `brief-board sync` turns every project's corpus/briefs/ and open corpus/todos/ into tickets, as built 2026-10-09 with todos and Backlog 2026-11-03. What the CLI reads (projects to depth three and their board-name, titles, summaries, the heading shapes it strips, which todos are open), what the server does per brief state (create, refresh, close, hide, warn) and per todo (create, refresh, remove), what the dry run compares, why the report folds closes and hides into "updated", and why briefs restarting at 01 in 2026-11 needed no fix (closed 2026-11-03).
 updated: 2026-11-03
 ---
 
@@ -13,17 +13,20 @@ The decision that sync runs only by hand, and why the corpus wins, is in
 `cli/src/sync/read.ts` and `cli/src/sync/parse.ts`, run from
 `cli/src/commands/sync.ts`.
 
-- **Which projects.** Every directory with a `corpus/briefs/`, directly under
-  the projects directory or one group folder down (since 2026-11-02; the
-  estate moved its repos into `apps/`, `platform/` and the other groups on
-  2026-11-01). A child without `corpus/briefs/` counts as a group folder and
-  is looked into once; dot-directories and `node_modules` are skipped. A
-  project is named by its own directory, never by its group and name joined, so its keys match
-  the ones `create` takes from the git root; two projects with one name stop
-  the run with a usage error naming both paths, before anything is sent.
-  Corpora nested deeper are not found: churchix inside presentation-sites and
-  the scoala-ramna theme. The same depth rule as vps-deploy's `SourceRepo`
-  and Ward's local seed. The projects directory is
+- **Which projects.** Every directory with a `corpus/briefs/` one, two or
+  three levels under the projects directory: a flat repo, one in a group
+  folder (since 2026-11-02; the estate moved its repos into `apps/`,
+  `platform/` and the other groups on 2026-11-01), and since 2026-11-03 a
+  corpus inside a grouped repo (churchix in presentation-sites) or a repo in
+  a plain folder in a group (the scoala-ramna theme). Discovery looks into
+  every directory down to depth three, projects as well as plain folders,
+  and nothing at depth four; dot-directories and `node_modules` are skipped.
+  A project is named by its `corpus/board-name` (the first line, trimmed;
+  one a key can't hold stops the run, naming the file), else by its own
+  directory, never by its group and name joined, so its keys match the ones
+  the CLI infers. Two projects with one name stop the run with a usage error
+  naming both paths, before anything is sent. vps-deploy's `SourceRepo` and
+  Ward's local seed still stop at one group folder. The projects directory is
   `BRIEF_BOARD_PROJECTS_DIR` from the environment or
   `~/.config/brief-board/env` (a leading `~` is the home directory), else
   `~/projects`. `--project <name>` narrows it to one, at either depth; `--dry-run` prints the

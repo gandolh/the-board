@@ -27,7 +27,7 @@ _Avoid_: issue, card (except for the drawing of a ticket in the UI), story, task
 A repo directory with a corpus (a `corpus/briefs/`), directly under the
 projects directory, one group folder down (`apps/`, `platform/`), or one more
 down. Its name is the first half of every ticket key: its own directory name,
-never `group/name`, unless the corpus names itself (churchix,
+never group/name, unless the corpus names itself (churchix,
 scoala-ramna-theme).
 _Avoid_: repo, workspace
 

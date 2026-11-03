@@ -238,8 +238,8 @@ From an estate-wide grill with the owner about every open todo. Two calls, recor
 [decisions.md](wiki/decisions.md) and [glossary.md](wiki/glossary.md): open todos get sync-owned
 tickets in a new first column, Backlog (a revisit of "One ticket per brief"), and a corpus nested
 one folder deeper names itself, as churchix and scoala-ramna-theme now do in `corpus/board-name`.
-[Brief 06](briefs/todo/06-a-backlog-column-for-open-todos.md) builds the Backlog column and
-[brief 07](briefs/todo/07-a-nested-corpus-names-itself.md) the deeper sync and the name. The todo
+[Brief 06](briefs/done/06-a-backlog-column-for-open-todos.md) builds the Backlog column and
+[brief 07](briefs/done/07-a-nested-corpus-names-itself.md) the deeper sync and the name. The todo
 `sync-after-numbering-restart` is closed, not built: the VPS board started empty, so the first
 sync meets no old ticket, and corpus-flow now says brief numbers never restart. It is deleted;
 [sync.md](wiki/sync.md) and [status.md](wiki/status.md) say so.
@@ -261,3 +261,12 @@ migration rebuilds `tickets` with foreign keys off, since the drop would otherwi
 comments and history. A dry run against the live board found imbatranimOS's five open todos.
 163 tests; not deployed. The board has to be deployed before the next sync, or it drops the
 todos ([status.md](wiki/status.md)).
+
+## [2026-11-03] done | Brief 07, a nested corpus names itself
+
+[Brief 07](briefs/done/07-a-nested-corpus-names-itself.md), `4082bac`. Sync finds projects up to
+three folders deep, looking into projects as well as plain folders, and names one by its
+`corpus/board-name` when it has one; a name a key can't hold stops the run. Commands that infer
+the project read the nearest corpus's `board-name`, and `create` finds the brief in that corpus.
+A dry run finds 25 projects, churchix and scoala-ramna-theme among them, and presentation-sites
+under its own name. 170 tests; the sync that files them is the owner's, after the deploy.

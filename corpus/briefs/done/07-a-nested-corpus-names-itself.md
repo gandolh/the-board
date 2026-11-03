@@ -77,3 +77,35 @@ is four levels down and must stay unread.
   `scoala-ramna-theme`, and `presentation-sites` still under its own name
   (read-only; the real sync is the owner's).
 - Typecheck, lint, build and the repo's tests pass.
+
+## Outcome (2026-11-03)
+
+Built in `4082bac`; the discovery and naming rules are in
+[sync.md](../../wiki/sync.md).
+
+- **Discovery.** `findProjects` walks every directory down to depth three,
+  projects as well as plain folders (no dot-directories, no `node_modules`),
+  so a corpus inside a project and a repo in a plain folder are both found,
+  and `zeta/sites/eta` at depth four still isn't. On this machine exactly
+  two corpora sit at depth three: churchix and the scoala-ramna theme.
+- **Name.** A new `cli/src/board-name.ts` holds `readBoardName` and
+  `corpusRoot`, shared by sync and the CLI. The name is valid when a key can
+  hold it, checked as `parseKey(formatKey(name, 1))` giving the name back, so
+  `shared` was not touched.
+- **The CLI.** `projectOf` takes the working directory; `Runtime.corpusDir()`
+  is the nearest directory with a `corpus/` up to the git root, and `create`
+  looks for the brief there, not at the git root, which inside churchix would
+  have been presentation-sites' corpus.
+- **Guide.** One sentence on `corpus/board-name`; section 7 lost a line so the
+  guide stays at 80.
+- **Checks.** From inside churchix `show 01` asks for `churchix-01`, from the
+  theme `show 152` for `scoala-ramna-theme-152`, and from presentation-sites
+  `show 1` for `presentation-sites-01` (read-only; none exists before the next
+  sync). `brief-board sync --dry-run` finds 25 projects, with churchix,
+  scoala-ramna-theme and presentation-sites each under its own name.
+- **Outside the file list:** `cli/src/runtime.ts` (`corpusDir`) and the
+  wiki's `architecture.md` (how the CLI infers the project).
+
+170 tests (from 163), typecheck, lint and build pass. The real sync is the
+owner's, after brief 06's deploy ([status.md](../../wiki/status.md), "Next
+(owner)").
