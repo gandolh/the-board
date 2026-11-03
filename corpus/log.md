@@ -209,3 +209,17 @@ since this run could only read that repo.
 [decisions.md](wiki/decisions.md). The always-on container with a restart
 policy, rejected on 2026-10-08, is now what runs; agents still carry on when
 the board is down, and sync recovers the moves.
+
+## [2026-11-03] update | ward-auth 0.7.0, and a setup script in vps-deploy
+
+The owner asked to take Ward's library to its latest version and for a script
+to configure the board. Both vendored copies (`server/vendor/ward`,
+`web/vendor/ward`) moved from 0.3.1 to 0.7.0 with wzd_auth's `npm run vendor`.
+The upgrade notes ask for nothing but one call: 0.4.0's `POST /auth/username`
+is on by default and sits outside the `/api` read-only rule, so a browser
+session could rename itself. `wardAuth` gets `allowRename: false`, with a test
+that the route is gone. 0.6.0's migration runs on open; 0.7.0's `returnTo`
+already comes from the login page. Typecheck, lint, 140 tests and the build
+pass. vps-deploy's `npm run setup:brief-board` now runs the owner's steps
+(that repo's log has it); [docs/owner-setup.md](../docs/owner-setup.md) points
+at it and keeps each step by hand. Not deployed.

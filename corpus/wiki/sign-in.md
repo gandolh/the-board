@@ -1,6 +1,6 @@
 ---
-summary: How the board decides who gets in, as built 2026-11-02. The vendored ward-auth 0.3.1 plugin as the one guard; a local account from the seed or Sign in with Ward; the CLI's bearer token; read-only browser sessions (read_only_session); the 401 rewritten into the API's error shape; the settings in config.ts and .env; the login and account pages; and how the local Ward check went.
-updated: 2026-11-02
+summary: How the board decides who gets in, as built 2026-11-02 and moved to ward-auth 0.7.0 on 2026-11-03. The vendored plugin as the one guard, its rename route off; a local account from the seed or Sign in with Ward; the CLI's bearer token; read-only browser sessions (read_only_session); the 401 rewritten into the API's error shape; the settings in config.ts and .env; the login and account pages; and how the local Ward check went.
+updated: 2026-11-03
 ---
 
 # Sign-in
@@ -13,7 +13,8 @@ it disagree.
 ## The guard
 
 `server/src/app.ts` registers the vendored `wardAuth` plugin
-(`server/vendor/ward/`, ward-auth 0.3.1, copied from almanac) before any
+(`server/vendor/ward/`, ward-auth 0.7.0, vendored from `wzd_auth` on
+2026-11-03; it was 0.3.1, copied from almanac) before any
 route, so no route authenticates itself:
 
 - cookie `brief_board_session`, path `/brief-board-api` (the browser-visible
@@ -29,7 +30,11 @@ route, so no route authenticates itself:
   `{ ok: false, reason: "read_only_session" }`, without `endSession`: the
   request fails and the session stays. A script in another app on the
   shared origin could send the owner's cookie; this keeps the worst case at
-  reading the board. Every write is the CLI's, with the token.
+  reading the board. Every write is the CLI's, with the token;
+- `allowRename: false` turns off the library's `POST /auth/username`, on by
+  default since 0.4.0. It sits under `/auth`, outside the read-only rule
+  above, so a session could otherwise rename itself; the board offers no
+  rename and the seed matches accounts by name.
 
 The plugin answers a refusal with `{ error: "unauthorized" }`. An `onSend`
 hook rewrites a 401 under `/api` into the API's shape, `{ code:
@@ -65,7 +70,7 @@ needs `http://127.0.0.1:8806`, or the plugin refuses the login as cross-site.
 ## The board's pages
 
 `web/src/AuthGate.tsx` wraps the board on the vendored React hooks
-(`web/vendor/ward/`, the same 0.3.1 copy): loading, the login page when
+(`web/vendor/ward/`, the same 0.7.0 copy): loading, the login page when
 signed out (the address becomes `/brief-board/login`), the board or the
 account page when signed in. `route.ts` is a three-page router: board,
 `login`, `account`. A 401 from `api.ts` asks the hooks about the session
