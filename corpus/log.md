@@ -270,3 +270,16 @@ three folders deep, looking into projects as well as plain folders, and names on
 the project read the nearest corpus's `board-name`, and `create` finds the brief in that corpus.
 A dry run finds 25 projects, churchix and scoala-ramna-theme among them, and presentation-sites
 under its own name. 170 tests; the sync that files them is the owner's, after the deploy.
+
+## [2026-11-06] research | Agent runs on the board, from HyperAgent
+
+The owner asked whether HyperAgent has anything for the board's style or for
+managing agents. [research-agent-runs.md](wiki/research-agent-runs.md) holds
+the evidence from the five-agent run of 2026-11-05 (sync closed a ticket
+mid-run, stopped agents left tickets In Progress and a dev server running,
+the hand-backs lived in chat), the four HyperAgents and the pattern each
+offers, and the ranking. Brief 08 (a ticket knows the run that works it) is
+the first step; two todos, `a-run-lists-what-it-holds` and
+`the-hand-back-goes-on-the-board`, wait on it. "Run" is in the glossary as
+proposed.
+

@@ -55,6 +55,12 @@ Reading every project's `corpus/briefs/` and open `corpus/todos/`, and
 correcting the tickets to match.
 _Avoid_: import, scan
 
+**Run**:
+One agent session working one ticket, from `brief-board start` to its end
+move (or a `release` when it stops unfinished). Proposed in brief 08; not
+built yet.
+_Avoid_: claim, lease, job
+
 ## Statuses
 
 **Backlog**:
