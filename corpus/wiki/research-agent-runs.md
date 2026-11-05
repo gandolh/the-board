@@ -1,5 +1,5 @@
 ---
-summary: Research of 2026-11-06 into what the HyperAgent projects suggest for brief-board and for managing agent runs. The evidence from the five-agent run of 2026-11-05 (sync closed a ticket mid-run, stopped agents left tickets In Progress and a dev server running, owner questions scattered across chat), each HyperAgent and the one pattern it offers, the candidates ranked against the board's decisions, and the recommendation (a run on the ticket first, brief 08; what a run holds and a hand-back on the board as todos).
+summary: Research of 2026-11-06 into what the HyperAgent projects suggest for brief-board and for managing agent runs. The evidence from the five-agent run of 2026-11-05 (sync closed a ticket mid-run, stopped agents left tickets In Progress and a dev server running, owner questions scattered across chat), each HyperAgent and the one pattern it offers, the candidates ranked against the board's decisions, and the recommendation (a run on the ticket first, brief 08; what a run holds and a hand-back on the board as todos). Followed the same day by research-agent-runs-elsewhere.md, the survey past HyperAgent that sharpened all three.
 updated: 2026-11-06
 ---
 
@@ -98,3 +98,10 @@ Build brief 08. Take the two todos to briefs once 08 has shown that agents
 open and close runs reliably. The owner decides the stale threshold and
 whether "The corpus wins" gets a revisit note for the delayed close (08 lists
 both).
+
+Followed up the same day in
+[research-agent-runs-elsewhere.md](research-agent-runs-elsewhere.md), which
+surveys other agent trackers, protocols, job systems and runtimes. It changed
+three things here: a run stays alive by its own board writes and goes stale
+after hours of silence rather than a day from its start, questions belong to
+the ticket and need no run, and `brief-board runs` moved into brief 08.

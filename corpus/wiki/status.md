@@ -1,6 +1,6 @@
 ---
-summary: Snapshot as of 2026-11-03, per area. Live on the VPS since 2026-11-03; first sync 2026-11-03 (23 projects, 30 tickets in To Do). The board, CLI, sync and guide built 2026-10-09 and rolled out to every project's CLAUDE.md but vps-deploy's; Base UI under the panel and lanes 2026-10-23. Down since 2026-10-13; briefs 01-05 (2026-11-02) built it for the VPS behind sign-in (sync in group folders, the sub-path, the CLI's token, sign-in, the container and the vps-deploy stack), not deployed, with the owner's steps, which vps-deploy's npm run setup:brief-board runs (2026-11-03); ward-auth 0.7.0 with its rename route off (2026-11-03); the numbering question after the estate restarted brief numbering, closed 2026-11-03; Backlog for open todos (brief 06) and nested corpora naming themselves (brief 07, churchix and scoala-ramna-theme) built 2026-11-03, not deployed; no open briefs.
-updated: 2026-11-03
+summary: Snapshot as of 2026-11-03, per area. Live on the VPS since 2026-11-03; first sync 2026-11-03 (23 projects, 30 tickets in To Do). The board, CLI, sync and guide built 2026-10-09 and rolled out to every project's CLAUDE.md but vps-deploy's; Base UI under the panel and lanes 2026-10-23. Down since 2026-10-13; briefs 01-05 (2026-11-02) built it for the VPS behind sign-in (sync in group folders, the sub-path, the CLI's token, sign-in, the container and the vps-deploy stack), not deployed, with the owner's steps, which vps-deploy's npm run setup:brief-board runs (2026-11-03); ward-auth 0.7.0 with its rename route off (2026-11-03); the numbering question after the estate restarted brief numbering, closed 2026-11-03; Backlog for open todos (brief 06) and nested corpora naming themselves (brief 07, churchix and scoala-ramna-theme) built 2026-11-03, not deployed; brief 08 (a ticket knows the run that works it) open since 2026-11-06, with two todos behind it.
+updated: 2026-11-06
 ---
 
 # Status
@@ -78,10 +78,17 @@ brief.
 
 ## Open briefs
 
-None. The two written 2026-11-03 in an estate-wide grill with the owner are
-done: [06, a Backlog column](../briefs/done/06-a-backlog-column-for-open-todos.md)
+[08, a ticket knows the run that works it](../briefs/todo/08-a-ticket-knows-the-run-that-works-it.md),
+written 2026-11-06 from [research-agent-runs.md](research-agent-runs.md) and
+sharpened the same day by
+[research-agent-runs-elsewhere.md](research-agent-runs-elsewhere.md). It
+waits on five owner decisions listed in the brief. The two written
+2026-11-03 are done: [06, a Backlog column](../briefs/done/06-a-backlog-column-for-open-todos.md)
 and [07, a nested corpus names itself](../briefs/done/07-a-nested-corpus-names-itself.md).
 
 ## Todos
 
-None.
+- [a-run-lists-what-it-holds](../todos/a-run-lists-what-it-holds.md), after
+  brief 08.
+- [the-hand-back-goes-on-the-board](../todos/the-hand-back-goes-on-the-board.md),
+  questions first; needs no run, so it can go before brief 08.

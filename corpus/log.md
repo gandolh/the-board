@@ -283,3 +283,21 @@ the first step; two todos, `a-run-lists-what-it-holds` and
 `the-hand-back-goes-on-the-board`, wait on it. "Run" is in the glossary as
 proposed.
 
+
+## [2026-11-06] research | Agent runs elsewhere; brief 08 and both todos sharpened
+
+The owner asked to dig deeper than HyperAgent.
+[research-agent-runs-elsewhere.md](wiki/research-agent-runs-elsewhere.md)
+reads beads, Linear's agent sessions, GitHub's Copilot cloud agent,
+vibe-kanban, A2A and MCP tasks, SQS, Temporal and Kubernetes Leases, and
+Claude Code, OpenHands, SWE-agent, Taskmaster and LangGraph, and judges five
+questions against [decisions.md](wiki/decisions.md). Brief 08 now keeps a run
+alive by its own board writes, with no heartbeat command and stale after 4
+hours by default; it records how a run ended, adds `brief-board runs` and a
+guide section for the session that runs agents, and lists five owner
+decisions. The todo `the-hand-back-goes-on-the-board` puts questions on the
+ticket as a derived badge, with `brief-board questions`, and can go before 08;
+`a-run-lists-what-it-holds` has the smallest `hold` and a guide line that
+needs no build. No `next` command and no new todo.
+[status.md](wiki/status.md) lists brief 08 and the two todos. Ticket
+brief-board-08's summary updated.
