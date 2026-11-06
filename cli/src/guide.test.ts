@@ -60,8 +60,20 @@ describe("the guide", () => {
     expect(controller).toContain('brief-board release <ticket> -m "<why, and what it left running>"');
   });
 
+  it("asks for the report lines in the end move, and questions as --question", () => {
+    const finishing = guide.slice(guide.indexOf("## 5. Finishing"), guide.indexOf("## 6."));
+    for (const line of ["  Commits: ", "  Checks run: ", "  Checks skipped: ", "  Owner steps: "]) expect(finishing).toContain(line);
+    expect(finishing).toContain("the full report goes in the brief's outcome note");
+    expect(finishing).toContain('Ask each question for the owner with --question "<question>"');
+    expect(finishing).toContain("never as prose in the message");
+    const reportsBack = guide.slice(guide.indexOf("## 6."), guide.indexOf("## 7."));
+    expect(reportsBack).toContain('brief-board answer <ticket> <n> -m "<the answer>"');
+    const controller = guide.slice(guide.indexOf("## 7."), guide.indexOf("## 8."));
+    expect(controller).toContain('-m "Tokens: <count>". Else leave it out.');
+  });
+
   it("stays short enough to read before every brief", () => {
-    // 80 until runs and the section for a session that runs other agents.
-    expect(guide.split("\n").length).toBeLessThanOrEqual(100);
+    // 80 until runs, the section for a session that runs other agents, and the report lines.
+    expect(guide.split("\n").length).toBeLessThanOrEqual(110);
   });
 });

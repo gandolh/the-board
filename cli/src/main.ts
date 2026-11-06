@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { create } from "./commands/create.js";
 import { guide } from "./commands/guide.js";
 import { comment, move, start } from "./commands/moves.js";
+import { answer, questions } from "./commands/questions.js";
 import { list, show } from "./commands/read.js";
 import { release, runs } from "./commands/runs.js";
 import { sync } from "./commands/sync.js";
@@ -25,19 +26,22 @@ const USAGE = `brief-board: track corpus briefs on the board.
   move <ticket> <status> [-m <message>]
   comment <ticket> -m <message>
   release <ticket> -m <message>       end the run of an agent that was stopped; the ticket stays In Progress
+  answer <ticket> <n> -m <answer>     record the owner's answer to question n
   show <ticket>
   list [--status <status>] [--all]
   runs                                 every open run across projects, stalest first
+  questions                            every open question across projects, oldest first
   sync                                 read every project's briefs into the board
   guide                                the rules for using the board
 
 <ticket> is a key (atrium-83) or a brief number in this project (83).
 Every command takes --project <name> (default: this git repo's directory name);
-every write takes --author <name> (default: $BRIEF_BOARD_AUTHOR, else "agent").`;
+every write takes --author <name> (default: $BRIEF_BOARD_AUTHOR, else "agent");
+start, move and comment take --question "<question for the owner>", once per question.`;
 
 type Command = (rt: Runtime, args: string[], packageRoot: URL) => Promise<void>;
 
-const COMMANDS: Record<string, Command> = { create, start, move, comment, release, show, list, runs, sync, guide };
+const COMMANDS: Record<string, Command> = { create, start, move, comment, release, answer, show, list, runs, questions, sync, guide };
 
 /** Run one invocation and return its exit code. `packageRoot` is the cli package's directory. */
 export async function main(argv: string[], ctx: Context, packageRoot: URL): Promise<number> {

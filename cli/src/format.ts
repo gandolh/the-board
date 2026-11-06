@@ -4,6 +4,7 @@ import {
   STATUS_LABELS,
   type MessageRole,
   type MoveCheck,
+  type OpenQuestionEntry,
   type OpenRunEntry,
   type Run,
   type Status,
@@ -88,8 +89,17 @@ export function openRunLine({ key, run }: OpenRunEntry, now: Date = new Date()):
   return `${key.padEnd(24)} ${run.author.padEnd(16)} started ${ago(run.startedAt, now)} ago, heard ${ago(run.lastHeardAt, now)} ago${run.stale ? ", stale" : ""}`;
 }
 
+/** `questions`: one open question per line, with its ticket, number, who asked and when. */
+export function openQuestionLine({ key, question }: OpenQuestionEntry, now: Date = new Date()): string {
+  const number = `#${question.number}`;
+  return `${key.padEnd(24)} ${number.padEnd(4)} ${question.author}, ${ago(question.askedAt, now)} ago: ${question.text.replace(/\s*\n\s*/g, " ")}`;
+}
+
 /** `show`: everything about one ticket, oldest first. */
-export function ticketDetail({ ticket, comments, history, runs = [] }: TicketDetailResponse, now: Date = new Date()): string[] {
+export function ticketDetail(
+  { ticket, comments, history, runs = [], questions = [] }: TicketDetailResponse,
+  now: Date = new Date(),
+): string[] {
   const open = openRun(ticket);
   const ended = runs.filter((run) => run.endedAt !== null);
   const lines = [
@@ -106,6 +116,21 @@ export function ticketDetail({ ticket, comments, history, runs = [] }: TicketDet
   if (ended.length > 0) {
     lines.push(`Earlier runs (${ended.length}):`);
     for (const run of ended) lines.push(`  [${run.startedAt}] ${run.author}: ${runEnding(run)}, ${run.endedAt}`);
+    lines.push("");
+  }
+  if (questions.length > 0) {
+    // Open first, so the ones waiting for the owner lead.
+    const open = questions.filter((question) => question.answeredAt === null);
+    const answered = questions.filter((question) => question.answeredAt !== null);
+    lines.push(`Questions (${open.length} open, ${answered.length} answered):`);
+    for (const question of [...open, ...answered]) {
+      lines.push(`  #${question.number} [${question.askedAt}] ${question.author}: ${question.text.replace(/\n/g, "\n    ")}`);
+      lines.push(
+        question.answeredAt === null
+          ? "    open"
+          : `    answered by ${question.answeredBy} [${question.answeredAt}]: ${question.answer!.replace(/\n/g, "\n    ")}`,
+      );
+    }
     lines.push("");
   }
   lines.push(`Comments (${comments.length}):`);

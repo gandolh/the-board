@@ -41,6 +41,10 @@ export function DetailPanel({ ticketKey, refreshedAt, onClose }: { ticketKey: st
   const open = shown ? openRun(shown.ticket) : null;
   const run = shown && (open || shown.ticket.status === "in_progress") ? runLine(open, refreshedAt ?? new Date()) : null;
   const ended = shown?.runs.filter((candidate) => candidate.endedAt !== null) ?? [];
+  // Open questions first: those are the ones waiting for the owner.
+  const questions = shown
+    ? [...shown.questions.filter((q) => q.answeredAt === null), ...shown.questions.filter((q) => q.answeredAt !== null)]
+    : [];
 
   return (
     <Dialog.Root
@@ -108,6 +112,41 @@ export function DetailPanel({ ticketKey, refreshedAt, onClose }: { ticketKey: st
               <div className="markdown">
                 {shown.ticket.summary.trim() ? <Markdown skipHtml>{shown.ticket.summary}</Markdown> : <p className="muted">No summary.</p>}
               </div>
+
+              {questions.length > 0 && (
+                <>
+                  <h3>Questions</h3>
+                  <ol className="comments">
+                    {questions.map((question) => (
+                      <li key={question.number} className="comment">
+                        <div className="comment-head">
+                          <span className={`role ${question.answeredAt === null ? "question-open" : "question-answered"}`}>
+                            {question.answeredAt === null ? "Open" : "Answered"}
+                          </span>
+                          <span className="comment-author">#{question.number}</span>
+                          <span className="muted">{question.author}</span>
+                          <time className="muted" dateTime={question.askedAt}>
+                            {when(question.askedAt)}
+                          </time>
+                        </div>
+                        <div className="markdown">
+                          <Markdown skipHtml>{question.text}</Markdown>
+                        </div>
+                        {question.answer !== null && (
+                          <div className="answer">
+                            <div className="comment-head muted">
+                              Answer from {question.answeredBy}, {question.answeredAt ? when(question.answeredAt) : ""}
+                            </div>
+                            <div className="markdown">
+                              <Markdown skipHtml>{question.answer}</Markdown>
+                            </div>
+                          </div>
+                        )}
+                      </li>
+                    ))}
+                  </ol>
+                </>
+              )}
 
               <h3>Comments</h3>
               {shown.comments.length === 0 ? (

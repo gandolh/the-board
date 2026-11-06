@@ -40,7 +40,14 @@ put the work off to another session:
 
 ## 5. Finishing
 Make the end move before you move the brief to done/ and before the commit
-that moves it: a sync in between closes the ticket under you. Pick one column:
+that moves it: a sync in between closes the ticket under you. Its message ends
+with these four lines; the full report goes in the brief's outcome note.
+  Commits: <hashes>
+  Checks run: <what passed>
+  Checks skipped: <what, and why>
+  Owner steps: <the exact commands, or none>
+Ask each question for the owner with --question "<question>" on that move,
+one flag per question, never as prose in the message. Pick one column:
 - The owner needs to try it: move to ready_for_test with test notes. Say what
   to try and where: the URL, the command, which account. Never a password.
 - It is finished but needs a deploy: move to ready_for_deploy with deploy
@@ -59,12 +66,16 @@ that moves it: a sync in between closes the ticket under you. Pick one column:
 - "The deploy broke X": move back to in_progress with -m saying what broke.
 - On a Blocked ticket, "I did X": start it with -m saying what the owner did,
   or move it to done with a confirmation if nothing is left to do.
+- An answer to a question: brief-board answer <ticket> <n> -m "<the answer>".
+  `brief-board questions` lists the open ones.
 
 ## 7. Running other agents
 For a session that starts agents and waits on them:
 - Give each agent a name to pass as --author on every board command.
 - Before a sync the owner asks for, run `brief-board runs` and tell the owner
   which runs are open.
+- When your runtime reports an agent's token use, add it to the agent's
+  ticket: brief-board comment <ticket> -m "Tokens: <count>". Else leave it out.
 - To stop an agent, first ask it to wind down if your runtime lets you message
   it: stop what it started, release its run, hand back. Otherwise stop it and
   release its run yourself, naming what it left running (a port, a container):

@@ -48,6 +48,24 @@ export const runSchema = z.object({
 });
 export type Run = z.infer<typeof runSchema>;
 
+/**
+ * A question for the owner, asked with `--question` on a move, a comment or
+ * a start. It belongs to the ticket, not to a run: it outlives the end move,
+ * and is open until someone records the owner's answer.
+ */
+export const questionSchema = z.object({
+  /** Stable for its ticket: 1, 2, 3... */
+  number: z.number().int().positive(),
+  text: z.string(),
+  author: z.string(),
+  askedAt: timestamp,
+  /** Null while the question is open. */
+  answer: z.string().nullable(),
+  answeredBy: z.string().nullable(),
+  answeredAt: timestamp.nullable(),
+});
+export type Question = z.infer<typeof questionSchema>;
+
 /** The board's record of one brief. */
 export const ticketSchema = z.object({
   key: z.string(),
@@ -73,6 +91,8 @@ export const ticketSchema = z.object({
   statusChangedAt: timestamp,
   /** The ticket's latest run, open or ended; null if none ever started. */
   run: runSchema.nullable(),
+  /** How many of its questions wait for the owner's answer: the card's badge, in any column. */
+  openQuestions: z.number().int().nonnegative(),
 });
 export type Ticket = z.infer<typeof ticketSchema>;
 
@@ -136,6 +156,9 @@ export type ErrorBody = z.infer<typeof errorBodySchema>;
 
 const author = z.string().trim().min(1).max(100).optional();
 
+/** Questions for the owner, riding on a move, a comment or a start. */
+const questions = z.array(z.string().trim().min(1).max(2000)).max(20).optional();
+
 // --- GET /api/health ---------------------------------------------------------
 
 export const healthResponseSchema = z.object({ ok: z.literal(true) });
@@ -173,6 +196,8 @@ export const ticketDetailResponseSchema = z.object({
   history: z.array(historyEventSchema),
   /** Every run on the ticket, oldest first. */
   runs: z.array(runSchema),
+  /** Every question on the ticket, by number. */
+  questions: z.array(questionSchema),
 });
 export type TicketDetailResponse = z.infer<typeof ticketDetailResponseSchema>;
 
@@ -199,6 +224,7 @@ export const moveRequestSchema = z.object({
   to: statusSchema,
   message: z.string().max(10_000).optional(),
   author,
+  questions,
 });
 export type MoveRequest = z.infer<typeof moveRequestSchema>;
 
@@ -206,6 +232,8 @@ export const moveResponseSchema = z.object({
   ticket: ticketSchema,
   /** The move's message, stored as a comment; null when it carried none. */
   comment: commentSchema.nullable(),
+  /** The questions it asked, numbered. */
+  questions: z.array(questionSchema),
 });
 export type MoveResponse = z.infer<typeof moveResponseSchema>;
 
@@ -214,10 +242,11 @@ export type MoveResponse = z.infer<typeof moveResponseSchema>;
 export const commentRequestSchema = z.object({
   body: z.string().trim().min(1).max(10_000),
   author,
+  questions,
 });
 export type CommentRequest = z.infer<typeof commentRequestSchema>;
 
-export const commentResponseSchema = z.object({ comment: commentSchema });
+export const commentResponseSchema = z.object({ comment: commentSchema, questions: z.array(questionSchema) });
 export type CommentResponse = z.infer<typeof commentResponseSchema>;
 
 // --- POST /api/tickets/:key/start ----------------------------------------------
@@ -230,6 +259,7 @@ export type CommentResponse = z.infer<typeof commentResponseSchema>;
 export const startRequestSchema = z.object({
   message: z.string().max(10_000).optional(),
   author,
+  questions,
 });
 export type StartRequest = z.infer<typeof startRequestSchema>;
 
@@ -241,6 +271,8 @@ export const startResponseSchema = z.object({
   comment: commentSchema.nullable(),
   /** The open run as it stood before it passed to another author; null when there was none, or it was this author's. */
   passedFrom: runSchema.nullable(),
+  /** The questions it asked, numbered. */
+  questions: z.array(questionSchema),
 });
 export type StartResponse = z.infer<typeof startResponseSchema>;
 
@@ -279,6 +311,48 @@ export type OpenRunEntry = z.infer<typeof openRunEntrySchema>;
 /** Every open run across projects, stalest first (the oldest last write first). */
 export const runsResponseSchema = z.object({ runs: z.array(openRunEntrySchema) });
 export type RunsResponse = z.infer<typeof runsResponseSchema>;
+
+// --- POST /api/tickets/:key/questions/:number/answer ---------------------------
+
+/** The code of an answer to a question that is answered already, or doesn't exist. */
+export const QUESTION_NOT_OPEN = "question_not_open";
+
+export const questionParamsSchema = z.object({ key: ticketKeySchema, number: z.coerce.number().int().positive() });
+
+/** Record the owner's answer, which closes the question. */
+export const answerRequestSchema = z.object({
+  answer: z.string().trim().min(1).max(10_000),
+  author,
+});
+export type AnswerRequest = z.infer<typeof answerRequestSchema>;
+
+export const answerResponseSchema = z.object({
+  ticket: ticketSchema,
+  question: questionSchema,
+  comment: commentSchema,
+});
+export type AnswerResponse = z.infer<typeof answerResponseSchema>;
+
+// --- GET /api/questions ------------------------------------------------------------
+
+export const questionsQuerySchema = z.object({
+  /** Only this project's. */
+  project: z.string().min(1).optional(),
+});
+
+/** An open question with the ticket it was asked on. */
+export const openQuestionEntrySchema = z.object({
+  key: z.string(),
+  project: z.string(),
+  title: z.string(),
+  status: statusSchema,
+  question: questionSchema,
+});
+export type OpenQuestionEntry = z.infer<typeof openQuestionEntrySchema>;
+
+/** Every open question across projects, oldest first. */
+export const questionsResponseSchema = z.object({ questions: z.array(openQuestionEntrySchema) });
+export type QuestionsResponse = z.infer<typeof questionsResponseSchema>;
 
 // --- POST /api/sync --------------------------------------------------------------
 

@@ -240,6 +240,57 @@ describe("runs", () => {
   });
 });
 
+describe("questions", () => {
+  it("a move with two --question stores both, numbered, and show lists them", async () => {
+    const key = await ticket();
+    await run(["start", key]);
+    const moved = await run(["move", key, "ready_for_deploy", "-m", "npm run deploy", "--question", "Tabs too?", "--question", "Keep the old parser?"]);
+    expect(moved.code).toBe(0);
+    expect(moved.out).toBe(`${key}: In Progress → Ready for deploy\n${key}: asked questions 1, 2`);
+    const show = (await run(["show", key])).out;
+    expect(show).toContain("Questions (2 open, 0 answered):");
+    expect(show).toMatch(/#1 \[[^\]]+\] agent: Tabs too\?\n {4}open/);
+  });
+
+  it("answer closes one; a closed or unknown number is a usage mistake naming the open ones", async () => {
+    const key = await ticket();
+    await run(["start", key, "--question", "One?"]);
+    expect((await run(["comment", key, "-m", "more", "--question", "Two?", "--question", "Three?"])).out).toBe(
+      `${key}: comment added\n${key}: asked questions 2, 3`,
+    );
+    const answered = await run(["answer", key, "2", "-m", "Yes, both.", "--author", "owner"]);
+    expect(answered.code).toBe(0);
+    expect(answered.out).toBe(`${key}: question 2 answered`);
+    const again = await run(["answer", key, "2", "-m", "again"]);
+    expect(again.code).toBe(1);
+    expect(again.err).toBe(`brief-board: ${key} has no open question 2; open: 1, 3`);
+    expect((await run(["answer", key, "7", "-m", "x"])).err).toContain("no open question 7; open: 1, 3");
+    expect((await run(["answer", key, "1"])).code).toBe(1);
+    expect((await run(["answer", key, "first", "-m", "x"])).code).toBe(1);
+    const show = (await run(["show", key])).out;
+    expect(show).toContain("Questions (2 open, 1 answered):");
+    // Open ones first, then the answered one with its answer.
+    expect(show.indexOf("#3 [")).toBeLessThan(show.indexOf("#2 ["));
+    expect(show).toMatch(/answered by owner \[[^\]]+\]: Yes, both\./);
+    expect(show).toContain("Answered question 2: Two?");
+  });
+
+  it("questions lists open ones across projects, oldest first, and --project narrows it", async () => {
+    const first = await ticket();
+    await run(["start", first, "--question", "Asked first?"]);
+    await run(["create", "1", "--title", "Elsewhere", "--summary", "", "--project", "quiz", "--brief", "corpus/briefs/todo/01-x.md"]);
+    await run(["start", "quiz-01", "--question", "Asked second?"]);
+    const all = (await run(["questions"])).out.split("\n");
+    const a = all.findIndex((line) => line.includes("Asked first?"));
+    const b = all.findIndex((line) => line.includes("Asked second?"));
+    expect(a).toBeGreaterThanOrEqual(0);
+    expect(a).toBeLessThan(b);
+    expect(all[b]).toMatch(/^quiz-01 +#1 {3}agent, 0m ago: Asked second\?$/);
+    expect((await run(["questions", "--project", "quiz"])).out.split("\n")).toEqual([all[b]]);
+    expect((await run(["questions", "--project", "nobody"])).out).toBe("No open questions in nobody.");
+  });
+});
+
 describe("list", () => {
   it("lists this project's tickets, every project's with --all, and filters on --status", async () => {
     const key = await ticket();

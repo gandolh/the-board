@@ -3,8 +3,8 @@ import { dirname } from "node:path";
 import Database from "better-sqlite3";
 
 /**
- * The board's SQLite file. Tickets, their labels, comments, history and
- * runs. The schema is versioned with `PRAGMA user_version`: each migration
+ * The board's SQLite file. Tickets, their labels, comments, history, runs
+ * and questions. The schema is versioned with `PRAGMA user_version`: each migration
  * runs once, in order, inside a transaction, and bumps the version.
  *
  * A ticket's key is its primary key, in canonical form (`atrium-03`), and
@@ -98,6 +98,23 @@ export const MIGRATIONS: string[] = [
   );
   CREATE UNIQUE INDEX runs_one_open ON runs (ticket_key) WHERE ended_at IS NULL;
   CREATE INDEX runs_by_ticket ON runs (ticket_key, id);
+  `,
+  // 2026-11-06: questions for the owner, numbered per ticket, open until answered.
+  `
+  CREATE TABLE questions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ticket_key TEXT NOT NULL REFERENCES tickets(key) ON DELETE CASCADE,
+    number INTEGER NOT NULL,
+    text TEXT NOT NULL,
+    author TEXT NOT NULL,
+    asked_at TEXT NOT NULL,
+    answer TEXT,
+    answered_by TEXT,
+    answered_at TEXT,
+    UNIQUE (ticket_key, number),
+    CHECK ((answered_at IS NULL) = (answer IS NULL))
+  );
+  CREATE INDEX questions_open ON questions (answered_at, asked_at);
   `,
 ];
 

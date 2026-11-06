@@ -291,6 +291,15 @@ main {
   color: var(--warn);
 }
 
+.badge-questions {
+  padding: 0 6px;
+  border-radius: 3px;
+  font-size: 12px;
+  font-weight: 650;
+  background: var(--accent);
+  color: var(--surface);
+}
+
 .card-foot {
   display: flex;
   flex-wrap: wrap;
@@ -473,6 +482,15 @@ main {
   font-weight: 650;
   color: var(--role);
   background: color-mix(in srgb, var(--role) 14%, transparent);
+}
+
+.question-open { --role: var(--accent); }
+.question-answered { --role: var(--done); }
+
+.answer {
+  margin-top: 6px;
+  padding-left: 10px;
+  border-left: 2px solid var(--line);
 }
 
 .role-block_reason { --role: var(--blocked); }

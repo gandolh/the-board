@@ -3,11 +3,15 @@ import { existsSync } from "node:fs";
 import fastifyStatic from "@fastify/static";
 import Fastify, { type FastifyInstance, type FastifyReply } from "fastify";
 import {
+  answerRequestSchema,
   boardQuerySchema,
   commentRequestSchema,
   moveRequestSchema,
   NO_OPEN_RUN,
   parseKey,
+  QUESTION_NOT_OPEN,
+  questionParamsSchema,
+  questionsQuerySchema,
   releaseRequestSchema,
   startRequestSchema,
   STATUS_LABELS,
@@ -16,12 +20,14 @@ import {
   ticketParamsSchema,
   UNAUTHORIZED,
   upsertTicketRequestSchema,
+  type AnswerResponse,
   type BoardResponse,
   type CommentResponse,
   type ErrorBody,
   type HealthResponse,
   type MoveCheck,
   type MoveResponse,
+  type QuestionsResponse,
   type ReleaseResponse,
   type RunsResponse,
   type StartResponse,
@@ -258,6 +264,13 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     return body;
   });
 
+  app.get("/api/questions", async (request, reply) => {
+    const query = parse(questionsQuerySchema, request.query, reply);
+    if (!query) return reply;
+    const body: QuestionsResponse = { questions: store.openQuestions(query.project) };
+    return body;
+  });
+
   /** The key from the URL, canonical, or a 400. */
   function keyOf(params: unknown, reply: FastifyReply): string | undefined {
     const parsed = ticketParamsSchema.safeParse(params);
@@ -302,7 +315,13 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     if (!key) return reply;
     const ticket = store.getTicket(key);
     if (!ticket) return notFound(reply, key);
-    const body: TicketDetailResponse = { ticket, comments: store.comments(key), history: store.history(key), runs: store.runs(key) };
+    const body: TicketDetailResponse = {
+      ticket,
+      comments: store.comments(key),
+      history: store.history(key),
+      runs: store.runs(key),
+      questions: store.questions(key),
+    };
     return body;
   });
 
@@ -351,10 +370,10 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     const move = parse(moveRequestSchema, request.body, reply);
     if (!move) return reply;
     if (store.getTicket(key)?.status === "backlog") return syncOwned(reply, key, "moves it");
-    const result = store.move(key, move.to, move.message, move.author ?? DEFAULT_AUTHOR);
+    const result = store.move(key, move.to, move.message, move.author ?? DEFAULT_AUTHOR, move.questions);
     if (!result) return notFound(reply, key);
     if (!result.ok) return refused(reply, key, move.to, result.check);
-    const body: MoveResponse = { ticket: result.ticket, comment: result.comment };
+    const body: MoveResponse = { ticket: result.ticket, comment: result.comment, questions: result.questions };
     return body;
   });
 
@@ -364,10 +383,16 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     const fields = parse(startRequestSchema, request.body, reply);
     if (!fields) return reply;
     if (store.getTicket(key)?.status === "backlog") return syncOwned(reply, key, "moves it");
-    const result = store.start(key, fields.message, fields.author ?? DEFAULT_AUTHOR);
+    const result = store.start(key, fields.message, fields.author ?? DEFAULT_AUTHOR, fields.questions);
     if (!result) return notFound(reply, key);
     if (!result.ok) return refused(reply, key, "in_progress", result.check);
-    const body: StartResponse = { ticket: result.ticket, resumed: result.resumed, comment: result.comment, passedFrom: result.passedFrom };
+    const body: StartResponse = {
+      ticket: result.ticket,
+      resumed: result.resumed,
+      comment: result.comment,
+      passedFrom: result.passedFrom,
+      questions: result.questions,
+    };
     return body;
   });
 
@@ -394,12 +419,31 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     const ticket = store.getTicket(key);
     if (!ticket) return notFound(reply, key);
     if (ticket.status === "backlog") return syncOwned(reply, key, "writes on it");
-    const comment = db.transaction(() => {
+    const author = fields.author ?? DEFAULT_AUTHOR;
+    const body: CommentResponse = db.transaction(() => {
       store.touchRun(key);
-      return store.addComment(key, { author: fields.author ?? DEFAULT_AUTHOR, body: fields.body, role: null, move: null });
+      const comment = store.addComment(key, { author, body: fields.body, role: null, move: null });
+      return { comment, questions: store.ask(key, fields.questions, author) };
     })();
-    const body: CommentResponse = { comment };
     return reply.status(201).send(body);
+  });
+
+  app.post("/api/tickets/:key/questions/:number/answer", async (request, reply) => {
+    const params = questionParamsSchema.safeParse(request.params);
+    if (!params.success) {
+      return fail(reply, 400, { code: "invalid_key", message: "answer a question as /api/tickets/<key>/questions/<number>/answer" });
+    }
+    const { key, number } = params.data;
+    const fields = parse(answerRequestSchema, request.body, reply);
+    if (!fields) return reply;
+    if (!store.getTicket(key)) return notFound(reply, key);
+    const result = store.answer(key, number, fields.answer, fields.author ?? DEFAULT_AUTHOR);
+    if (!result.ok) {
+      const open = result.open.length ? `open: ${result.open.join(", ")}` : "it has no open questions";
+      return fail(reply, 400, { code: QUESTION_NOT_OPEN, message: `${key} has no open question ${number}; ${open}` });
+    }
+    const body: AnswerResponse = { ticket: result.ticket, question: result.question, comment: result.comment };
+    return body;
   });
 
   app.post("/api/sync", { bodyLimit: 10 * 1024 * 1024 }, async (request, reply) => {

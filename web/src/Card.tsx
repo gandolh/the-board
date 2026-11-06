@@ -6,7 +6,8 @@ import { since, when } from "./time";
  * One ticket on the board: key, title, labels, and how long it has sat in its
  * column. A todo's card shows its slug where a brief's shows its key: the lane
  * already names the project. An In Progress card shows its run, or says it
- * has none.
+ * has none. A card with open questions for the owner shows how many, in any
+ * column.
  */
 export function Card({ ticket, now, onOpen }: { ticket: Ticket; now: Date; onOpen: (key: string) => void }) {
   const todo = ticket.number === null ? parseTodoKey(ticket.key) : null;
@@ -17,6 +18,7 @@ export function Card({ ticket, now, onOpen }: { ticket: Ticket; now: Date; onOpe
       <span className="card-title">{ticket.title}</span>
       {run && <span className={`card-run${run.stale ? " card-run-stale" : ""}`}>{run.text}</span>}
       <span className="card-foot">
+        {ticket.openQuestions > 0 && <QuestionBadge count={ticket.openQuestions} />}
         {ticket.tags.map((tag) => (
           <span key={tag} className="tag">
             {tag}
@@ -27,5 +29,15 @@ export function Card({ ticket, now, onOpen }: { ticket: Ticket; now: Date; onOpe
         </span>
       </span>
     </button>
+  );
+}
+
+/** "2 questions": open questions waiting for the owner's answer. */
+function QuestionBadge({ count }: { count: number }) {
+  const text = `${count} ${count === 1 ? "question" : "questions"}`;
+  return (
+    <span className="badge-questions" title={`${text} for the owner`}>
+      {text}
+    </span>
   );
 }

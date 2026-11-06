@@ -5,7 +5,9 @@ import {
   type Lane,
   type MessageRole,
   type MoveCheck,
+  type OpenQuestionEntry,
   type OpenRunEntry,
+  type Question,
   type Run,
   type RunEnding,
   type Status,
@@ -15,7 +17,7 @@ import {
 import type { Db } from "./db.js";
 
 /**
- * Reads and writes for tickets, comments, history and runs. Every write
+ * Reads and writes for tickets, comments, history, runs and questions. Every write
  * that touches more than one row runs in a transaction. Only `sync.ts` changes
  * a status without the move table.
  *
@@ -64,6 +66,17 @@ interface RunRow {
   ended_status: Status | null;
 }
 
+interface QuestionRow {
+  ticket_key: string;
+  number: number;
+  text: string;
+  author: string;
+  asked_at: string;
+  answer: string | null;
+  answered_by: string | null;
+  answered_at: string | null;
+}
+
 interface HistoryRow {
   from_status: Status | null;
   to_status: Status;
@@ -107,7 +120,86 @@ export class Store {
       updatedAt: row.updated_at,
       statusChangedAt: row.status_changed_at,
       run: this.latestRun(row.key),
+      openQuestions: (
+        this.db.prepare("SELECT COUNT(*) AS n FROM questions WHERE ticket_key = ? AND answered_at IS NULL").get(row.key) as { n: number }
+      ).n,
     };
+  }
+
+  private toQuestion(row: QuestionRow): Question {
+    return {
+      number: row.number,
+      text: row.text,
+      author: row.author,
+      askedAt: row.asked_at,
+      answer: row.answer,
+      answeredBy: row.answered_by,
+      answeredAt: row.answered_at,
+    };
+  }
+
+  /** Every question on the ticket, by number. */
+  questions(key: string): Question[] {
+    return (this.db.prepare("SELECT * FROM questions WHERE ticket_key = ? ORDER BY number").all(key) as QuestionRow[]).map((row) =>
+      this.toQuestion(row),
+    );
+  }
+
+  /** Every open question across projects, or one project's, oldest first. */
+  openQuestions(project?: string): OpenQuestionEntry[] {
+    const rows = this.db
+      .prepare(
+        `SELECT q.*, t.project, t.title, t.status FROM questions q JOIN tickets t ON t.key = q.ticket_key
+         WHERE q.answered_at IS NULL AND (@project IS NULL OR t.project = @project)
+         ORDER BY q.asked_at, q.id`,
+      )
+      .all({ project: project ?? null }) as (QuestionRow & { project: string; title: string; status: Status })[];
+    return rows.map((row) => ({ key: row.ticket_key, project: row.project, title: row.title, status: row.status, question: this.toQuestion(row) }));
+  }
+
+  /** Ask questions on the ticket, numbered on from its last. */
+  ask(key: string, texts: readonly string[] | undefined, author: string): Question[] {
+    if (!texts?.length) return [];
+    const at = this.now();
+    const last = (this.db.prepare("SELECT MAX(number) AS n FROM questions WHERE ticket_key = ?").get(key) as { n: number | null }).n ?? 0;
+    const insert = this.db.prepare("INSERT INTO questions (ticket_key, number, text, author, asked_at) VALUES (?, ?, ?, ?, ?)");
+    return texts.map((text, index) => {
+      const number = last + index + 1;
+      insert.run(key, number, text.trim(), author, at);
+      return { number, text: text.trim(), author, askedAt: at, answer: null, answeredBy: null, answeredAt: null };
+    });
+  }
+
+  /**
+   * Close question `number` with the owner's answer, and say so in a comment.
+   * When it isn't open (answered already, or no such number), the numbers of
+   * the ones that are.
+   */
+  answer(
+    key: string,
+    number: number,
+    answer: string,
+    author: string,
+  ): { ok: true; ticket: Ticket; question: Question; comment: Comment } | { ok: false; open: number[] } {
+    return this.db.transaction(() => {
+      const at = this.now();
+      const updated = this.db
+        .prepare("UPDATE questions SET answer = ?, answered_by = ?, answered_at = ? WHERE ticket_key = ? AND number = ? AND answered_at IS NULL")
+        .run(answer.trim(), author, at, key, number);
+      if (updated.changes === 0) {
+        const open = this.questions(key).filter((question) => question.answeredAt === null);
+        return { ok: false as const, open: open.map((question) => question.number) };
+      }
+      this.touchRun(key);
+      const question = this.questions(key).find((candidate) => candidate.number === number)!;
+      const comment = this.addComment(key, {
+        author,
+        body: `Answered question ${number}: ${question.text}\n\n${question.answer}`,
+        role: null,
+        move: null,
+      });
+      return { ok: true as const, ticket: this.getTicket(key)!, question, comment };
+    })();
   }
 
   private toRun(row: RunRow): Run {
@@ -303,7 +395,11 @@ export class Store {
     to: Status,
     message: string | undefined,
     author: string,
-  ): { ok: true; ticket: Ticket; comment: Comment | null } | { ok: false; check: Extract<MoveCheck, { ok: false }> } | null {
+    questions?: readonly string[],
+  ):
+    | { ok: true; ticket: Ticket; comment: Comment | null; questions: Question[] }
+    | { ok: false; check: Extract<MoveCheck, { ok: false }> }
+    | null {
     return this.db.transaction(() => {
       const ticket = this.getTicket(key);
       if (!ticket) return null;
@@ -320,7 +416,8 @@ export class Store {
       const comment = body
         ? this.addComment(key, { author, body, role: check.rule.role, move: { from: ticket.status, to } })
         : null;
-      return { ok: true as const, ticket: this.getTicket(key)!, comment };
+      const asked = this.ask(key, questions, author);
+      return { ok: true as const, ticket: this.getTicket(key)!, comment, questions: asked };
     })();
   }
 
@@ -334,17 +431,18 @@ export class Store {
     key: string,
     message: string | undefined,
     author: string,
+    questions?: readonly string[],
   ):
-    | { ok: true; ticket: Ticket; resumed: boolean; comment: Comment | null; passedFrom: Run | null }
+    | { ok: true; ticket: Ticket; resumed: boolean; comment: Comment | null; passedFrom: Run | null; questions: Question[] }
     | { ok: false; check: Extract<MoveCheck, { ok: false }> }
     | null {
     return this.db.transaction(() => {
       const ticket = this.getTicket(key);
       if (!ticket) return null;
       if (ticket.status !== "in_progress") {
-        const moved = this.move(key, "in_progress", message, author);
+        const moved = this.move(key, "in_progress", message, author, questions);
         if (!moved?.ok) return moved;
-        return { ok: true as const, ticket: moved.ticket, resumed: false, comment: moved.comment, passedFrom: null };
+        return { ok: true as const, ticket: moved.ticket, resumed: false, comment: moved.comment, passedFrom: null, questions: moved.questions };
       }
       const note = message?.trim() || "Resumed in a new session.";
       const open = this.openRun(key);
@@ -360,7 +458,8 @@ export class Store {
         this.touchRun(key);
       }
       const comment = this.addComment(key, { author, body, role: null, move: null });
-      return { ok: true as const, ticket: this.getTicket(key)!, resumed: true, comment, passedFrom };
+      const asked = this.ask(key, questions, author);
+      return { ok: true as const, ticket: this.getTicket(key)!, resumed: true, comment, passedFrom, questions: asked };
     })();
   }
 

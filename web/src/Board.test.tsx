@@ -22,6 +22,7 @@ const ticket = (fields: Partial<Ticket>): Ticket => ({
   updatedAt: now.toISOString(),
   statusChangedAt: now.toISOString(),
   run: null,
+  openQuestions: 0,
   ...fields,
 });
 
@@ -98,5 +99,20 @@ describe("a card's run", () => {
     expect(runEnding(run({ ended: "moved", endedTo: "ready_for_test" }))).toBe("moved to Ready for test");
     expect(runEnding(run({ ended: "released" }))).toBe("released, unfinished");
     expect(runEnding(run({ ended: "stale" }))).toBe("stale; sync closed the ticket");
+  });
+});
+
+describe("a card's questions", () => {
+  const card = (fields: Partial<Ticket>) => renderToStaticMarkup(<Card ticket={ticket(fields)} now={now} onOpen={() => {}} />);
+
+  it("counts open questions in a badge, in every column, Done included", () => {
+    for (const status of STATUSES) {
+      expect(card({ status, openQuestions: 2 })).toContain('<span class="badge-questions" title="2 questions for the owner">2 questions</span>');
+    }
+    expect(card({ status: "done", openQuestions: 1 })).toContain(">1 question</span>");
+  });
+
+  it("shows no badge when none are open", () => {
+    expect(card({ openQuestions: 0 })).not.toContain("badge-questions");
   });
 });

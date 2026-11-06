@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { MIGRATIONS, openDatabase } from "./db.js";
 
 describe("the migrations", () => {
-  it("upgrade a board from before Backlog with every ticket, tag, comment and history row kept, and add runs", () => {
+  it("upgrade a board from before Backlog with every ticket, tag, comment and history row kept, and add runs and questions", () => {
     const dir = mkdtempSync(join(tmpdir(), "brief-board-db-"));
     const path = join(dir, "board.db");
     try {
@@ -52,6 +52,15 @@ describe("the migrations", () => {
       db.prepare("DELETE FROM tickets WHERE key = 'p-01'").run();
       expect(db.prepare("SELECT COUNT(*) AS n FROM comments").get()).toEqual({ n: 0 });
       expect(db.prepare("SELECT COUNT(*) AS n FROM runs").get()).toEqual({ n: 0 });
+      // Questions are numbered once per ticket, and an answer comes with its time.
+      db.prepare(
+        `INSERT INTO tickets (key, project, number, title, summary, summary_source, brief_path, status, hidden, created_at, updated_at, status_changed_at)
+         VALUES ('p-03', 'p', 3, 'T', '', 'sync', 'corpus/briefs/todo/03-t.md', 'todo', 0, ?, ?, ?)`,
+      ).run(at, at, at);
+      const ask = db.prepare("INSERT INTO questions (ticket_key, number, text, author, asked_at, answer, answered_at) VALUES ('p-03', ?, 'Q?', 'agent', ?, ?, ?)");
+      ask.run(1, at, null, null);
+      expect(() => ask.run(1, at, null, null)).toThrow(/UNIQUE/);
+      expect(() => ask.run(2, at, "yes", null)).toThrow(/CHECK/);
       db.close();
     } finally {
       rmSync(dir, { recursive: true, force: true });

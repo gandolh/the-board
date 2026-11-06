@@ -1,9 +1,12 @@
 import {
+  type AnswerRequest,
+  type AnswerResponse,
   type BoardResponse,
   type CommentResponse,
   type ErrorBody,
   type MoveRequest,
   type MoveResponse,
+  type QuestionsResponse,
   type ReleaseRequest,
   type ReleaseResponse,
   type RunsResponse,
@@ -106,7 +109,7 @@ export class BoardClient {
     return this.call("POST", `/api/tickets/${encodeURIComponent(key)}/moves`, body);
   }
 
-  comment(key: string, body: { body: string; author?: string }): Promise<CommentResponse> {
+  comment(key: string, body: { body: string; author?: string; questions?: string[] }): Promise<CommentResponse> {
     return this.call("POST", `/api/tickets/${encodeURIComponent(key)}/comments`, body);
   }
 
@@ -120,6 +123,14 @@ export class BoardClient {
 
   runs(): Promise<RunsResponse> {
     return this.call("GET", "/api/runs");
+  }
+
+  answer(key: string, number: number, body: AnswerRequest): Promise<AnswerResponse> {
+    return this.call("POST", `/api/tickets/${encodeURIComponent(key)}/questions/${number}/answer`, body);
+  }
+
+  questions(project?: string): Promise<QuestionsResponse> {
+    return this.call("GET", `/api/questions${project ? `?${new URLSearchParams({ project })}` : ""}`);
   }
 
   sync(body: SyncRequest): Promise<SyncResponse> {

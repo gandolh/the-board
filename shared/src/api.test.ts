@@ -1,5 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { boardQuerySchema, moveRequestSchema, openRun, runSchema, syncRequestSchema, ticketSchema, upsertTicketRequestSchema } from "./api.js";
+import {
+  boardQuerySchema,
+  commentRequestSchema,
+  moveRequestSchema,
+  openRun,
+  questionParamsSchema,
+  runSchema,
+  startRequestSchema,
+  syncRequestSchema,
+  ticketSchema,
+  upsertTicketRequestSchema,
+} from "./api.js";
 
 const now = new Date().toISOString();
 
@@ -20,6 +31,7 @@ describe("the API contract", () => {
       updatedAt: now,
       statusChangedAt: now,
       run: null,
+      openQuestions: 0,
     };
     expect(ticketSchema.parse(ticket)).toEqual(ticket);
   });
@@ -33,6 +45,14 @@ describe("the API contract", () => {
     expect(openRun({ run: runSchema.parse(moved) })).toBeNull();
     expect(openRun({ run: null })).toBeNull();
     expect(runSchema.safeParse({ ...moved, ended: "abandoned" }).success).toBe(false);
+  });
+
+  it("takes questions on a move, a comment and a start, and refuses an empty one", () => {
+    expect(moveRequestSchema.parse({ to: "done", questions: [" Tabs too? "] }).questions).toEqual(["Tabs too?"]);
+    expect(commentRequestSchema.safeParse({ body: "note", questions: [""] }).success).toBe(false);
+    expect(startRequestSchema.parse({}).questions).toBeUndefined();
+    expect(questionParamsSchema.parse({ key: "p-1", number: "2" })).toEqual({ key: "p-01", number: 2 });
+    expect(questionParamsSchema.safeParse({ key: "p-01", number: "0" }).success).toBe(false);
   });
 
   it("defaults the board to 14 days of Done", () => {
@@ -74,6 +94,7 @@ describe("the API contract", () => {
       updatedAt: now,
       statusChangedAt: now,
       run: null,
+      openQuestions: 0,
     });
     expect(ticket.number).toBeNull();
   });
