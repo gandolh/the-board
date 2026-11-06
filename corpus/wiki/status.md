@@ -78,13 +78,8 @@ from 2026-10-13. Brief numbering restarted at 01 on 2026-11-02 (see
    start. Then, as a check, a
    `--question` on a test ticket shows its badge on the live board, and
    `brief-board needs` lists today's Ready for deploy tickets.
-2. Deploy the board with Backlog (brief 06), then sync, in that order: a
-   board from before Backlog ignores the todos. From vps-deploy:
-   `node cli.ts brief-board deploy`; then, from outside a repo,
-   `brief-board sync --dry-run` and `brief-board sync`. The migration
-   rebuilds the tickets table on first start; the board keeps every ticket,
-   comment and history row. The same sync brings churchix and
-   scoala-ramna-theme on (brief 07; the CLI already infers their names).
+2. Backlog (brief 06) and nested corpora (brief 07) are deployed: the owner
+   deployed the board on 2026-11-04 and synced it since (last on 2026-11-05).
 3. For local development only: add brief-board to Ward's local seed
    (`wzd_auth`, `infrastructure/local/seed.mjs`):
    `{ slug: "brief-board", name: "brief-board", repo: "brief-board", envFiles: [".env"], dev: "http://localhost:5178/brief-board/", api: "/brief-board-api" }`
