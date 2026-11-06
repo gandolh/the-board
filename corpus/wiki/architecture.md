@@ -71,20 +71,22 @@ colon raw or as `%3A`.
 
 ## CLI
 
-`create`, `start` (a resume when the ticket is already In Progress), `move`,
-`comment`, `release`, `show`, `list`, `runs`, `sync` and `guide`. Since
-2026-11-06 `start` posts to `/api/tickets/:key/start`, which opens a run or,
-on a resume, passes the open run to the new author; the CLI warns on stderr
-when that run was fresh and someone else's. `release` ends a stopped agent's
-run without a move, and `runs` lists the open ones, stalest first. The project is `--project`,
-else the `corpus/board-name` of the nearest `corpus/` from the working
-directory up to the git root (2026-11-03, for a nested corpus such as
-churchix), else the git root's directory name; `create` looks for the brief in
-that same corpus. The author is `--author`, else `BRIEF_BOARD_AUTHOR`, else
-`agent`.
+`create`, `start`, `move`, `comment`, `release`, `answer`, `show`, `list`,
+`runs`, `questions`, `sync` and `guide`. The project is `--project`, else
+the `corpus/board-name` of the nearest `corpus/` from the working directory
+up to the git root (2026-11-03, for a nested corpus such as churchix), else
+the git root's directory name; `create` looks for the brief in that same
+corpus. The author is `--author`, else `BRIEF_BOARD_AUTHOR`, else `agent`.
 
 - `move` and `start` fetch the ticket and run the shared move check locally
   first, so an agent learns the table from the CLI before the board refuses.
+- Runs (2026-11-06): `start` posts to `/api/tickets/:key/start`, which moves
+  the ticket or, on a resume, passes the open run to the new author; the CLI
+  warns on stderr when that run was fresh and someone else's. `release` ends
+  a stopped agent's run; `runs` lists the open ones, stalest first.
+- Questions (2026-11-06): `--question`, repeatable, on `start`, `move` and
+  `comment`. `answer` checks locally that the question is open; a closed or
+  unknown number exits 1 naming the open ones.
 - A status may be given as the id, hyphenated, or the label
   (`ready_for_test`, `ready-for-test`, "Ready for test").
 - Exit codes (`cli/src/main.ts`): 0 success, 1 a usage mistake, 2 the board
@@ -92,9 +94,8 @@ that same corpus. The author is `--author`, else `BRIEF_BOARD_AUTHOR`, else
   the board is unreachable, printed as one line. A 4xx that isn't the
   contract's JSON (another service on the port) counts as unreachable.
 - `guide` prints `cli/src/guide.md` with the move table filled in from
-  `shared` at print time; a test holds it under 100 lines (80 until
-  2026-11-06, when runs and the section for a session that runs other agents
-  came in).
+  `shared` at print time; a test holds it under 110 lines (80 until runs,
+  the controller's section and the report lines came in on 2026-11-06).
 
 ## Server
 
@@ -103,23 +104,23 @@ that same corpus. The author is `--author`, else `BRIEF_BOARD_AUTHOR`, else
 `:memory:`). Author defaults to `agent`; tags are replaced on every `PUT`,
 deduplicated, and never include the project. A `PUT` that creates answers
 201. Error codes: `invalid_request`, `invalid_key`, `not_found`,
-`move_not_allowed`, `message_required`, `sync_owned` (a move, comment or
-`PUT` on a todo's ticket, 2026-11-03), `no_open_run` (a `release` with
-nothing to release, 2026-11-06), `internal`, and `unauthorized` (a 401
-from the sign-in guard, [sign-in.md](sign-in.md)). Migrations run with
-foreign keys off, because rebuilding `tickets` (copy, drop, rename, as
-SQLite changes a CHECK) would otherwise cascade the drop into every comment
-and history row; each checks the keys before it commits. Runs (2026-11-06)
-are their own table, with at most one open run per ticket held by a partial
-unique index. `Store` opens one on any move into In Progress and ends it on
-any move out; the routes for comments, `PUT` and start set its last-heard
-time, and sync's own writes don't. Stale is worked out on read from
-`BRIEF_BOARD_STALE_HOURS` (default 4). A ticket carries its latest run, open
-or ended, and the ticket detail lists all of them. A release or a stale end
-is not a status change, so it leaves no history row; the run's ending and a
-comment record it. Since 2026-11-02 the
-vendored `wardAuth` plugin is the one guard in front of every route;
-`config.ts` reads the settings.
+`move_not_allowed`, `message_required`, `sync_owned` (a write on a todo's
+ticket, 2026-11-03), `no_open_run` and `question_not_open` (2026-11-06),
+`internal`, and `unauthorized` (a 401 from the sign-in guard,
+[sign-in.md](sign-in.md)). Migrations run with foreign keys off, because
+rebuilding `tickets` (copy, drop, rename, as SQLite changes a CHECK) would
+otherwise cascade the drop into every comment and history row; each checks
+the keys before it commits. Since 2026-11-02 the vendored `wardAuth` plugin
+is the one guard in front of every route; `config.ts` reads the settings.
+
+Runs and questions (2026-11-06) are tables of their own. A ticket has at
+most one open run (a partial unique index); `Store` opens it on any move into
+In Progress and ends it on any move out, the comment, `PUT` and start routes
+set its last-heard time, and sync's writes don't. Stale is worked out on
+read from `BRIEF_BOARD_STALE_HOURS` (default 4). A release, a stale end or an
+answer is not a status change and leaves no history row; the record and a
+comment carry it. A ticket carries its latest run and its count of open
+questions; sync never touches questions.
 
 Paths (since 2026-11-02, for the sub-path on the VPS): the API is `/api/*`.
 The browser reaches it at `/brief-board-api/api/*`; Caddy strips that prefix

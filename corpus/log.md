@@ -355,3 +355,15 @@ has a section for a session that runs other agents.
 [glossary.md](wiki/glossary.md) has Run and Stale; [sync.md](wiki/sync.md)
 and [status.md](wiki/status.md) are updated. 199 tests. Not deployed: the
 server goes first, then the local CLI rebuild.
+
+## [2026-11-06] done | Brief 09, the hand-back goes on the board
+
+[Brief 09](briefs/done/09-the-hand-back-goes-on-the-board.md), `f5d0712`
+on the branch `briefs-2026-11-06`. Agents ask the owner with `--question`
+on a move, comment or start; each question is numbered on its ticket, the
+card counts the open ones in a badge in any column, `brief-board answer`
+closes one with the owner's answer, and `brief-board questions` lists the
+open ones across projects. The guide asks the end move for four report
+lines and questions as `--question`; the controller adds `Tokens:` as a
+comment when its runtime reports usage. [glossary.md](wiki/glossary.md)
+has Question. 213 tests. Not deployed; it goes with brief 08's deploy.

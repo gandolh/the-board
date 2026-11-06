@@ -87,3 +87,48 @@ for work the owner agrees to put off.
   brief-board server` from vps-deploy; rebuild the local CLI (the repo's
   README says how); a `--question` on a test ticket shows its badge on the
   live board.
+
+## Outcome
+
+Built 2026-11-06 in `f5d0712`, on the branch `briefs-2026-11-06`, after
+brief 08. Ticket brief-board-09 is in Ready for deploy.
+
+- **Asking.** `--question`, repeatable, on `start`, `move` and `comment`;
+  the CLI prints the numbers it asked ("asked questions 1, 2"). Questions
+  go in a `questions` table (migration 4), numbered per ticket from the
+  last one, in the same transaction as the move, comment or start; a
+  refused move asks nothing. `comment` still needs `-m`: the question rides
+  on the comment, as the brief says.
+- **Answering.** `brief-board answer <ticket> <n> -m "<answer>"` posts to
+  `/api/tickets/:key/questions/:n/answer`, closes the question with the
+  answer, its author and time, and adds a comment ("Answered question 2:
+  <question>" and the answer). The CLI checks locally that the question is
+  open, so a closed or unknown number exits 1 naming the open ones; the
+  server's `question_not_open` maps to the same exit if the question closes
+  in between.
+- **Reading.** `brief-board questions [--project <name>]` reads a new
+  `GET /api/questions`, oldest first. `show` prints the questions, open
+  first, each answered one with its answer.
+- **On the board.** A ticket carries `openQuestions`; the card shows "2
+  questions" in an accent badge in any column, Done included, and the panel
+  lists the questions, open first.
+- **The report.** The guide's "Finishing" asks the end move's message for
+  `Commits:`, `Checks run:`, `Checks skipped:` and `Owner steps:`, the full
+  report in the brief's outcome note, and each question as `--question`;
+  "When the owner reports back" says how to record an answer.
+- **My reading of `Tokens:`.** The agent can't know its own usage and the
+  controller can't edit the agent's end move, so the controller's section
+  tells it to add `Tokens: <count>` as a comment on the ticket when its
+  runtime reports the usage, and to leave it out otherwise.
+- **"The history and a comment say so"**, as in brief 08: an answer is not a
+  status change, so the comment and the question's own record carry it.
+- **Sync** is untouched; a test shows a ticket closed by sync and one hidden
+  by a superseded brief both keep their open questions, and a hidden
+  ticket's questions still show in `brief-board questions`.
+- The guide is 109 lines; its test's cap went to 110.
+- **Outside the file list:** `docs/architecture.md`, the wiki's
+  `architecture.md`, `web/src/Card.tsx`, `web/src/styles.css`.
+
+213 tests (from 199), typecheck and lint pass; the web build and a browser
+walk were skipped. Owner steps: [status.md](../../wiki/status.md), "Next
+(owner)" item 1, the same deploy as brief 08's.
