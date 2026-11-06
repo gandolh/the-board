@@ -324,3 +324,12 @@ candidates: run duration and tokens on the board, one needs-you list, and a
 Discord nudge from just-a-bot. ThePrimeagen's segments could not be found. No
 brief or todo written; [research-agent-runs.md](wiki/research-agent-runs.md)
 points to the new page.
+
+## [2026-11-06] decision | Briefs 10 and 11 from the hyperagent.com research
+
+The owner picked two of the three candidates: brief 10, a run shows how
+long it took (derived from brief 08's times, nothing stored), with a
+`Tokens:` report line added to brief 09's guide step; and brief 11, one
+derived list of what needs the owner (open questions, Blocked, stale runs,
+Ready for test and deploy) as `brief-board needs` and a strip on the board.
+The Discord nudge from just-a-bot wasn't picked.

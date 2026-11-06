@@ -138,6 +138,10 @@ stays read-only, sync stays by hand, no new column, and runs are a record.
    silence while all is fine (a build plus a read token, light enough for the
    VPS, and the owner's call whether pings are wanted).
 
+On 2026-11-06 the owner picked candidates 1 and 2: brief 10 (a run shows
+how long it took, plus brief 09's `Tokens:` line) and brief 11 (one list of
+what needs the owner). Candidate 3 wasn't picked.
+
 ## Not for us
 
 - Running the estate's briefs on Hyperagent itself. Its sandboxes can't reach

@@ -45,7 +45,9 @@ for work the owner agrees to put off.
    first, each answered one with its answer. The UI stays read-only.
 5. **The report, in the guide.** "Finishing" asks the end move's message
    for four fixed lines, `Commits:`, `Checks run:`, `Checks skipped:`,
-   `Owner steps:`, with the full report kept in the brief's outcome note in
+   `Owner steps:`, and a fifth, `Tokens:`, which the controller fills when
+   its runtime reports the agent's usage and leaves out otherwise (added
+   2026-11-06 from the hyperagent.com research, candidate 1), with the full report kept in the brief's outcome note in
    the repo, and each question for the owner as a `--question`, not as
    prose in the message.
 6. **The server.** A questions table beside comments, migrated like the
@@ -78,7 +80,7 @@ for work the owner agrees to put off.
   closes one, refuses a closed or unknown number with exit 1 and names the
   open ones; `questions` lists open ones across projects, oldest first, and
   `--project` narrows it; the badge counts open questions in every column;
-  sync leaves them alone; the guide test covers the four report lines and
+  sync leaves them alone; the guide test covers the report lines and
   `--question`.
 - `npm test` and the typecheck pass.
 - **Owner steps:** `node cli.ts brief-board deploy` and `node cli.ts
