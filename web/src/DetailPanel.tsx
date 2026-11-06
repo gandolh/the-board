@@ -1,9 +1,10 @@
 import { Dialog } from "@base-ui/react/dialog";
 import { useEffect, useRef, useState } from "react";
 import Markdown from "react-markdown";
-import { STATUS_LABELS, type TicketDetailResponse } from "@brief-board/shared";
+import { openRun, STATUS_LABELS, type TicketDetailResponse } from "@brief-board/shared";
 import { fetchTicket } from "./api";
 import { ROLE_LABELS } from "./labels";
+import { runEnding, runLine } from "./runs";
 import { when } from "./time";
 
 /**
@@ -37,6 +38,9 @@ export function DetailPanel({ ticketKey, refreshedAt, onClose }: { ticketKey: st
   }, [ticketKey, refreshedAt]);
 
   const shown = detail?.ticket.key === ticketKey ? detail : null;
+  const open = shown ? openRun(shown.ticket) : null;
+  const run = shown && (open || shown.ticket.status === "in_progress") ? runLine(open, refreshedAt ?? new Date()) : null;
+  const ended = shown?.runs.filter((candidate) => candidate.endedAt !== null) ?? [];
 
   return (
     <Dialog.Root
@@ -71,6 +75,12 @@ export function DetailPanel({ ticketKey, refreshedAt, onClose }: { ticketKey: st
                   <span className={`status status-${shown.ticket.status}`}>{STATUS_LABELS[shown.ticket.status]}</span>
                   {shown.ticket.hidden && <span className="muted"> · hidden (superseded)</span>}
                 </dd>
+                {run && (
+                  <>
+                    <dt>Run</dt>
+                    <dd className={run.stale ? "run-stale" : undefined}>{run.text}</dd>
+                  </>
+                )}
                 <dt>Project</dt>
                 <dd>{shown.ticket.project}</dd>
                 <dt>Tags</dt>
@@ -124,6 +134,24 @@ export function DetailPanel({ ticketKey, refreshedAt, onClose }: { ticketKey: st
                     </li>
                   ))}
                 </ol>
+              )}
+
+              {ended.length > 0 && (
+                <>
+                  <h3>Earlier runs</h3>
+                  <ol className="history">
+                    {ended.map((earlier) => (
+                      <li key={earlier.id}>
+                        <span>
+                          {earlier.author}: {runEnding(earlier)}
+                        </span>
+                        <span className="muted">
+                          , {when(earlier.startedAt)} to {when(earlier.endedAt!)}
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                </>
               )}
 
               <h3>History</h3>

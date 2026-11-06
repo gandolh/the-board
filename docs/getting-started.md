@@ -49,6 +49,7 @@ It serves the board on <http://127.0.0.1:8806/brief-board/> and the API under `/
 | `PORT` | `8806` | Port the server listens on |
 | `BRIEF_BOARD_DB` | `data/brief-board.sqlite` | SQLite file to use |
 | `BRIEF_BOARD_TOKEN` | unset (the CLI is shut out) | The CLI's shared token; at least 32 characters (`openssl rand -base64 32`). Every `/api` call but `/api/health` needs it or a signed-in browser |
+| `BRIEF_BOARD_STALE_HOURS` | `4` | Hours without a write on its ticket before a run reads as stale |
 | `PUBLIC_ORIGIN` | `http://localhost:5178` | The board's origin as the browser sees it; sign-in from any other is refused |
 | `WARD_OIDC_*` | unset (local accounts only) | "Sign in with Ward"; Ward's local seed writes them |
 

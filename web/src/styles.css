@@ -14,6 +14,7 @@
   --shadow: 0 1px 1px rgb(9 30 66 / 0.25), 0 0 1px rgb(9 30 66 / 0.31);
   --banner-bg: #fff7d6;
   --banner-text: #533f04;
+  --warn: #a54800;
   --backlog: #86765a;
   --todo: #8590a2;
   --in_progress: #0c66e4;
@@ -41,6 +42,7 @@
     --shadow: 0 1px 1px rgb(0 0 0 / 0.5), 0 0 1px rgb(0 0 0 / 0.5);
     --banner-bg: #332e1b;
     --banner-text: #f5cd47;
+    --warn: #fea362;
     --backlog: #bfa983;
     --todo: #8c9bab;
     --in_progress: #579dff;
@@ -276,6 +278,17 @@ main {
 
 .card-title {
   overflow-wrap: anywhere;
+}
+
+.card-run {
+  font-size: 12px;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.card-run-stale,
+.run-stale {
+  color: var(--warn);
 }
 
 .card-foot {

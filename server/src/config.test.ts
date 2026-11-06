@@ -13,7 +13,13 @@ describe("the server's settings", () => {
       ward: undefined,
       trustedProxies: [],
       token: undefined,
+      staleHours: 4,
     });
+  });
+
+  it("reads the hours before a run reads as stale, and refuses zero", () => {
+    expect(loadConfig({ BRIEF_BOARD_STALE_HOURS: "1.5" }).staleHours).toBe(1.5);
+    expect(() => loadConfig({ BRIEF_BOARD_STALE_HOURS: "0" })).toThrow(/BRIEF_BOARD_STALE_HOURS/);
   });
 
   it("treats an empty value as unset, and splits the trusted proxies", () => {

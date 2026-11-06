@@ -1,4 +1,4 @@
-import { formatKey, formatTodoKey, type SyncRequest, type SyncResponse, type SyncTodo, type Ticket } from "@brief-board/shared";
+import { formatKey, formatTodoKey, openRun, type SyncRequest, type SyncResponse, type SyncTodo, type Ticket } from "@brief-board/shared";
 import type { Store } from "./store.js";
 
 /**
@@ -14,7 +14,10 @@ import type { Store } from "./store.js";
  *   warning, because the board cannot tell which side is wrong.
  * - `done`, ticket in To Do, In Progress or Blocked: close it, with a history
  *   event and a comment saying why. Ready for test and Ready for deploy stay:
- *   the corpus cannot say whether the owner tested or deployed.
+ *   the corpus cannot say whether the owner tested or deployed. An In
+ *   Progress ticket whose run is open and fresh stays too, with a warning:
+ *   the run's end move decides. A stale run ends as `stale` and the ticket
+ *   closes, and the comment and a warning say so.
  * - `done`, no ticket: nothing. Sync does not backfill history.
  * - `superseded`, a ticket: hide it.
  * A ticket whose brief is missing from its project's payload gets a warning and
@@ -91,9 +94,20 @@ export function runSync(store: Store, request: SyncRequest): SyncResponse {
         if (changed) store.updateTicket(key, changes);
 
         if (brief.state === "done" && CLOSABLE.includes(ticket.status)) {
-          store.setStatus(key, ticket.status, "done", SYNC_AUTHOR, "sync");
-          store.addComment(key, { author: SYNC_AUTHOR, body: CLOSED_BY_SYNC, role: "conclusion", move: null });
-          changed = true;
+          const run = openRun(ticket);
+          if (run && !run.stale) {
+            result.warnings.push(`${key}: its brief is in done/, but its run by ${run.author} is open; the run's end move decides`);
+          } else {
+            let body = CLOSED_BY_SYNC;
+            if (run) {
+              store.endRun(key, "stale");
+              body += ` The run by ${run.author}, last heard ${run.lastHeardAt}, was stale and ends here.`;
+              result.warnings.push(`${key}: closed; its run by ${run.author} was stale (last heard ${run.lastHeardAt}) and ends here`);
+            }
+            store.setStatus(key, ticket.status, "done", SYNC_AUTHOR, "sync");
+            store.addComment(key, { author: SYNC_AUTHOR, body, role: "conclusion", move: null });
+            changed = true;
+          }
         }
 
         if (changed) result.updated++;

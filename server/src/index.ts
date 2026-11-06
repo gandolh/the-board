@@ -44,6 +44,7 @@ const app = await buildApp({
   webBase: config.webBase,
   ward: config.ward,
   trustedProxies: config.trustedProxies,
+  staleHours: config.staleHours,
   logger: true,
 });
 app.log.info(`database: ${dbPath}`);

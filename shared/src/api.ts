@@ -17,6 +17,37 @@ export const SUMMARY_SOURCES = ["agent", "sync"] as const;
 export const summarySourceSchema = z.enum(SUMMARY_SOURCES);
 export type SummarySource = z.infer<typeof summarySourceSchema>;
 
+/** How a run ended: its ticket moved out of In Progress, someone released it, or sync closed its ticket while it was stale. */
+export const RUN_ENDINGS = ["moved", "released", "stale"] as const;
+export const runEndingSchema = z.enum(RUN_ENDINGS);
+export type RunEnding = z.infer<typeof runEndingSchema>;
+
+/**
+ * One agent session working one ticket, from `start` to its end move or a
+ * `release`. A record, never a lock: nothing on the board hands a ticket to
+ * anyone. Every write on the ticket while the run is open sets `lastHeardAt`.
+ */
+export const runSchema = z.object({
+  id: z.number().int(),
+  author: z.string(),
+  /** The message `start` carried, if any. */
+  message: z.string().nullable(),
+  startedAt: timestamp,
+  /** The last write on the ticket while the run was open. */
+  lastHeardAt: timestamp,
+  /**
+   * Open, and not heard from for longer than the board's stale threshold.
+   * Worked out when the board is read; never stored. False once the run ends.
+   */
+  stale: z.boolean(),
+  /** Null while the run is open. */
+  endedAt: timestamp.nullable(),
+  ended: runEndingSchema.nullable(),
+  /** The column a `moved` run's ticket went to; null otherwise. */
+  endedTo: statusSchema.nullable(),
+});
+export type Run = z.infer<typeof runSchema>;
+
 /** The board's record of one brief. */
 export const ticketSchema = z.object({
   key: z.string(),
@@ -40,8 +71,15 @@ export const ticketSchema = z.object({
   createdAt: timestamp,
   updatedAt: timestamp,
   statusChangedAt: timestamp,
+  /** The ticket's latest run, open or ended; null if none ever started. */
+  run: runSchema.nullable(),
 });
 export type Ticket = z.infer<typeof ticketSchema>;
+
+/** The ticket's run if it is still open. */
+export function openRun(ticket: Pick<Ticket, "run">): Run | null {
+  return ticket.run && ticket.run.endedAt === null ? ticket.run : null;
+}
 
 export const commentSchema = z.object({
   id: z.number().int(),
@@ -133,6 +171,8 @@ export const ticketDetailResponseSchema = z.object({
   ticket: ticketSchema,
   comments: z.array(commentSchema),
   history: z.array(historyEventSchema),
+  /** Every run on the ticket, oldest first. */
+  runs: z.array(runSchema),
 });
 export type TicketDetailResponse = z.infer<typeof ticketDetailResponseSchema>;
 
@@ -179,6 +219,66 @@ export type CommentRequest = z.infer<typeof commentRequestSchema>;
 
 export const commentResponseSchema = z.object({ comment: commentSchema });
 export type CommentResponse = z.infer<typeof commentResponseSchema>;
+
+// --- POST /api/tickets/:key/start ----------------------------------------------
+
+/**
+ * `brief-board start`: To Do or Blocked moves to In Progress through the
+ * table and opens a run. On a ticket already In Progress it is a resume: a
+ * comment, and the open run passes to this author (or a run opens if none is).
+ */
+export const startRequestSchema = z.object({
+  message: z.string().max(10_000).optional(),
+  author,
+});
+export type StartRequest = z.infer<typeof startRequestSchema>;
+
+export const startResponseSchema = z.object({
+  ticket: ticketSchema,
+  /** The ticket was already In Progress. */
+  resumed: z.boolean(),
+  /** The move's message or the resume note, stored as a comment. */
+  comment: commentSchema.nullable(),
+  /** The open run as it stood before it passed to another author; null when there was none, or it was this author's. */
+  passedFrom: runSchema.nullable(),
+});
+export type StartResponse = z.infer<typeof startResponseSchema>;
+
+// --- POST /api/tickets/:key/release --------------------------------------------
+
+/** The code of a `release` on a ticket with no open run. */
+export const NO_OPEN_RUN = "no_open_run";
+
+/** End a run without a move, for an agent that was stopped. The ticket stays In Progress. */
+export const releaseRequestSchema = z.object({
+  /** Why, and what the agent left running. */
+  message: z.string().trim().min(1).max(10_000),
+  author,
+});
+export type ReleaseRequest = z.infer<typeof releaseRequestSchema>;
+
+export const releaseResponseSchema = z.object({
+  ticket: ticketSchema,
+  /** The run, ended as `released`. */
+  run: runSchema,
+  comment: commentSchema,
+});
+export type ReleaseResponse = z.infer<typeof releaseResponseSchema>;
+
+// --- GET /api/runs ---------------------------------------------------------------
+
+/** An open run with the ticket it works. */
+export const openRunEntrySchema = z.object({
+  key: z.string(),
+  project: z.string(),
+  title: z.string(),
+  run: runSchema,
+});
+export type OpenRunEntry = z.infer<typeof openRunEntrySchema>;
+
+/** Every open run across projects, stalest first (the oldest last write first). */
+export const runsResponseSchema = z.object({ runs: z.array(openRunEntrySchema) });
+export type RunsResponse = z.infer<typeof runsResponseSchema>;
 
 // --- POST /api/sync --------------------------------------------------------------
 

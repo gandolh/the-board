@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { wardClientOptionsFromEnv, type WardClientOptions } from "../vendor/ward/ward-auth.js";
+import { DEFAULT_STALE_HOURS } from "./store.js";
 
 /** Where the auth plugin's routes sit as Fastify sees them; the browser reaches them under the API prefix. */
 export const AUTH_ROUTE_PREFIX = "/auth";
@@ -39,6 +40,8 @@ export interface Config {
    * and only a signed-in browser reads the board. A secret: never log it.
    */
   token: string | undefined;
+  /** `BRIEF_BOARD_STALE_HOURS`: hours without a write on its ticket before a run reads as stale. Default 4. */
+  staleHours: number;
 }
 
 /** The environment cannot run the server. The message names every variable at fault. */
@@ -74,6 +77,9 @@ const envSchema = z.object({
       message: "BRIEF_BOARD_BASE must be a path such as /brief-board/: a leading and a trailing slash.",
     }),
   ).transform((value) => value ?? "/brief-board/"),
+  BRIEF_BOARD_STALE_HOURS: optional(
+    z.coerce.number<string>().positive({ message: "BRIEF_BOARD_STALE_HOURS must be a number of hours above 0, such as 4." }),
+  ).transform((value) => value ?? DEFAULT_STALE_HOURS),
   BRIEF_BOARD_TOKEN: optional(
     z
       .string()
@@ -142,5 +148,6 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
     ward,
     trustedProxies: trustedProxies(env.AUTH_TRUSTED_PROXIES),
     token: values.BRIEF_BOARD_TOKEN,
+    staleHours: values.BRIEF_BOARD_STALE_HOURS,
   };
 }

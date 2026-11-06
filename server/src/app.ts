@@ -5,9 +5,11 @@ import Fastify, { type FastifyInstance, type FastifyReply } from "fastify";
 import {
   boardQuerySchema,
   commentRequestSchema,
-
   moveRequestSchema,
+  NO_OPEN_RUN,
   parseKey,
+  releaseRequestSchema,
+  startRequestSchema,
   STATUS_LABELS,
   SYNC_OWNED,
   syncRequestSchema,
@@ -18,7 +20,12 @@ import {
   type CommentResponse,
   type ErrorBody,
   type HealthResponse,
+  type MoveCheck,
   type MoveResponse,
+  type ReleaseResponse,
+  type RunsResponse,
+  type StartResponse,
+  type Status,
   type SyncResponse,
   type TicketDetailResponse,
   type UpsertTicketResponse,
@@ -28,7 +35,7 @@ import { createWardClient, wardAuth, type Accounts, type WardClientOptions } fro
 import { openAccounts, USER_ROLE } from "./accounts.js";
 import { AUTH_ROUTE_PREFIX } from "./config.js";
 import { openDatabase } from "./db.js";
-import { Store } from "./store.js";
+import { DEFAULT_STALE_HOURS, Store } from "./store.js";
 import { runSync } from "./sync.js";
 
 /**
@@ -90,6 +97,8 @@ export interface AppOptions {
   ward?: WardClientOptions;
   /** Peers besides loopback whose `X-Forwarded-For` the login lockout believes. Default none. */
   trustedProxies?: readonly string[];
+  /** Hours without a write on its ticket before a run reads as stale. Default 4. */
+  staleHours?: number;
   /** The clock, for tests. */
   now?: () => Date;
   logger?: boolean;
@@ -152,7 +161,7 @@ function parse<S extends z.ZodType>(schema: S, value: unknown, reply: FastifyRep
 
 export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
   const db = openDatabase(options.dbPath);
-  const store = new Store(db, options.now);
+  const store = new Store(db, options.now, (options.staleHours ?? DEFAULT_STALE_HOURS) * 60 * 60 * 1000);
   const apiPrefix = options.apiPrefix ?? API_PREFIX;
   const webBase = options.webBase ?? BOARD_PATH;
   const app = Fastify({ logger: options.logger ?? false, rewriteUrl: (request) => stripApiPrefix(request.url ?? "/", apiPrefix) });
@@ -244,6 +253,11 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     return body;
   });
 
+  app.get("/api/runs", async () => {
+    const body: RunsResponse = { runs: store.openRuns() };
+    return body;
+  });
+
   /** The key from the URL, canonical, or a 400. */
   function keyOf(params: unknown, reply: FastifyReply): string | undefined {
     const parsed = ticketParamsSchema.safeParse(params);
@@ -254,6 +268,21 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     });
     return undefined;
   }
+
+  /** A move the table refuses, with the moves the ticket may make. */
+  const refused = (reply: FastifyReply, key: string, target: Status, check: Extract<MoveCheck, { ok: false }>) => {
+    const from = STATUS_LABELS[store.getTicket(key)!.status];
+    const to = STATUS_LABELS[target];
+    const rule = check.allowed.find((candidate) => candidate.to === target);
+    return fail(reply, 400, {
+      code: check.code,
+      message:
+        check.code === "message_required"
+          ? `${from} → ${to} needs a message (${rule?.role.replace("_", " ") ?? "message"})`
+          : `${key} cannot go from ${from} to ${to}`,
+      allowed: check.allowed,
+    });
+  };
 
   const notFound = (reply: FastifyReply, key: string) =>
     fail(reply, 404, { code: "not_found", message: `no ticket ${key}; file a brief, then sync or PUT it` });
@@ -273,7 +302,7 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     if (!key) return reply;
     const ticket = store.getTicket(key);
     if (!ticket) return notFound(reply, key);
-    const body: TicketDetailResponse = { ticket, comments: store.comments(key), history: store.history(key) };
+    const body: TicketDetailResponse = { ticket, comments: store.comments(key), history: store.history(key), runs: store.runs(key) };
     return body;
   });
 
@@ -309,6 +338,7 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
         });
       }
       store.setTags(key, project, fields.tags);
+      store.touchRun(key);
       return !existing;
     })();
     const body: UpsertTicketResponse = { created, ticket: store.getTicket(key)! };
@@ -323,21 +353,36 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     if (store.getTicket(key)?.status === "backlog") return syncOwned(reply, key, "moves it");
     const result = store.move(key, move.to, move.message, move.author ?? DEFAULT_AUTHOR);
     if (!result) return notFound(reply, key);
-    if (!result.ok) {
-      const ticket = store.getTicket(key)!;
-      const from = STATUS_LABELS[ticket.status];
-      const to = STATUS_LABELS[move.to];
-      const rule = result.check.allowed.find((candidate) => candidate.to === move.to);
-      return fail(reply, 400, {
-        code: result.check.code,
-        message:
-          result.check.code === "message_required"
-            ? `${from} → ${to} needs a message (${rule?.role.replace("_", " ") ?? "message"})`
-            : `${key} cannot go from ${from} to ${to}`,
-        allowed: result.check.allowed,
-      });
-    }
+    if (!result.ok) return refused(reply, key, move.to, result.check);
     const body: MoveResponse = { ticket: result.ticket, comment: result.comment };
+    return body;
+  });
+
+  app.post("/api/tickets/:key/start", async (request, reply) => {
+    const key = keyOf(request.params, reply);
+    if (!key) return reply;
+    const fields = parse(startRequestSchema, request.body, reply);
+    if (!fields) return reply;
+    if (store.getTicket(key)?.status === "backlog") return syncOwned(reply, key, "moves it");
+    const result = store.start(key, fields.message, fields.author ?? DEFAULT_AUTHOR);
+    if (!result) return notFound(reply, key);
+    if (!result.ok) return refused(reply, key, "in_progress", result.check);
+    const body: StartResponse = { ticket: result.ticket, resumed: result.resumed, comment: result.comment, passedFrom: result.passedFrom };
+    return body;
+  });
+
+  app.post("/api/tickets/:key/release", async (request, reply) => {
+    const key = keyOf(request.params, reply);
+    if (!key) return reply;
+    const fields = parse(releaseRequestSchema, request.body, reply);
+    if (!fields) return reply;
+    const ticket = store.getTicket(key);
+    if (!ticket) return notFound(reply, key);
+    const result = store.release(key, fields.message, fields.author ?? DEFAULT_AUTHOR);
+    if (!result) {
+      return fail(reply, 400, { code: NO_OPEN_RUN, message: `${key} has no open run to release (it is ${STATUS_LABELS[ticket.status]})` });
+    }
+    const body: ReleaseResponse = result;
     return body;
   });
 
@@ -349,12 +394,10 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     const ticket = store.getTicket(key);
     if (!ticket) return notFound(reply, key);
     if (ticket.status === "backlog") return syncOwned(reply, key, "writes on it");
-    const comment = store.addComment(key, {
-      author: fields.author ?? DEFAULT_AUTHOR,
-      body: fields.body,
-      role: null,
-      move: null,
-    });
+    const comment = db.transaction(() => {
+      store.touchRun(key);
+      return store.addComment(key, { author: fields.author ?? DEFAULT_AUTHOR, body: fields.body, role: null, move: null });
+    })();
     const body: CommentResponse = { comment };
     return reply.status(201).send(body);
   });

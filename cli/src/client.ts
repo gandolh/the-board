@@ -4,6 +4,11 @@ import {
   type ErrorBody,
   type MoveRequest,
   type MoveResponse,
+  type ReleaseRequest,
+  type ReleaseResponse,
+  type RunsResponse,
+  type StartRequest,
+  type StartResponse,
   type SyncRequest,
   type SyncResponse,
   type TicketDetailResponse,
@@ -103,6 +108,18 @@ export class BoardClient {
 
   comment(key: string, body: { body: string; author?: string }): Promise<CommentResponse> {
     return this.call("POST", `/api/tickets/${encodeURIComponent(key)}/comments`, body);
+  }
+
+  start(key: string, body: StartRequest): Promise<StartResponse> {
+    return this.call("POST", `/api/tickets/${encodeURIComponent(key)}/start`, body);
+  }
+
+  release(key: string, body: ReleaseRequest): Promise<ReleaseResponse> {
+    return this.call("POST", `/api/tickets/${encodeURIComponent(key)}/release`, body);
+  }
+
+  runs(): Promise<RunsResponse> {
+    return this.call("GET", "/api/runs");
   }
 
   sync(body: SyncRequest): Promise<SyncResponse> {

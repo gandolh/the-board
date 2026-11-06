@@ -5,8 +5,8 @@ import Database from "better-sqlite3";
 import { describe, expect, it } from "vitest";
 import { MIGRATIONS, openDatabase } from "./db.js";
 
-describe("the Backlog migration", () => {
-  it("upgrades a board from before it with every ticket, tag, comment and history row kept", () => {
+describe("the migrations", () => {
+  it("upgrade a board from before Backlog with every ticket, tag, comment and history row kept, and add runs", () => {
     const dir = mkdtempSync(join(tmpdir(), "brief-board-db-"));
     const path = join(dir, "board.db");
     try {
@@ -42,9 +42,16 @@ describe("the Backlog migration", () => {
       insert.run("p:a", null, "backlog", at, at, at);
       expect(() => insert.run("p:b", null, "todo", at, at, at)).toThrow(/CHECK/);
       expect(() => insert.run("p-02", 2, "backlog", at, at, at)).toThrow(/CHECK/);
+      // A ticket holds at most one open run, and any number of ended ones.
+      const run = db.prepare("INSERT INTO runs (ticket_key, author, started_at, last_heard_at, ended_at, ended) VALUES ('p-01', 'agent', ?, ?, ?, ?)");
+      run.run(at, at, at, "moved");
+      run.run(at, at, null, null);
+      expect(() => run.run(at, at, null, null)).toThrow(/UNIQUE/);
+      expect(() => run.run(at, at, at, null)).toThrow(/CHECK/);
       // And the children still cascade from the rebuilt table.
       db.prepare("DELETE FROM tickets WHERE key = 'p-01'").run();
       expect(db.prepare("SELECT COUNT(*) AS n FROM comments").get()).toEqual({ n: 0 });
+      expect(db.prepare("SELECT COUNT(*) AS n FROM runs").get()).toEqual({ n: 0 });
       db.close();
     } finally {
       rmSync(dir, { recursive: true, force: true });

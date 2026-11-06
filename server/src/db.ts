@@ -3,8 +3,8 @@ import { dirname } from "node:path";
 import Database from "better-sqlite3";
 
 /**
- * The board's SQLite file. Tickets, their labels, comments and
- * history. The schema is versioned with `PRAGMA user_version`: each migration
+ * The board's SQLite file. Tickets, their labels, comments, history and
+ * runs. The schema is versioned with `PRAGMA user_version`: each migration
  * runs once, in order, inside a transaction, and bumps the version.
  *
  * A ticket's key is its primary key, in canonical form (`atrium-03`), and
@@ -80,6 +80,24 @@ export const MIGRATIONS: string[] = [
     SELECT key, project, number, title, summary, summary_source, brief_path, status, hidden, created_at, updated_at, status_changed_at FROM tickets;
   DROP TABLE tickets;
   ALTER TABLE tickets_new RENAME TO tickets;
+  `,
+  // 2026-11-06: runs. One agent session working one ticket, at most one open
+  // per ticket. Whether a run is stale is worked out on read, never stored.
+  `
+  CREATE TABLE runs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ticket_key TEXT NOT NULL REFERENCES tickets(key) ON DELETE CASCADE,
+    author TEXT NOT NULL,
+    message TEXT,
+    started_at TEXT NOT NULL,
+    last_heard_at TEXT NOT NULL,
+    ended_at TEXT,
+    ended TEXT CHECK (ended IN ('moved', 'released', 'stale')),
+    ended_status TEXT,
+    CHECK ((ended_at IS NULL) = (ended IS NULL))
+  );
+  CREATE UNIQUE INDEX runs_one_open ON runs (ticket_key) WHERE ended_at IS NULL;
+  CREATE INDEX runs_by_ticket ON runs (ticket_key, id);
   `,
 ];
 

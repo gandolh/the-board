@@ -21,9 +21,9 @@ flowchart LR
 
 1. A brief is filed in some project's `corpus/briefs/todo/`.
 2. `brief-board sync` (or `brief-board create`) makes a To Do ticket with the brief's title and first paragraph.
-3. The agent runs `brief-board start <n>` when work begins.
-4. It ends with `move <n> done`, or `ready_for_test` / `ready_for_deploy` with a note when the owner has a step left, or `blocked` with a reason.
-5. The brief file moving to `done/` stays the record; sync makes the board agree with it.
+3. The agent runs `brief-board start <n>` when work begins. That opens a run on the ticket, which every write the agent makes keeps fresh; after 4 hours with none it reads as stale. A session that stops an agent ends its run with `brief-board release`, and `brief-board runs` lists the open ones.
+4. It ends with `move <n> done`, or `ready_for_test` / `ready_for_deploy` with a note when the owner has a step left, or `blocked` with a reason. Any move out of In Progress ends the run.
+5. The brief file moving to `done/` stays the record; sync makes the board agree with it, except that it leaves an In Progress ticket whose run is still fresh for that run's end move.
 
 Before a brief there may be a todo. Each open todo in `corpus/todos/` has a ticket in Backlog, keyed `<project>:<slug>`, which only sync makes, keeps and removes: no agent moves or comments on it. Promoting the todo deletes its file, so the next sync takes that ticket off and files the brief's in To Do.
 

@@ -20,9 +20,10 @@ describe("the guide", () => {
       "## 4. Blocking",
       "## 5. Finishing",
       "## 6. When the owner reports back",
-      "## 7. When the board is down",
-      "## 8. Hard rules",
-      "## 9. The moves",
+      "## 7. Running other agents",
+      "## 8. When the board is down",
+      "## 9. Hard rules",
+      "## 10. The moves",
     ]) {
       expect(guide).toContain(topic);
     }
@@ -37,7 +38,30 @@ describe("the guide", () => {
     expect(guide).toContain("A corpus whose folder name isn't\nits board name puts the name alone in corpus/board-name.");
   });
 
+  it("puts the end move before the brief goes to done/, and says why", () => {
+    const finishing = guide.slice(guide.indexOf("## 5. Finishing"), guide.indexOf("## 6."));
+    expect(finishing).toContain("Make the end move before you move the brief to done/ and before the commit\nthat moves it");
+    expect(finishing).toContain("a sync in between closes the ticket under you");
+  });
+
+  it("says start opens a run, what keeps it fresh, and how to run a dev server", () => {
+    const starting = guide.slice(guide.indexOf("## 3."), guide.indexOf("## 4."));
+    expect(starting).toContain("Start opens a run");
+    expect(starting).toContain("after 4 hours with none it reads as stale");
+    expect(starting).toContain("never with & or nohup");
+    expect(starting).toContain("Stop\nwhat you started before your end move.");
+  });
+
+  it("tells a session that runs agents to name them, check runs before a sync, and release a stopped agent's run", () => {
+    const controller = guide.slice(guide.indexOf("## 7. Running other agents"), guide.indexOf("## 8."));
+    expect(controller).toContain("Give each agent a name to pass as --author");
+    expect(controller).toContain("Before a sync the owner asks for, run `brief-board runs`");
+    expect(controller).toContain("first ask it to wind down");
+    expect(controller).toContain('brief-board release <ticket> -m "<why, and what it left running>"');
+  });
+
   it("stays short enough to read before every brief", () => {
-    expect(guide.split("\n").length).toBeLessThanOrEqual(80);
+    // 80 until runs and the section for a session that runs other agents.
+    expect(guide.split("\n").length).toBeLessThanOrEqual(100);
   });
 });

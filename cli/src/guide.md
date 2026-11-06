@@ -23,8 +23,14 @@ what the brief does and why. Add --tag <label> for labels.
 ## 3. Starting or resuming
 If the owner named a ticket, run `brief-board show <ticket>` first and read
 every comment before you do anything. Earlier sessions and the owner's answers
-are there. Then run `brief-board start <ticket>`. On a ticket already In
-Progress, start records the resume; add -m "<what you pick up>" if it helps.
+are there. Then run `brief-board start <ticket>`. Start opens a run, the
+board's record that you work the ticket; each start, comment and move keeps it
+fresh, and after 4 hours with none it reads as stale. On a ticket already In
+Progress, start records the resume and the run passes to you; add
+-m "<what you pick up>" if it helps.
+Start a long-lived process, such as a dev server, as your runtime's background
+task, so /tasks shows it with its command line, never with & or nohup. Stop
+what you started before your end move.
 
 ## 4. Blocking
 Ask the owner before you block. Most questions get answered in the session;
@@ -33,7 +39,8 @@ put the work off to another session:
   brief-board move <ticket> blocked -m "<what the owner must do or decide>"
 
 ## 5. Finishing
-Pick one column:
+Make the end move before you move the brief to done/ and before the commit
+that moves it: a sync in between closes the ticket under you. Pick one column:
 - The owner needs to try it: move to ready_for_test with test notes. Say what
   to try and where: the URL, the command, which account. Never a password.
 - It is finished but needs a deploy: move to ready_for_deploy with deploy
@@ -53,17 +60,28 @@ Pick one column:
 - On a Blocked ticket, "I did X": start it with -m saying what the owner did,
   or move it to done with a confirmation if nothing is left to do.
 
-## 7. When the board is down
+## 7. Running other agents
+For a session that starts agents and waits on them:
+- Give each agent a name to pass as --author on every board command.
+- Before a sync the owner asks for, run `brief-board runs` and tell the owner
+  which runs are open.
+- To stop an agent, first ask it to wind down if your runtime lets you message
+  it: stop what it started, release its run, hand back. Otherwise stop it and
+  release its run yourself, naming what it left running (a port, a container):
+  brief-board release <ticket> -m "<why, and what it left running>"
+  The ticket stays In Progress for the owner to decide.
+
+## 8. When the board is down
 A command printing "the board isn't reachable" or "the board refused the token"
 exits 3. Tell the owner once, make no more board calls this session, and carry
 on. Moves made while it is down are lost; sync restores what the corpus knows.
 
-## 8. Hard rules
+## 9. Hard rules
 - Never write a path to brief-board into any repo. Repos name the command only.
 - Never put a secret in a message. Name a secret by its file and key.
 - Don't run `brief-board sync` unless the owner asks.
 - Don't touch another project's tickets unless the owner asks.
 
-## 9. The moves
+## 10. The moves
 Any move not listed is refused. A move marked "required" needs -m "<message>".
 {{moves}}

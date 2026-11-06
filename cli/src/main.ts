@@ -3,6 +3,7 @@ import { create } from "./commands/create.js";
 import { guide } from "./commands/guide.js";
 import { comment, move, start } from "./commands/moves.js";
 import { list, show } from "./commands/read.js";
+import { release, runs } from "./commands/runs.js";
 import { sync } from "./commands/sync.js";
 import { TokenRefused } from "./client.js";
 import type { Context } from "./context.js";
@@ -20,11 +21,13 @@ import { Runtime } from "./runtime.js";
 const USAGE = `brief-board: track corpus briefs on the board.
 
   create <number> --title <t> --summary <s> [--tag <label>]... [--brief <path>]
-  start <ticket> [-m <message>]       To Do or Blocked to In Progress; resumes one already In Progress
+  start <ticket> [-m <message>]       To Do or Blocked to In Progress, opening a run; resumes one already In Progress
   move <ticket> <status> [-m <message>]
   comment <ticket> -m <message>
+  release <ticket> -m <message>       end the run of an agent that was stopped; the ticket stays In Progress
   show <ticket>
   list [--status <status>] [--all]
+  runs                                 every open run across projects, stalest first
   sync                                 read every project's briefs into the board
   guide                                the rules for using the board
 
@@ -34,7 +37,7 @@ every write takes --author <name> (default: $BRIEF_BOARD_AUTHOR, else "agent").`
 
 type Command = (rt: Runtime, args: string[], packageRoot: URL) => Promise<void>;
 
-const COMMANDS: Record<string, Command> = { create, start, move, comment, show, list, sync, guide };
+const COMMANDS: Record<string, Command> = { create, start, move, comment, release, show, list, runs, sync, guide };
 
 /** Run one invocation and return its exit code. `packageRoot` is the cli package's directory. */
 export async function main(argv: string[], ctx: Context, packageRoot: URL): Promise<number> {

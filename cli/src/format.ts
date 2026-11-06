@@ -1,8 +1,11 @@
 import {
   movesFrom,
+  openRun,
   STATUS_LABELS,
   type MessageRole,
   type MoveCheck,
+  type OpenRunEntry,
+  type Run,
   type Status,
   type Ticket,
   type TicketDetailResponse,
@@ -52,24 +55,60 @@ export function refusal(key: string, from: Status, to: Status, check: Extract<Mo
   return [`${key} is ${label(from)} and cannot go to ${label(to)}.`, ...allowedMoves(from)];
 }
 
-export function ticketLine(ticket: Ticket): string {
+/** "12m", "5h", "3d": how long since `iso`. */
+export function ago(iso: string, now: Date): string {
+  const minutes = Math.max(0, Math.floor((now.getTime() - Date.parse(iso)) / 60_000));
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 48) return `${hours}h`;
+  return `${Math.floor(hours / 24)}d`;
+}
+
+/** An open run: "run by ana, started 2h ago, heard 20m ago", or "stale run by ana, ...". */
+export function openRunText(run: Run, now: Date): string {
+  return `${run.stale ? "stale run" : "run"} by ${run.author}, started ${ago(run.startedAt, now)} ago, heard ${ago(run.lastHeardAt, now)} ago`;
+}
+
+/** How an ended run ended. */
+export function runEnding(run: Run): string {
+  if (run.ended === "moved") return `moved to ${run.endedTo ? label(run.endedTo) : "another column"}`;
+  if (run.ended === "released") return "released, unfinished";
+  return "stale; sync closed the ticket";
+}
+
+export function ticketLine(ticket: Ticket, now: Date = new Date()): string {
   const tags = ticket.tags.length ? `  [${ticket.tags.join(", ")}]` : "";
-  return `${ticket.key.padEnd(24)} ${label(ticket.status).padEnd(16)} ${ticket.title}${tags}`;
+  const run = openRun(ticket);
+  const mark = run ? `  (${run.stale ? `stale run by ${run.author}, heard ${ago(run.lastHeardAt, now)} ago` : `run by ${run.author}`})` : "";
+  return `${ticket.key.padEnd(24)} ${label(ticket.status).padEnd(16)} ${ticket.title}${tags}${mark}`;
+}
+
+/** `runs`: one open run per line. */
+export function openRunLine({ key, run }: OpenRunEntry, now: Date = new Date()): string {
+  return `${key.padEnd(24)} ${run.author.padEnd(16)} started ${ago(run.startedAt, now)} ago, heard ${ago(run.lastHeardAt, now)} ago${run.stale ? ", stale" : ""}`;
 }
 
 /** `show`: everything about one ticket, oldest first. */
-export function ticketDetail({ ticket, comments, history }: TicketDetailResponse): string[] {
+export function ticketDetail({ ticket, comments, history, runs = [] }: TicketDetailResponse, now: Date = new Date()): string[] {
+  const open = openRun(ticket);
+  const ended = runs.filter((run) => run.endedAt !== null);
   const lines = [
     `${ticket.key}: ${ticket.title}`,
     `Status:  ${label(ticket.status)}${ticket.hidden ? " (hidden: the brief was superseded)" : ""}`,
+    `Run:     ${open ? openRunText(open, now) : "no run"}`,
     `Tags:    ${ticket.tags.length ? ticket.tags.join(", ") : "none"}`,
     `${ticket.number === null ? "Todo: " : "Brief:"}   ${ticket.briefPath}`,
     "",
     "Summary:",
     ticket.summary.trim() ? `  ${ticket.summary.trim().replace(/\n/g, "\n  ")}` : "  (none)",
     "",
-    `Comments (${comments.length}):`,
   ];
+  if (ended.length > 0) {
+    lines.push(`Earlier runs (${ended.length}):`);
+    for (const run of ended) lines.push(`  [${run.startedAt}] ${run.author}: ${runEnding(run)}, ${run.endedAt}`);
+    lines.push("");
+  }
+  lines.push(`Comments (${comments.length}):`);
   for (const comment of comments) {
     const role = comment.role ? ROLE_WORDS[comment.role] : "comment";
     const move = comment.move ? `, ${label(comment.move.from)} → ${label(comment.move.to)}` : "";

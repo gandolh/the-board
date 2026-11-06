@@ -1,6 +1,6 @@
 import { checkMove, type Status } from "@brief-board/shared";
 import { Rejected, UsageError } from "../errors.js";
-import { label, refusal } from "../format.js";
+import { ago, label, refusal } from "../format.js";
 import { statusArg, type Runtime } from "../runtime.js";
 
 /** Check the move locally first, so an agent reads the rules from the CLI, not from a 400. */
@@ -15,20 +15,30 @@ async function moveTo(rt: Runtime, key: string, to: Status, message: string | un
 
 /**
  * `start <ticket> [-m <message>]`. To Do and Blocked move to In Progress (a
- * Blocked ticket needs -m, as the table says). A ticket already In Progress is
- * a resume: a new session picking the work up. That is a comment, not an error.
+ * Blocked ticket needs -m, as the table says), and a run opens. A ticket
+ * already In Progress is a resume: a new session picking the work up, a
+ * comment and not an error, and the open run passes to this author. When that
+ * run was fresh and someone else's, a warning names it; the start still goes
+ * ahead, because a run is a record, not a lock.
  */
 export async function start(rt: Runtime, args: string[]): Promise<void> {
   const { values, positionals } = rt.parse(args, { message: { type: "string", short: "m" } });
   const key = rt.ticketKey(positionals[0], values.project);
   const author = rt.author(values.author);
-  const { ticket } = await rt.client().ticket(key);
-  if (ticket.status === "in_progress") {
-    await rt.client().comment(key, { body: values.message?.trim() || "Resumed in a new session.", author });
-    rt.out(`${key}: resumed (already In Progress)`);
-    return;
+  const client = rt.client();
+  const { ticket } = await client.ticket(key);
+  if (ticket.status !== "in_progress") {
+    const check = checkMove(ticket.status, "in_progress", values.message);
+    if (!check.ok) throw new Rejected(refusal(key, ticket.status, "in_progress", check).join("\n"));
   }
-  await moveTo(rt, key, "in_progress", values.message, author);
+  const result = await client.start(key, { message: values.message, author });
+  const before = result.passedFrom;
+  if (before && !before.stale) {
+    rt.ctx.err(
+      `brief-board: warning: ${key} had an open run by ${before.author}, heard ${ago(before.lastHeardAt, new Date())} ago. It passes to ${author}; make sure ${before.author} has stopped.`,
+    );
+  }
+  rt.out(result.resumed ? `${key}: resumed (already In Progress)` : `${key}: ${label(ticket.status)} → ${label(result.ticket.status)}`);
 }
 
 /** `move <ticket> <status> [-m <message>]` */

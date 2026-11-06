@@ -5,6 +5,9 @@ import {
   type Lane,
   type MessageRole,
   type MoveCheck,
+  type OpenRunEntry,
+  type Run,
+  type RunEnding,
   type Status,
   type SummarySource,
   type Ticket,
@@ -12,10 +15,17 @@ import {
 import type { Db } from "./db.js";
 
 /**
- * Reads and writes for tickets, comments and history. Every write
+ * Reads and writes for tickets, comments, history and runs. Every write
  * that touches more than one row runs in a transaction. Only `sync.ts` changes
  * a status without the move table.
+ *
+ * A run opens with any move into In Progress and ends with any move out of
+ * it; `release` and sync end it too. Whether an open run is stale is worked
+ * out here on every read, from its last write and `staleMs`.
  */
+
+/** How long a run may go without a write on its ticket before it reads as stale. */
+export const DEFAULT_STALE_HOURS = 4;
 
 interface TicketRow {
   key: string;
@@ -42,6 +52,18 @@ interface CommentRow {
   created_at: string;
 }
 
+interface RunRow {
+  id: number;
+  ticket_key: string;
+  author: string;
+  message: string | null;
+  started_at: string;
+  last_heard_at: string;
+  ended_at: string | null;
+  ended: RunEnding | null;
+  ended_status: Status | null;
+}
+
 interface HistoryRow {
   from_status: Status | null;
   to_status: Status;
@@ -53,8 +75,10 @@ interface HistoryRow {
 export class Store {
   constructor(
     readonly db: Db,
-    /** The clock, so tests can age a ticket past `doneDays`. */
+    /** The clock, so tests can age a ticket past `doneDays` or a run past `staleMs`. */
     private readonly clock: () => Date = () => new Date(),
+    /** A run with no write on its ticket for longer than this is stale. */
+    private readonly staleMs: number = DEFAULT_STALE_HOURS * 60 * 60 * 1000,
   ) {}
 
   now(): string {
@@ -82,7 +106,76 @@ export class Store {
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       statusChangedAt: row.status_changed_at,
+      run: this.latestRun(row.key),
     };
+  }
+
+  private toRun(row: RunRow): Run {
+    const open = row.ended_at === null;
+    return {
+      id: row.id,
+      author: row.author,
+      message: row.message,
+      startedAt: row.started_at,
+      lastHeardAt: row.last_heard_at,
+      stale: open && this.clock().getTime() - Date.parse(row.last_heard_at) > this.staleMs,
+      endedAt: row.ended_at,
+      ended: row.ended,
+      endedTo: row.ended_status,
+    };
+  }
+
+  /** The ticket's latest run, open or ended. */
+  private latestRun(key: string): Run | null {
+    const row = this.db.prepare("SELECT * FROM runs WHERE ticket_key = ? ORDER BY id DESC LIMIT 1").get(key) as RunRow | undefined;
+    return row ? this.toRun(row) : null;
+  }
+
+  /** The ticket's open run, if it has one. */
+  openRun(key: string): Run | null {
+    const row = this.db.prepare("SELECT * FROM runs WHERE ticket_key = ? AND ended_at IS NULL").get(key) as RunRow | undefined;
+    return row ? this.toRun(row) : null;
+  }
+
+  /** Every run on the ticket, oldest first. */
+  runs(key: string): Run[] {
+    return (this.db.prepare("SELECT * FROM runs WHERE ticket_key = ? ORDER BY id").all(key) as RunRow[]).map((row) => this.toRun(row));
+  }
+
+  /** Every open run across projects, stalest (the oldest last write) first. */
+  openRuns(): OpenRunEntry[] {
+    const rows = this.db
+      .prepare(
+        `SELECT r.*, t.project, t.title FROM runs r JOIN tickets t ON t.key = r.ticket_key
+         WHERE r.ended_at IS NULL ORDER BY r.last_heard_at, r.id`,
+      )
+      .all() as (RunRow & { project: string; title: string })[];
+    return rows.map((row) => ({ key: row.ticket_key, project: row.project, title: row.title, run: this.toRun(row) }));
+  }
+
+  /** Open a run. The caller has made sure none is open: the schema allows one per ticket. */
+  openNewRun(key: string, author: string, message: string | null): void {
+    const at = this.now();
+    this.db
+      .prepare("INSERT INTO runs (ticket_key, author, message, started_at, last_heard_at) VALUES (?, ?, ?, ?, ?)")
+      .run(key, author, message, at, at);
+  }
+
+  /** A write on the ticket: its open run, if any, was heard from now. */
+  touchRun(key: string): void {
+    this.db.prepare("UPDATE runs SET last_heard_at = ? WHERE ticket_key = ? AND ended_at IS NULL").run(this.now(), key);
+  }
+
+  /** The open run passes to `author`, as a new session resumes the work. */
+  passRun(key: string, author: string): void {
+    this.db.prepare("UPDATE runs SET author = ?, last_heard_at = ? WHERE ticket_key = ? AND ended_at IS NULL").run(author, this.now(), key);
+  }
+
+  /** End the open run, if any. A `moved` run keeps the column its ticket went to. */
+  endRun(key: string, how: RunEnding, to: Status | null = null): void {
+    this.db
+      .prepare("UPDATE runs SET ended_at = ?, ended = ?, ended_status = ? WHERE ticket_key = ? AND ended_at IS NULL")
+      .run(this.now(), how, how === "moved" ? to : null, key);
   }
 
   getTicket(key: string): Ticket | null {
@@ -202,7 +295,8 @@ export class Store {
 
   /**
    * A move through the table: check it, change the status, record the
-   * history, and keep the message as a comment with the row's role.
+   * history, and keep the message as a comment with the row's role. A move
+   * out of In Progress ends the open run as `moved`; a move into it opens one.
    */
   move(
     key: string,
@@ -215,12 +309,79 @@ export class Store {
       if (!ticket) return null;
       const check = checkMove(ticket.status, to, message);
       if (!check.ok) return { ok: false as const, check };
-      this.setStatus(key, ticket.status, to, author, "move");
       const body = message?.trim();
+      // The run's last write is the move that ends it; a move into In Progress opens the next.
+      if (ticket.status === "in_progress") {
+        this.touchRun(key);
+        this.endRun(key, "moved", to);
+      }
+      if (to === "in_progress") this.openNewRun(key, author, body || null);
+      this.setStatus(key, ticket.status, to, author, "move");
       const comment = body
         ? this.addComment(key, { author, body, role: check.rule.role, move: { from: ticket.status, to } })
         : null;
       return { ok: true as const, ticket: this.getTicket(key)!, comment };
+    })();
+  }
+
+  /**
+   * `start`: To Do or Blocked moves to In Progress through the table, which
+   * opens a run. A ticket already In Progress is a resume, recorded as a
+   * comment: a run opens if none is, or the open run passes to this author
+   * (`passedFrom` is the run as it stood), or this author's is heard from.
+   */
+  start(
+    key: string,
+    message: string | undefined,
+    author: string,
+  ):
+    | { ok: true; ticket: Ticket; resumed: boolean; comment: Comment | null; passedFrom: Run | null }
+    | { ok: false; check: Extract<MoveCheck, { ok: false }> }
+    | null {
+    return this.db.transaction(() => {
+      const ticket = this.getTicket(key);
+      if (!ticket) return null;
+      if (ticket.status !== "in_progress") {
+        const moved = this.move(key, "in_progress", message, author);
+        if (!moved?.ok) return moved;
+        return { ok: true as const, ticket: moved.ticket, resumed: false, comment: moved.comment, passedFrom: null };
+      }
+      const note = message?.trim() || "Resumed in a new session.";
+      const open = this.openRun(key);
+      let passedFrom: Run | null = null;
+      let body = note;
+      if (!open) {
+        this.openNewRun(key, author, message?.trim() || null);
+      } else if (open.author !== author) {
+        passedFrom = open;
+        this.passRun(key, author);
+        body = `${note}\n\nThe run passes from ${open.author} to ${author}.`;
+      } else {
+        this.touchRun(key);
+      }
+      const comment = this.addComment(key, { author, body, role: null, move: null });
+      return { ok: true as const, ticket: this.getTicket(key)!, resumed: true, comment, passedFrom };
+    })();
+  }
+
+  /**
+   * `release`: end the open run without a move, for an agent that was
+   * stopped. The ticket stays In Progress, and a comment says the run ended
+   * unfinished and why. Null when the ticket has no open run.
+   */
+  release(key: string, message: string, author: string): { ticket: Ticket; run: Run; comment: Comment } | null {
+    return this.db.transaction(() => {
+      const open = this.openRun(key);
+      if (!open) return null;
+      this.endRun(key, "released");
+      const comment = this.addComment(key, {
+        author,
+        body: `Released the run by ${open.author}: it ended unfinished, and the ticket stays In Progress.\n\n${message.trim()}`,
+        role: null,
+        move: null,
+      });
+      const run = this.runs(key).find((candidate) => candidate.id === open.id)!;
+      return { ticket: this.getTicket(key)!, run, comment };
     })();
   }
 

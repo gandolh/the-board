@@ -17,7 +17,9 @@ interface Server {
   close(): Promise<void>;
 }
 const serverApp = new URL("../../server/src/app.ts", import.meta.url).href;
-const { buildApp } = (await import(serverApp)) as { buildApp: (o: { dbPath: string; token?: string }) => Promise<Server> };
+const { buildApp } = (await import(serverApp)) as {
+  buildApp: (o: { dbPath: string; token?: string; now?: () => Date }) => Promise<Server>;
+};
 
 const PACKAGE_ROOT = new URL("../", import.meta.url);
 
@@ -26,12 +28,14 @@ const TOKEN = "k".repeat(44);
 
 let server: Server;
 let url: string;
+/** How far the board's clock is from the real one: a write made with it set back is that much older. */
+let clockOffset = 0;
 let scratch: string;
 let repo: string;
 let home: string;
 
 beforeAll(async () => {
-  server = await buildApp({ dbPath: ":memory:", token: TOKEN });
+  server = await buildApp({ dbPath: ":memory:", token: TOKEN, now: () => new Date(Date.now() + clockOffset) });
   url = await server.listen({ host: "127.0.0.1", port: 0 });
 });
 afterAll(async () => {
@@ -147,6 +151,92 @@ describe("start, move and comment", () => {
     const key = await ticket();
     await run(["start", key], { env: { BRIEF_BOARD_URL: url, BRIEF_BOARD_TOKEN: TOKEN, BRIEF_BOARD_AUTHOR: "night-shift" } });
     expect((await run(["show", key])).out).toMatch(/To Do → In Progress by night-shift/);
+  });
+});
+
+describe("runs", () => {
+  const HOUR = 60 * 60 * 1000;
+  /** Run a command as if it happened `ms` ago on the board. */
+  async function earlier<T>(ms: number, action: () => Promise<T>): Promise<T> {
+    clockOffset = -ms;
+    try {
+      return await action();
+    } finally {
+      clockOffset = 0;
+    }
+  }
+
+  it("start opens a run that show and list print, and a move ends it", async () => {
+    const key = await ticket();
+    expect((await run(["show", key])).out).toContain("Run:     no run");
+    await earlier(2 * HOUR, () => run(["start", key, "--author", "ana"]));
+    const show = (await run(["show", key])).out;
+    expect(show).toContain("Run:     run by ana, started 2h ago, heard 2h ago");
+    expect(show).not.toContain("Earlier runs");
+    expect((await run(["list", "--status", "in_progress"])).out).toContain(`Ticket ${key.split("-").pop()}  (run by ana)`);
+    await run(["move", key, "ready_for_deploy", "-m", "npm run deploy", "--author", "ana"]);
+    const after = (await run(["show", key])).out;
+    expect(after).toContain("Run:     no run");
+    expect(after).toMatch(/Earlier runs \(1\):\n {2}\[[^\]]+\] ana: moved to Ready for deploy, /);
+  });
+
+  it("a second start passes the run on, and warns on stderr when it was fresh and someone else's", async () => {
+    const key = await ticket();
+    await earlier(HOUR, () => run(["start", key, "--author", "ana"]));
+    const second = await run(["start", key, "--author", "bo"]);
+    expect(second.code).toBe(0);
+    expect(second.out).toBe(`${key}: resumed (already In Progress)`);
+    expect(second.err).toBe(
+      `brief-board: warning: ${key} had an open run by ana, heard 1h ago. It passes to bo; make sure ana has stopped.`,
+    );
+    const show = (await run(["show", key])).out;
+    expect(show).toContain("Run:     run by bo");
+    expect(show).toContain("The run passes from ana to bo.");
+    // bo resuming its own run, and anyone taking over a stale one, warn about nothing.
+    expect((await run(["start", key, "--author", "bo"])).err).toBe("");
+    await earlier(5 * HOUR, () => run(["comment", key, "-m", "last word", "--author", "bo"]));
+    expect((await run(["start", key, "--author", "cy"])).err).toBe("");
+  });
+
+  it("marks a stale run in show and list", async () => {
+    const key = await ticket();
+    await earlier(5 * HOUR, () => run(["start", key, "--author", "ana"]));
+    expect((await run(["show", key])).out).toContain("Run:     stale run by ana, started 5h ago, heard 5h ago");
+    expect((await run(["list"])).out).toContain("(stale run by ana, heard 5h ago)");
+  });
+
+  it("release ends the run, keeps the ticket In Progress, and needs -m", async () => {
+    const key = await ticket();
+    await run(["start", key, "--author", "ana"]);
+    expect((await run(["release", key])).code).toBe(1);
+    const released = await run(["release", key, "-m", "Stopped; Vite left on 5173", "--author", "controller"]);
+    expect(released.code).toBe(0);
+    expect(released.out).toBe(`${key}: released the run by ana; the ticket stays In Progress`);
+    const show = (await run(["show", key])).out;
+    expect(show).toContain("Status:  In Progress");
+    expect(show).toContain("Run:     no run");
+    expect(show).toContain("ana: released, unfinished");
+    expect(show).toContain("Vite left on 5173");
+    const again = await run(["release", key, "-m", "again"]);
+    expect(again.code).toBe(2);
+    expect(again.err).toContain("has no open run to release");
+  });
+
+  it("runs lists every open run, stalest first", async () => {
+    const fresh = await ticket();
+    const stale = await ticket();
+    await run(["start", fresh, "--author", "ana"]);
+    await earlier(6 * HOUR, () => run(["start", stale, "--author", "bo"]));
+    const res = await run(["runs"]);
+    expect(res.code).toBe(0);
+    const lines = res.out.split("\n");
+    const staleLine = lines.findIndex((line) => line.startsWith(stale));
+    const freshLine = lines.findIndex((line) => line.startsWith(fresh));
+    expect(staleLine).toBeGreaterThanOrEqual(0);
+    expect(staleLine).toBeLessThan(freshLine);
+    expect(lines[staleLine]).toMatch(/ bo +started 6h ago, heard 6h ago, stale$/);
+    expect(lines[freshLine]).toMatch(/ ana +started 0m ago, heard 0m ago$/);
+    expect((await run(["runs", "--project", "nobody"])).out).toBe("No open runs in nobody.");
   });
 });
 

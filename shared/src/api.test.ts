@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { boardQuerySchema, moveRequestSchema, syncRequestSchema, ticketSchema, upsertTicketRequestSchema } from "./api.js";
+import { boardQuerySchema, moveRequestSchema, openRun, runSchema, syncRequestSchema, ticketSchema, upsertTicketRequestSchema } from "./api.js";
 
 const now = new Date().toISOString();
 
@@ -19,8 +19,20 @@ describe("the API contract", () => {
       createdAt: now,
       updatedAt: now,
       statusChangedAt: now,
+      run: null,
     };
     expect(ticketSchema.parse(ticket)).toEqual(ticket);
+  });
+
+  it("parses a ticket's run, open or ended, and says which is open", () => {
+    const run = { id: 1, author: "agent", message: null, startedAt: now, lastHeardAt: now, stale: false, endedAt: null, ended: null, endedTo: null };
+    expect(runSchema.parse(run)).toEqual(run);
+    expect(openRun({ run })).toEqual(run);
+    const moved = { ...run, endedAt: now, ended: "moved", endedTo: "ready_for_deploy" };
+    expect(runSchema.parse(moved)).toEqual(moved);
+    expect(openRun({ run: runSchema.parse(moved) })).toBeNull();
+    expect(openRun({ run: null })).toBeNull();
+    expect(runSchema.safeParse({ ...moved, ended: "abandoned" }).success).toBe(false);
   });
 
   it("defaults the board to 14 days of Done", () => {
@@ -61,6 +73,7 @@ describe("the API contract", () => {
       createdAt: now,
       updatedAt: now,
       statusChangedAt: now,
+      run: null,
     });
     expect(ticket.number).toBeNull();
   });
