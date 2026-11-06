@@ -65,7 +65,7 @@ patterns are about what the board records, not about running agents.
    would have prevented the closed-mid-run case. The pattern: FSoft's queue
    knows who holds a task; a Hyperlight handler owns its sandbox until it
    returns. It fixes a real loss and the next two build on it.
-2. **What a run holds** (todo `a-run-lists-what-it-holds`). An agent records
+2. **What a run holds** (brief 12, promoted from its todo on 2026-11-06). An agent records
    what it starts that outlives a command (a port, a dev server's PID, a
    container, a scratch folder); `release`, the end move and `brief-board
    runs` list them, so whoever stops an agent can clean up, and a second agent

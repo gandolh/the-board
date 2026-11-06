@@ -389,3 +389,10 @@ board to one at a click, and hides when nothing waits. The guide tells a
 session that runs agents to show `needs` first at a hand-back. Briefs 08 to
 11 are all built on that branch, 229 tests, and go out in one deploy: the
 server first, then the local CLI rebuild.
+
+## [2026-11-06] todo | Brief 12: a run lists what it holds
+
+Promoted from the todo at the owner's ask: `hold` and `drop` on a run's
+ports, pids, containers and paths, a warning (never a lock) on a clash, and
+the leftovers printed and kept when the run ends or is released. Built after
+brief 08, deployed with it if 08-11 aren't live yet.

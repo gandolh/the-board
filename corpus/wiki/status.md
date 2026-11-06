@@ -1,5 +1,5 @@
 ---
-summary: Snapshot as of 2026-11-03, per area. Live on the VPS since 2026-11-03; first sync 2026-11-03 (23 projects, 30 tickets in To Do). The board, CLI, sync and guide built 2026-10-09 and rolled out to every project's CLAUDE.md but vps-deploy's; Base UI under the panel and lanes 2026-10-23. Down since 2026-10-13; briefs 01-05 (2026-11-02) built it for the VPS behind sign-in (sync in group folders, the sub-path, the CLI's token, sign-in, the container and the vps-deploy stack), not deployed, with the owner's steps, which vps-deploy's npm run setup:brief-board runs (2026-11-03); ward-auth 0.7.0 with its rename route off (2026-11-03); the numbering question after the estate restarted brief numbering, closed 2026-11-03; Backlog for open todos (brief 06) and nested corpora naming themselves (brief 07, churchix and scoala-ramna-theme) built 2026-11-03, not deployed; brief 08 (runs: a run on each ticket kept fresh by its writes, release, brief-board runs, sync waiting for a fresh run, the guide's end-move order and its section for a session that runs other agents) built 2026-11-06, not deployed; brief 09 (questions for the owner on the ticket, a badge, brief-board answer and questions, the report lines in the guide) built 2026-11-06, not deployed; brief 10 (each run's duration, worked out from its times, one shared formatter) built 2026-11-06, not deployed; brief 11 (one derived list of what needs the owner: brief-board needs and a strip above the lanes) built 2026-11-06, not deployed; the todo a-run-lists-what-it-holds.
+summary: Snapshot as of 2026-11-03, per area. Live on the VPS since 2026-11-03; first sync 2026-11-03 (23 projects, 30 tickets in To Do). The board, CLI, sync and guide built 2026-10-09 and rolled out to every project's CLAUDE.md but vps-deploy's; Base UI under the panel and lanes 2026-10-23. Down since 2026-10-13; briefs 01-05 (2026-11-02) built it for the VPS behind sign-in (sync in group folders, the sub-path, the CLI's token, sign-in, the container and the vps-deploy stack), not deployed, with the owner's steps, which vps-deploy's npm run setup:brief-board runs (2026-11-03); ward-auth 0.7.0 with its rename route off (2026-11-03); the numbering question after the estate restarted brief numbering, closed 2026-11-03; Backlog for open todos (brief 06) and nested corpora naming themselves (brief 07, churchix and scoala-ramna-theme) built 2026-11-03, not deployed; brief 08 (runs: a run on each ticket kept fresh by its writes, release, brief-board runs, sync waiting for a fresh run, the guide's end-move order and its section for a session that runs other agents) built 2026-11-06, not deployed; brief 09 (questions for the owner on the ticket, a badge, brief-board answer and questions, the report lines in the guide) built 2026-11-06, not deployed; brief 10 (each run's duration, worked out from its times, one shared formatter) built 2026-11-06, not deployed; brief 11 (one derived list of what needs the owner: brief-board needs and a strip above the lanes) built 2026-11-06, not deployed; brief 12 (a run lists what it holds) filed 2026-11-06.
 updated: 2026-11-06
 ---
 
@@ -107,9 +107,9 @@ None. [08, a ticket knows the run that works it](../briefs/done/08-a-ticket-know
 [09, the hand-back goes on the board](../briefs/done/09-the-hand-back-goes-on-the-board.md),
 [10, a run shows how long it took](../briefs/done/10-a-run-shows-how-long-it-took.md)
 and [11, one list of what needs the owner](../briefs/done/11-one-list-of-what-needs-the-owner.md)
-are built (2026-11-06), on the branch `briefs-2026-11-06`, not deployed.
+are built (2026-11-06), merged into main the same day, not deployed.
 
 ## Todos
 
-- [a-run-lists-what-it-holds](../todos/a-run-lists-what-it-holds.md): its
-  no-build guide line went in with brief 08; `hold` and `drop` wait.
+None. The last one became brief 12 (`hold` and `drop`) on 2026-11-06; its
+no-build guide line went in with brief 08.
