@@ -6,6 +6,7 @@ import {
   type ErrorBody,
   type MoveRequest,
   type MoveResponse,
+  type NeedsResponse,
   type QuestionsResponse,
   type ReleaseRequest,
   type ReleaseResponse,
@@ -127,6 +128,10 @@ export class BoardClient {
 
   answer(key: string, number: number, body: AnswerRequest): Promise<AnswerResponse> {
     return this.call("POST", `/api/tickets/${encodeURIComponent(key)}/questions/${number}/answer`, body);
+  }
+
+  needs(project?: string): Promise<NeedsResponse> {
+    return this.call("GET", `/api/needs${project ? `?${new URLSearchParams({ project })}` : ""}`);
   }
 
   questions(project?: string): Promise<QuestionsResponse> {

@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type { Lane as LaneData, NeedKind } from "@brief-board/shared";
 import { useSession } from "../vendor/ward/ward-auth-react.js";
 import { AccountPage } from "./AccountPage";
-import { fetchBoard } from "./api";
+import { fetchBoard, fetchNeeds } from "./api";
 import { Board, orderLanes } from "./Board";
 import { DetailPanel } from "./DetailPanel";
+import { needKeys, NeedsStrip } from "./NeedsStrip";
 import { navigate, pathOf, usePage } from "./route";
 import { clock } from "./time";
 import { usePolling } from "./usePolling";
@@ -17,22 +19,30 @@ export function App() {
   return usePage() === "account" ? <AccountPage /> : <BoardPage />;
 }
 
-/** One board, a lane per project, six columns. */
+type LaneTicket = LaneData["tickets"][number];
+
+/** One board, a lane per project, seven columns, and what needs the owner above them. */
 function BoardPage() {
   const board = usePolling(fetchBoard);
+  const needs = usePolling(fetchNeeds);
   const [tag, setTag] = useState("");
+  const [needKind, setNeedKind] = useState<NeedKind | null>(null);
   const [openKey, setOpenKey] = useState<string | null>(null);
   const [toggled, setToggled] = useState<ReadonlySet<string>>(new Set());
 
   const allLanes = useMemo(() => board.data?.lanes ?? [], [board.data]);
   const blocked = allLanes.reduce((n, lane) => n + lane.tickets.filter((t) => t.status === "blocked").length, 0);
   const tags = useMemo(() => [...new Set(allLanes.flatMap((lane) => lane.tickets.flatMap((t) => t.tags)))].sort(), [allLanes]);
+  const allNeeds = useMemo(() => needs.data?.needs ?? [], [needs.data]);
+  const needFilter = useMemo(() => needKeys(allNeeds, needKind), [allNeeds, needKind]);
   const lanes = useMemo(() => {
-    const filtered = tag
-      ? allLanes.map((lane) => ({ ...lane, tickets: lane.tickets.filter((t) => t.tags.includes(tag)) })).filter((lane) => lane.tickets.length > 0)
-      : allLanes;
+    const keep = (t: LaneTicket) => (!tag || t.tags.includes(tag)) && (!needFilter || needFilter.has(t.key));
+    const filtered =
+      tag || needFilter
+        ? allLanes.map((lane) => ({ ...lane, tickets: lane.tickets.filter(keep) })).filter((lane) => lane.tickets.length > 0)
+        : allLanes;
     return orderLanes(filtered);
-  }, [allLanes, tag]);
+  }, [allLanes, tag, needFilter]);
 
   useEffect(() => {
     document.title = blocked > 0 ? `(${blocked} blocked) brief-board` : "brief-board";
@@ -73,10 +83,16 @@ function BoardPage() {
         </div>
       )}
 
+      <NeedsStrip needs={allNeeds} selected={needFilter ? needKind : null} onSelect={setNeedKind} />
+
       <main>
         {board.data && lanes.length === 0 ? (
           <p className="empty">
-            {tag ? `No tickets carry the tag "${tag}".` : "No tickets yet. An agent runs brief-board sync to fill the board."}
+            {needFilter
+              ? "None of these tickets are on the board with this filter."
+              : tag
+                ? `No tickets carry the tag "${tag}".`
+                : "No tickets yet. An agent runs brief-board sync to fill the board."}
           </p>
         ) : (
           <Board lanes={lanes} now={board.fetchedAt ?? new Date()} toggled={toggled} onToggle={toggle} onOpen={setOpenKey} />

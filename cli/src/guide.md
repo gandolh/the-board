@@ -71,6 +71,7 @@ one flag per question, never as prose in the message. Pick one column:
 
 ## 7. Running other agents
 For a session that starts agents and waits on them:
+- At a hand-back, show the owner `brief-board needs` first.
 - Give each agent a name to pass as --author on every board command.
 - Before a sync the owner asks for, run `brief-board runs` and tell the owner
   which runs are open.
@@ -78,9 +79,8 @@ For a session that starts agents and waits on them:
   ticket: brief-board comment <ticket> -m "Tokens: <count>". Else leave it out.
 - To stop an agent, first ask it to wind down if your runtime lets you message
   it: stop what it started, release its run, hand back. Otherwise stop it and
-  release its run yourself, naming what it left running (a port, a container):
-  brief-board release <ticket> -m "<why, and what it left running>"
-  The ticket stays In Progress for the owner to decide.
+  release its run yourself; the ticket stays In Progress for the owner:
+  brief-board release <ticket> -m "<why, and what it left running: a port, a container>"
 
 ## 8. When the board is down
 A command printing "the board isn't reachable" or "the board refused the token"

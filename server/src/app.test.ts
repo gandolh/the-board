@@ -9,6 +9,7 @@ import {
   type CommentResponse,
   type ErrorBody,
   type MoveResponse,
+  type NeedsResponse,
   type QuestionsResponse,
   type ReleaseResponse,
   type RunsResponse,
@@ -603,6 +604,81 @@ describe("questions", () => {
     expect((await detail("p-01")).ticket).toMatchObject({ status: "done", openQuestions: 1 });
     expect((await detail("p-02")).ticket).toMatchObject({ hidden: true, openQuestions: 1 });
     expect((await open()).map((entry) => entry.question.text)).toEqual(["Close?", "Hide?"]);
+  });
+});
+
+describe("what needs the owner", () => {
+  const HOUR = 60 * 60 * 1000;
+  const later = (ms: number) => {
+    clock = new Date(clock.getTime() + ms);
+  };
+  const needs = async (query = "") => (await call({ url: `/api/needs${query}` })).json<NeedsResponse>().needs;
+  const comment = (key: string, body: string, questions: string[]) =>
+    call({ method: "POST", url: `/api/tickets/${key}/comments`, payload: { body, questions, author: "ana" } });
+
+  it("lists each kind with its ticket, reason and since when, in the owner's order", async () => {
+    await ticketIn("p-01", "ready_for_deploy");
+    later(HOUR);
+    await ticketIn("p-02", "ready_for_test");
+    later(HOUR);
+    await put("p-03");
+    await call({ method: "POST", url: "/api/tickets/p-03/start", payload: { author: "bo" } });
+    const heard = clock.toISOString();
+    later(HOUR);
+    await ticketIn("p-04", "blocked");
+    const blockedAt = clock.toISOString();
+    later(HOUR);
+    await comment("p-01", "one more thing", ["Deploy on Friday?"]);
+    const asked = clock.toISOString();
+    later(3 * HOUR);
+    expect((await needs()).map((need) => [need.kind, need.key, need.reason, need.by])).toEqual([
+      ["question", "p-01", "#1 Deploy on Friday?", "ana"],
+      ["blocked", "p-04", "owner decides", "agent"],
+      ["stale_run", "p-03", "stale run by bo", "bo"],
+      ["ready_for_test", "p-02", "try it", "agent"],
+      ["ready_for_deploy", "p-01", "npm run deploy", "agent"],
+    ]);
+    const [question, blocked, stale] = await needs();
+    expect(question).toMatchObject({ since: asked, status: "ready_for_deploy", project: "p", title: "A brief" });
+    expect(blocked!.since).toBe(blockedAt);
+    expect(stale!.since).toBe(heard);
+  });
+
+  it("puts a ticket that is Blocked and has an open question under each, oldest first in each kind", async () => {
+    await ticketIn("p-01", "blocked");
+    later(HOUR);
+    await ticketIn("p-02", "blocked");
+    await comment("p-02", "and", ["Which colour?"]);
+    later(HOUR);
+    await comment("p-01", "and", ["Which font?"]);
+    expect((await needs()).map((need) => [need.kind, need.key])).toEqual([
+      ["question", "p-02"],
+      ["question", "p-01"],
+      ["blocked", "p-01"],
+      ["blocked", "p-02"],
+    ]);
+  });
+
+  it("narrows to a project, drops answered questions and fresh runs, and is empty when nothing waits", async () => {
+    expect(await needs()).toEqual([]);
+    await ticketIn("p-01", "in_progress");
+    await ticketIn("q-01", "ready_for_test");
+    await comment("p-01", "note", ["Answered?"]);
+    await call({ method: "POST", url: "/api/tickets/p-01/questions/1/answer", payload: { answer: "yes" } });
+    expect((await needs()).map((need) => need.key)).toEqual(["q-01"]);
+    expect(await needs("?project=p")).toEqual([]);
+    expect((await needs("?project=q")).map((need) => need.kind)).toEqual(["ready_for_test"]);
+  });
+
+  it("leaves out the columns of a ticket hidden by a superseded brief, and says when a move carried no message", async () => {
+    await ticketIn("p-01", "ready_for_test");
+    await move("p-01", "ready_for_deploy");
+    await ticketIn("p-02", "ready_for_deploy");
+    await sync("p", [
+      { number: 1, state: "todo" },
+      { number: 2, state: "superseded" },
+    ]);
+    expect((await needs()).map((need) => [need.key, need.reason])).toEqual([["p-01", "no message"]]);
   });
 });
 

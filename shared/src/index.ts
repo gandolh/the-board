@@ -9,3 +9,4 @@ export * from "./moves.js";
 export * from "./key.js";
 export * from "./api.js";
 export * from "./duration.js";
+export * from "./needs.js";

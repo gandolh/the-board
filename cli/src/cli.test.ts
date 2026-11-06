@@ -304,6 +304,34 @@ describe("questions", () => {
   });
 });
 
+describe("needs", () => {
+  it("lists what waits on the owner by kind, with a count line, and --project narrows it", async () => {
+    await run(["create", "1", "--title", "Waiting", "--summary", "", "--project", "owner-a", "--brief", "corpus/briefs/todo/01-x.md"]);
+    await run(["create", "2", "--title", "Blocked", "--summary", "", "--project", "owner-a", "--brief", "corpus/briefs/todo/02-x.md"]);
+    await run(["start", "owner-a-01", "--project", "owner-a"]);
+    await run(["move", "owner-a-01", "ready_for_deploy", "-m", "node cli.ts owner-a deploy\nthen check the page", "--question", "Today?"]);
+    await run(["start", "owner-a-02"]);
+    await run(["move", "owner-a-02", "blocked", "-m", "The owner picks a colour", "--question", "Blue or green?"]);
+    const res = await run(["needs", "--project", "owner-a"]);
+    expect(res.code).toBe(0);
+    expect(res.out.split("\n")).toEqual([
+      "2 questions · 1 blocked · 1 to deploy",
+      "",
+      "Questions (2):",
+      expect.stringMatching(/^ {2}owner-a-01 +#1 Today\? {2}\(agent, 0m ago\)$/),
+      expect.stringMatching(/^ {2}owner-a-02 +#1 Blue or green\? {2}\(agent, 0m ago\)$/),
+      "",
+      "Blocked (1):",
+      expect.stringMatching(/^ {2}owner-a-02 +The owner picks a colour {2}\(agent, 0m ago\)$/),
+      "",
+      "Ready for deploy (1):",
+      expect.stringMatching(/^ {2}owner-a-01 +node cli\.ts owner-a deploy {2}\(agent, 0m ago\)$/),
+    ]);
+    const empty = await run(["needs", "--project", "nobody"]);
+    expect(empty).toMatchObject({ code: 0, out: "Nothing needs the owner in nobody." });
+  });
+});
+
 describe("list", () => {
   it("lists this project's tickets, every project's with --all, and filters on --status", async () => {
     const key = await ticket();

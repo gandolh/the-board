@@ -7,6 +7,7 @@ import {
   boardQuerySchema,
   commentRequestSchema,
   moveRequestSchema,
+  needsQuerySchema,
   NO_OPEN_RUN,
   parseKey,
   QUESTION_NOT_OPEN,
@@ -27,6 +28,7 @@ import {
   type HealthResponse,
   type MoveCheck,
   type MoveResponse,
+  type NeedsResponse,
   type QuestionsResponse,
   type ReleaseResponse,
   type RunsResponse,
@@ -261,6 +263,13 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
 
   app.get("/api/runs", async () => {
     const body: RunsResponse = { runs: store.openRuns() };
+    return body;
+  });
+
+  app.get("/api/needs", async (request, reply) => {
+    const query = parse(needsQuerySchema, request.query, reply);
+    if (!query) return reply;
+    const body: NeedsResponse = { needs: store.needs(query.project) };
     return body;
   });
 

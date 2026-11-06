@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { create } from "./commands/create.js";
 import { guide } from "./commands/guide.js";
 import { comment, move, start } from "./commands/moves.js";
+import { needs } from "./commands/needs.js";
 import { answer, questions } from "./commands/questions.js";
 import { list, show } from "./commands/read.js";
 import { release, runs } from "./commands/runs.js";
@@ -31,6 +32,7 @@ const USAGE = `brief-board: track corpus briefs on the board.
   list [--status <status>] [--all]
   runs                                 every open run across projects, stalest first
   questions                            every open question across projects, oldest first
+  needs                                everything waiting on the owner: questions, Blocked, stale runs, to test, to deploy
   sync                                 read every project's briefs into the board
   guide                                the rules for using the board
 
@@ -41,7 +43,21 @@ start, move and comment take --question "<question for the owner>", once per que
 
 type Command = (rt: Runtime, args: string[], packageRoot: URL) => Promise<void>;
 
-const COMMANDS: Record<string, Command> = { create, start, move, comment, release, answer, show, list, runs, questions, sync, guide };
+const COMMANDS: Record<string, Command> = {
+  create,
+  start,
+  move,
+  comment,
+  release,
+  answer,
+  show,
+  list,
+  runs,
+  questions,
+  needs,
+  sync,
+  guide,
+};
 
 /** Run one invocation and return its exit code. `packageRoot` is the cli package's directory. */
 export async function main(argv: string[], ctx: Context, packageRoot: URL): Promise<number> {

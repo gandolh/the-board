@@ -1,9 +1,16 @@
-import { boardResponseSchema, ticketDetailResponseSchema, type BoardResponse, type TicketDetailResponse } from "@brief-board/shared";
+import {
+  boardResponseSchema,
+  needsResponseSchema,
+  ticketDetailResponseSchema,
+  type BoardResponse,
+  type NeedsResponse,
+  type TicketDetailResponse,
+} from "@brief-board/shared";
 import { API_BASE } from "./base";
 
 /**
  * The board reads and never writes (decisions.md "The UI is read-only"): the
- * only requests in this app are these two GETs, and the server refuses a
+ * only requests in this app are these three GETs, and the server refuses a
  * signed-in browser anything else. Answers are parsed with the shared
  * contract, so a server that drifted shows as an error, not as a half-drawn
  * board.
@@ -42,6 +49,11 @@ async function get<T>(path: string, parse: (value: unknown) => T, signal?: Abort
 
 export function fetchBoard(signal?: AbortSignal): Promise<BoardResponse> {
   return get("/api/board", (v) => boardResponseSchema.parse(v), signal);
+}
+
+/** What waits on the owner, for the strip above the lanes. */
+export function fetchNeeds(signal?: AbortSignal): Promise<NeedsResponse> {
+  return get("/api/needs", (v) => needsResponseSchema.parse(v), signal);
 }
 
 export function fetchTicket(key: string, signal?: AbortSignal): Promise<TicketDetailResponse> {

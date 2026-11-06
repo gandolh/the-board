@@ -354,6 +354,45 @@ export type OpenQuestionEntry = z.infer<typeof openQuestionEntrySchema>;
 export const questionsResponseSchema = z.object({ questions: z.array(openQuestionEntrySchema) });
 export type QuestionsResponse = z.infer<typeof questionsResponseSchema>;
 
+// --- GET /api/needs ----------------------------------------------------------------
+
+/**
+ * What waits on the owner, in the order the owner reads it: open questions,
+ * Blocked tickets, stale runs, Ready for test, Ready for deploy. Derived from
+ * the tickets, questions and runs; never a status, never a column.
+ */
+export const NEED_KINDS = ["question", "blocked", "stale_run", "ready_for_test", "ready_for_deploy"] as const;
+export const needKindSchema = z.enum(NEED_KINDS);
+export type NeedKind = z.infer<typeof needKindSchema>;
+
+export const needsQuerySchema = z.object({
+  /** Only this project's. */
+  project: z.string().min(1).optional(),
+});
+
+/** One thing that waits on the owner: which ticket, why, and since when. */
+export const needSchema = z.object({
+  kind: needKindSchema,
+  key: z.string(),
+  project: z.string(),
+  title: z.string(),
+  status: statusSchema,
+  /**
+   * Why it is there: the question, the block reason, the stale run, or the
+   * message of the move into Ready for test or Ready for deploy.
+   */
+  reason: z.string(),
+  /** Who asked, whose run it is, or who made the move. */
+  by: z.string(),
+  /** When it was asked, when the run was last heard from, or when the ticket entered its column. */
+  since: timestamp,
+});
+export type Need = z.infer<typeof needSchema>;
+
+/** Grouped by kind in `NEED_KINDS` order, oldest first in each. */
+export const needsResponseSchema = z.object({ needs: z.array(needSchema) });
+export type NeedsResponse = z.infer<typeof needsResponseSchema>;
+
 // --- POST /api/sync --------------------------------------------------------------
 
 /** Where a brief sits in its project's corpus. */

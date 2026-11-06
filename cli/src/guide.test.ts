@@ -57,7 +57,8 @@ describe("the guide", () => {
     expect(controller).toContain("Give each agent a name to pass as --author");
     expect(controller).toContain("Before a sync the owner asks for, run `brief-board runs`");
     expect(controller).toContain("first ask it to wind down");
-    expect(controller).toContain('brief-board release <ticket> -m "<why, and what it left running>"');
+    expect(controller).toContain('brief-board release <ticket> -m "<why, and what it left running: a port, a container>"');
+    expect(controller).toContain("At a hand-back, show the owner `brief-board needs` first.");
   });
 
   it("asks for the report lines in the end move, and questions as --question", () => {

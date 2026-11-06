@@ -5,6 +5,8 @@ import {
   type Lane,
   type MessageRole,
   type MoveCheck,
+  type Need,
+  type NeedKind,
   type OpenQuestionEntry,
   type OpenRunEntry,
   type Question,
@@ -155,6 +157,69 @@ export class Store {
       )
       .all({ project: project ?? null }) as (QuestionRow & { project: string; title: string; status: Status })[];
     return rows.map((row) => ({ key: row.ticket_key, project: row.project, title: row.title, status: row.status, question: this.toQuestion(row) }));
+  }
+
+  /**
+   * What waits on the owner, grouped by kind in the order the owner reads it
+   * (open questions, Blocked, stale runs, Ready for test, Ready for deploy),
+   * oldest first in each. Questions and stale runs count wherever their
+   * ticket is, as `questions` and `runs` list them; the three columns count
+   * only tickets on the board, not those hidden by a superseded brief.
+   */
+  needs(project?: string): Need[] {
+    const inProject = (candidate: string) => project === undefined || candidate === project;
+    const questions: Need[] = this.openQuestions(project).map((entry) => ({
+      kind: "question",
+      key: entry.key,
+      project: entry.project,
+      title: entry.title,
+      status: entry.status,
+      reason: `#${entry.question.number} ${entry.question.text}`,
+      by: entry.question.author,
+      since: entry.question.askedAt,
+    }));
+    const staleRuns: Need[] = this.openRuns()
+      .filter((entry) => entry.run.stale && inProject(entry.project))
+      .map((entry) => ({
+        kind: "stale_run",
+        key: entry.key,
+        project: entry.project,
+        title: entry.title,
+        status: "in_progress",
+        reason: `stale run by ${entry.run.author}`,
+        by: entry.run.author,
+        since: entry.run.lastHeardAt,
+      }));
+    const rows = this.db
+      .prepare(
+        `SELECT * FROM tickets
+         WHERE hidden = 0 AND status IN ('blocked', 'ready_for_test', 'ready_for_deploy') AND (@project IS NULL OR project = @project)
+         ORDER BY status_changed_at, key`,
+      )
+      .all({ project: project ?? null }) as TicketRow[];
+    const inColumn = (status: Status & NeedKind): Need[] =>
+      rows
+        .filter((row) => row.status === status)
+        .map((row) => {
+          // The message of the move that put it there, and who made that move.
+          const message = this.db
+            .prepare("SELECT body, author FROM comments WHERE ticket_key = ? AND move_to = ? ORDER BY id DESC LIMIT 1")
+            .get(row.key, status) as { body: string; author: string } | undefined;
+          const moved = this.db
+            .prepare("SELECT author FROM history WHERE ticket_key = ? AND to_status = ? ORDER BY id DESC LIMIT 1")
+            .get(row.key, status) as { author: string } | undefined;
+          return {
+            kind: status,
+            key: row.key,
+            project: row.project,
+            title: row.title,
+            status,
+            reason: message?.body ?? "no message",
+            by: moved?.author ?? message?.author ?? "unknown",
+            since: row.status_changed_at,
+          };
+        });
+    return [...questions, ...inColumn("blocked"), ...staleRuns, ...inColumn("ready_for_test"), ...inColumn("ready_for_deploy")];
   }
 
   /** Ask questions on the ticket, numbered on from its last. */
