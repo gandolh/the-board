@@ -1,5 +1,5 @@
 ---
-summary: Snapshot as of 2026-11-03, per area. Live on the VPS since 2026-11-03; first sync 2026-11-03 (23 projects, 30 tickets in To Do). The board, CLI, sync and guide built 2026-10-09 and rolled out to every project's CLAUDE.md but vps-deploy's; Base UI under the panel and lanes 2026-10-23. Down since 2026-10-13; briefs 01-05 (2026-11-02) built it for the VPS behind sign-in (sync in group folders, the sub-path, the CLI's token, sign-in, the container and the vps-deploy stack), not deployed, with the owner's steps, which vps-deploy's npm run setup:brief-board runs (2026-11-03); ward-auth 0.7.0 with its rename route off (2026-11-03); the numbering question after the estate restarted brief numbering, closed 2026-11-03; Backlog for open todos (brief 06) and nested corpora naming themselves (brief 07, churchix and scoala-ramna-theme) built 2026-11-03, not deployed; brief 08 (runs: a run on each ticket kept fresh by its writes, release, brief-board runs, sync waiting for a fresh run, the guide's end-move order and its section for a session that runs other agents) built 2026-11-06, not deployed; brief 09 (questions for the owner on the ticket, a badge, brief-board answer and questions, the report lines in the guide) built 2026-11-06, not deployed; briefs 10-11 (run duration, the needs-you list) open; the todo a-run-lists-what-it-holds.
+summary: Snapshot as of 2026-11-03, per area. Live on the VPS since 2026-11-03; first sync 2026-11-03 (23 projects, 30 tickets in To Do). The board, CLI, sync and guide built 2026-10-09 and rolled out to every project's CLAUDE.md but vps-deploy's; Base UI under the panel and lanes 2026-10-23. Down since 2026-10-13; briefs 01-05 (2026-11-02) built it for the VPS behind sign-in (sync in group folders, the sub-path, the CLI's token, sign-in, the container and the vps-deploy stack), not deployed, with the owner's steps, which vps-deploy's npm run setup:brief-board runs (2026-11-03); ward-auth 0.7.0 with its rename route off (2026-11-03); the numbering question after the estate restarted brief numbering, closed 2026-11-03; Backlog for open todos (brief 06) and nested corpora naming themselves (brief 07, churchix and scoala-ramna-theme) built 2026-11-03, not deployed; brief 08 (runs: a run on each ticket kept fresh by its writes, release, brief-board runs, sync waiting for a fresh run, the guide's end-move order and its section for a session that runs other agents) built 2026-11-06, not deployed; brief 09 (questions for the owner on the ticket, a badge, brief-board answer and questions, the report lines in the guide) built 2026-11-06, not deployed; brief 10 (each run's duration, worked out from its times, one shared formatter) built 2026-11-06, not deployed; brief 11 (the needs-you list) open; the todo a-run-lists-what-it-holds.
 updated: 2026-11-06
 ---
 
@@ -51,18 +51,20 @@ from 2026-10-13. Brief numbering restarted at 01 on 2026-11-02 (see
   panel, polling; an In Progress card shows its run (stale in an orange
   warning tone) or "no run", and the panel lists earlier runs. A card with
   open questions shows a badge counting them, in any column; the panel lists
-  the questions, open first. README images
+  the questions, open first. Since brief 10 an In Progress card reads
+  "running 40m", a card elsewhere how long its last run took, and a stale
+  run at least start to last heard ("≥ 3h 10m"). README images
   retaken 2026-10-31 (they show six columns).
 - **Rollout** (2026-10-09). Thirteen repos carry the brief-board section in
   their CLAUDE.md. vps-deploy was skipped because its `corpus/CLAUDE.md` had
   uncommitted work, and on 2026-11-02 it still has no section.
 
-213 tests (2026-11-06, after brief 09); typecheck and lint clean.
+218 tests (2026-11-06, after brief 10); typecheck and lint clean.
 
 ## Next (owner)
 
-1. Deploy runs and questions (briefs 08 and 09), then rebuild the local
-   CLI, in that order: the new CLI's `start`, `answer` and `questions` call
+1. Deploy runs, questions and run durations (briefs 08 to 10), then
+   rebuild the local CLI, in that order: the new CLI's `start`, `answer` and `questions` call
    routes only the new server has. From
    vps-deploy: `node cli.ts brief-board deploy` and
    `node cli.ts brief-board server`; then rebuild the CLI as
@@ -100,11 +102,11 @@ brief.
 
 ## Open briefs
 
-[08, a ticket knows the run that works it](../briefs/done/08-a-ticket-knows-the-run-that-works-it.md)
-and [09, the hand-back goes on the board](../briefs/done/09-the-hand-back-goes-on-the-board.md)
-are built (2026-11-06), not deployed. Open, in order:
-[10, a run shows how long it took](../briefs/todo/10-a-run-shows-how-long-it-took.md)
-and [11, one list of what needs the owner](../briefs/todo/11-one-list-of-what-needs-the-owner.md).
+[08, a ticket knows the run that works it](../briefs/done/08-a-ticket-knows-the-run-that-works-it.md),
+[09, the hand-back goes on the board](../briefs/done/09-the-hand-back-goes-on-the-board.md)
+and [10, a run shows how long it took](../briefs/done/10-a-run-shows-how-long-it-took.md)
+are built (2026-11-06), not deployed. Open:
+[11, one list of what needs the owner](../briefs/todo/11-one-list-of-what-needs-the-owner.md).
 
 ## Todos
 

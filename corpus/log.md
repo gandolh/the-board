@@ -367,3 +367,13 @@ open ones across projects. The guide asks the end move for four report
 lines and questions as `--question`; the controller adds `Tokens:` as a
 comment when its runtime reports usage. [glossary.md](wiki/glossary.md)
 has Question. 213 tests. Not deployed; it goes with brief 08's deploy.
+
+## [2026-11-06] done | Brief 10, a run shows how long it took
+
+[Brief 10](briefs/done/10-a-run-shows-how-long-it-took.md), `cd173e8` on
+the branch `briefs-2026-11-06`. A run's duration is worked out from the
+times the board keeps, nothing stored: "running 40m" on an In Progress
+card, "took 1h 20m" for a run that ended, and at least start to last heard
+for a stale one ("ran ≥ 3h 10m"). One formatter in `shared` serves the
+board and the CLI's `show` and `runs`. 218 tests. Not deployed; it goes
+with briefs 08 and 09.
