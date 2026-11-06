@@ -76,3 +76,53 @@ this brief builds:
 - **Owner steps:** from vps-deploy, `node cli.ts brief-board deploy` and
   `node cli.ts brief-board server`; only after that, rebuild the local CLI
   (`npm run build` in this repo), because the new CLI needs the new server.
+
+## Outcome
+
+Built 2026-11-06 in `b4aafc0`, on the branch `brief-12-2026-11-06` (from
+main at `5f32574`). Ticket brief-board-12 is in Ready for deploy.
+
+- **The table.** `holds` (migration 5) keyed by run, not by ticket: kind
+  (one of the four, a CHECK), value, when it was taken, one row per run,
+  kind and value. A `drop` deletes the row. When the run ends, its rows
+  stay on it: those are its leftovers, and the next run starts with none.
+  That covers the end move, `release` and sync's stale end with no change
+  to `sync.ts`. A run that passes to a new author keeps its holds.
+- **The routes.** `POST /api/tickets/:key/hold` and `/drop`, body
+  `{ kind, value }` (the value in the body, since a path has slashes),
+  behind the token check. Both set the run's last-heard time. No open run
+  is `no_open_run`, with a message naming `brief-board start`; dropping
+  what the run doesn't hold is the new `not_held`, naming what it does
+  hold. A todo's ticket is `sync_owned`, as for a comment.
+- **The CLI.** `hold` and `drop` in `cli/src/commands/holds.ts`. The kind
+  is checked locally, any case; the value is trimmed and otherwise taken as
+  given. A clash prints one warning per other open run on stderr, naming
+  its ticket, author and when it was last heard, and exits 0. No open run
+  and `not_held` exit 1 (a usage mistake, as `answer` does for a closed
+  question). The end move and `release` print one line, "the run ended
+  still holding port 5173, container vite-dev (kept on the run as
+  leftovers)", only when something is held. `show` adds `Holds:` under
+  `Run:` for an open run ("nothing" when empty) and "; leftovers: ..." on
+  each earlier run that kept some; `runs` has holds as its last column.
+- **The contract.** The board's tickets keep the plain run, so `/api/board`
+  and `web/` are unchanged. The detail's runs, `GET /api/runs`, the release
+  and a new `endedRun` on the move response carry `RunWithHolds`.
+- **My calls.** Holding what the run holds already is a no-op ("already
+  holds", exit 0). Only open runs clash, as decision 2 says; an ended run's
+  leftover on the same port doesn't warn. Values are compared exactly after
+  trimming, so `tmp/x` and `./tmp/x` are two paths. `drop` works only on
+  the open run: an ended run's leftovers are its record and can't be
+  dropped. `--author` is accepted on `hold` and `drop` but not stored; a
+  hold belongs to the run.
+- **Guide.** Section 3: "Hold what you start that outlives a command, and
+  drop it when you stop it", with the command shape. Section 7, under
+  `release`: "Release prints what the run still held; stop those, or tell
+  the owner." The guide test's cap went from 110 to 115 lines (it is 112).
+- **Outside the file list:** `cli/src/format.ts`, `cli/src/client.ts`,
+  `cli/src/cli.test.ts`, `docs/architecture.md`, the wiki's
+  `architecture.md`.
+
+243 tests (from 229), typecheck (web included) and lint pass; the web build
+and a browser walk were skipped, since `web/` is untouched. Owner steps:
+[status.md](../../wiki/status.md), "Next (owner)" item 1: one deploy for
+briefs 08 to 12, the server first, then the local CLI rebuild.

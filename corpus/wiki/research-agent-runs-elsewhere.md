@@ -170,7 +170,7 @@ No new todo. Everything worth doing fits brief 08 or the two todos.
 [Brief 08](../briefs/done/08-a-ticket-knows-the-run-that-works-it.md) keeps
 a run alive by its own writes, records how it ended, adds `brief-board runs`
 and a guide section for the session that runs agents, and lists five owner
-decisions. [brief 12](../briefs/todo/12-a-run-lists-what-it-holds.md)
+decisions. [brief 12](../briefs/done/12-a-run-lists-what-it-holds.md)
 has the smallest `hold` and the guide line.
 [brief 09](../briefs/done/09-the-hand-back-goes-on-the-board.md) (promoted 2026-11-06)
 puts questions on the ticket, independent of runs, with `brief-board

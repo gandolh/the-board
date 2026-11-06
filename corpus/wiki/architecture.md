@@ -1,5 +1,5 @@
 ---
-summary: How brief-board is put together, as built 2026-10-09, with the 2026-11-02 sub-path, token and sign-in, the 2026-11-03 todo keys, and the 2026-11-06 runs. npm workspaces with a Fastify + SQLite API, a read-only Vite + React board, and the brief-board CLI that agents use; how the CLI finds the board without any repo holding a path; keys, the CLI's exit codes, the server's error codes, how the board UI polls and lays out, build gotchas, and what each project's CLAUDE.md says. The owner starts the server by hand on 127.0.0.1:8806.
+summary: How brief-board is put together, as built 2026-10-09, with the 2026-11-02 sub-path, token and sign-in, the 2026-11-03 todo keys, and the 2026-11-06 runs and their holds. npm workspaces with a Fastify + SQLite API, a read-only Vite + React board, and the brief-board CLI that agents use; how the CLI finds the board without any repo holding a path; keys, the CLI's exit codes, the server's error codes, how the board UI polls and lays out, build gotchas, and what each project's CLAUDE.md says. The owner starts the server by hand on 127.0.0.1:8806.
 updated: 2026-11-06
 ---
 
@@ -71,8 +71,8 @@ colon raw or as `%3A`.
 
 ## CLI
 
-`create`, `start`, `move`, `comment`, `release`, `answer`, `show`, `list`,
-`runs`, `questions`, `needs`, `sync` and `guide`. The project is `--project`, else
+`create`, `start`, `move`, `comment`, `release`, `hold`, `drop`, `answer`,
+`show`, `list`, `runs`, `questions`, `needs`, `sync` and `guide`. The project is `--project`, else
 the `corpus/board-name` of the nearest `corpus/` from the working directory
 up to the git root (2026-11-03, for a nested corpus such as churchix), else
 the git root's directory name; `create` looks for the brief in that same
@@ -83,7 +83,8 @@ corpus. The author is `--author`, else `BRIEF_BOARD_AUTHOR`, else `agent`.
 - Runs (2026-11-06): `start` posts to `/api/tickets/:key/start`, which moves
   the ticket or, on a resume, passes the open run to the new author; the CLI
   warns on stderr when that run was fresh and someone else's. `release` ends
-  a stopped agent's run; `runs` lists the open ones, stalest first.
+  a stopped agent's run; `runs` lists the open ones, stalest first. `hold`
+  and `drop` keep a run's holds; a clash with another open run warns, exit 0.
 - Questions (2026-11-06): `--question`, repeatable, on `start`, `move` and
   `comment`. `answer` checks locally that the question is open; a closed or
   unknown number exits 1 naming the open ones.
@@ -94,8 +95,8 @@ corpus. The author is `--author`, else `BRIEF_BOARD_AUTHOR`, else `agent`.
   the board is unreachable, printed as one line. A 4xx that isn't the
   contract's JSON (another service on the port) counts as unreachable.
 - `guide` prints `cli/src/guide.md` with the move table filled in from
-  `shared` at print time; a test holds it under 110 lines (80 until runs,
-  the controller's section and the report lines came in on 2026-11-06).
+  `shared` at print time; a test holds it under 115 lines (80 until runs,
+  the controller's section, the report lines and holds came in on 2026-11-06).
 
 ## Server
 
@@ -105,7 +106,7 @@ corpus. The author is `--author`, else `BRIEF_BOARD_AUTHOR`, else `agent`.
 deduplicated, and never include the project. A `PUT` that creates answers
 201. Error codes: `invalid_request`, `invalid_key`, `not_found`,
 `move_not_allowed`, `message_required`, `sync_owned` (a write on a todo's
-ticket, 2026-11-03), `no_open_run` and `question_not_open` (2026-11-06),
+ticket, 2026-11-03), `no_open_run`, `question_not_open` and `not_held` (2026-11-06),
 `internal`, and `unauthorized` (a 401 from the sign-in guard,
 [sign-in.md](sign-in.md)). Migrations run with foreign keys off, because
 rebuilding `tickets` (copy, drop, rename, as SQLite changes a CHECK) would
@@ -120,7 +121,8 @@ set its last-heard time, and sync's writes don't. Stale is worked out on
 read from `BRIEF_BOARD_STALE_HOURS` (default 4). A release, a stale end or an
 answer is not a status change and leaves no history row; the record and a
 comment carry it. A ticket carries its latest run and its count of open
-questions; sync never touches questions.
+questions; sync never touches questions. Holds are rows keyed by run: those
+left when it ends stay on it as leftovers, and the board's tickets omit them.
 
 Paths (since 2026-11-02, for the sub-path on the VPS): the API is `/api/*`.
 The browser reaches it at `/brief-board-api/api/*`; Caddy strips that prefix

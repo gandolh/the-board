@@ -396,3 +396,17 @@ Promoted from the todo at the owner's ask: `hold` and `drop` on a run's
 ports, pids, containers and paths, a warning (never a lock) on a clash, and
 the leftovers printed and kept when the run ends or is released. Built after
 brief 08, deployed with it if 08-11 aren't live yet.
+
+## [2026-11-06] done | Brief 12, a run lists what it holds
+
+[Brief 12](briefs/done/12-a-run-lists-what-it-holds.md), `b4aafc0` on the
+branch `brief-12-2026-11-06`. `brief-board hold <ticket>
+port|pid|container|path <value>` and `drop` record what a run started that
+outlives a command, in a `holds` table keyed by run. A hold on what another
+open run holds warns and goes ahead. The end move and `release` print what
+the run still held, and the ended run keeps it as its leftovers; `show` and
+`runs` list holds. Two guide lines: hold what outlives a command and drop it
+when you stop it, and a release's holds are what to clean up.
+[glossary.md](wiki/glossary.md) has Hold and Leftover. 243 tests. Not
+deployed; it goes out with briefs 08 to 11, the server first, then the local
+CLI rebuild.

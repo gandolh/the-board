@@ -1,5 +1,5 @@
 ---
-summary: The board's vocabulary. Ticket vs brief vs todo, project, lane, project tag and tag, sync, the guide, a run and a stale run, a question, the statuses (Backlog, To Do, In Progress, Blocked, Ready for test, Ready for deploy, Done), and the messages a move can carry (conclusion, block reason, confirmation, test notes, deploy steps), each with the words they replace.
+summary: The board's vocabulary. Ticket vs brief vs todo, project, lane, project tag and tag, sync, the guide, a run and a stale run, a hold and a leftover, a question, the statuses (Backlog, To Do, In Progress, Blocked, Ready for test, Ready for deploy, Done), and the messages a move can carry (conclusion, block reason, confirmation, test notes, deploy steps), each with the words they replace.
 updated: 2026-11-06
 ---
 
@@ -60,6 +60,18 @@ One agent session working one ticket, from `brief-board start` to its end
 move, or to a `release` by whoever stopped the agent. A record on the
 ticket, never a lock; it ends `moved`, `released` or `stale`.
 _Avoid_: claim, lease, job
+
+**Hold**:
+A port, pid, container or path that a run declares it started, recorded
+with `brief-board hold` and taken off with `drop`. Free text the board
+checks against nothing; a record, never a lock.
+_Avoid_: lock, lease, reservation, claim
+
+**Leftover**:
+A hold still on a run when the run ended. It stays on that run, printed by
+the end move or `release` and listed by `show`; the next run starts with
+none.
+_Avoid_: orphan, dangling resource
 
 **Question**:
 Something only the owner can decide, asked on a ticket with `--question`
