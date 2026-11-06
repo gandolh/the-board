@@ -20,14 +20,14 @@ The list is derived, like 09's badge: never a status, never a column, so
 
 ## Owner decisions
 
-Settled on 2026-11-06: a derived list, read-only. Two smaller calls, with
-the default this brief builds:
+Settled on 2026-11-06: a derived list, read-only. The two smaller calls,
+answered the same day:
 
-1. **What's on it.** Default, in this order: open questions (09), Blocked
+1. **What's on it.** **Decided**, in this order: open questions (09), Blocked
    tickets with their blocking message, stale runs (08), Ready for test,
    Ready for deploy. Each line names the ticket, why it's there and since
    when.
-2. **Where it shows on the board.** Default: a strip above the lanes, one
+2. **Where it shows on the board.** **Decided:** a strip above the lanes, one
    line per kind with a count ("3 questions · 1 blocked · 2 to test · 7 to
    deploy"), each opening the matching tickets. Nothing when all are zero.
 

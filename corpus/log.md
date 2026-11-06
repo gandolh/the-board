@@ -333,3 +333,10 @@ long it took (derived from brief 08's times, nothing stored), with a
 derived list of what needs the owner (open questions, Blocked, stale runs,
 Ready for test and deploy) as `brief-board needs` and a strip on the board.
 The Discord nudge from just-a-bot wasn't picked.
+
+## [2026-11-06] decision | Briefs 10 and 11 decided
+
+A stale run's duration reads as at least start to last heard; the needs-you
+list holds open questions, Blocked tickets, stale runs, Ready for test and
+Ready for deploy, shown as a strip of counts above the lanes, hidden at all
+zeros. All as written.

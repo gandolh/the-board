@@ -17,9 +17,9 @@ the board already keeps, with no new input from agents.
 ## Owner decisions
 
 Settled on 2026-11-06: duration only on the board, tokens as a report line
-(brief 09). One smaller call, with the default this brief builds:
+(brief 09). The smaller call, answered the same day:
 
-1. **What a stale run's duration is.** Default: from its start to the last
+1. **What a stale run's duration is.** **Decided:** from its start to the last
    time the board heard from it, marked as at least that long ("≥ 3h 10m"),
    since nobody knows when it really stopped.
 
