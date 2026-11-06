@@ -71,13 +71,13 @@ describe("a card's run", () => {
   });
   const card = (fields: Partial<Ticket>) => renderToStaticMarkup(<Card ticket={ticket({ status: "in_progress", ...fields })} now={now} onOpen={() => {}} />);
 
-  it("shows who runs an In Progress ticket, since when, and when the board last heard", () => {
-    expect(card({ run: run({}) })).toContain('<span class="card-run">ana · started 2h ago · heard 20m ago</span>');
+  it("shows who runs an In Progress ticket, how long it has been running, and when the board last heard", () => {
+    expect(card({ run: run({}) })).toContain('<span class="card-run">ana · running 2h · heard 20m ago</span>');
   });
 
-  it("shows a stale run in the warning tone", () => {
-    expect(card({ run: run({ stale: true, lastHeardAt: minutesAgo(300) }) })).toContain(
-      '<span class="card-run card-run-stale">ana · stale run, heard 5h ago</span>',
+  it("shows a stale run in the warning tone, at least start to last heard", () => {
+    expect(card({ run: run({ stale: true, startedAt: minutesAgo(490), lastHeardAt: minutesAgo(300) }) })).toContain(
+      '<span class="card-run card-run-stale">ana · stale run, heard 5h ago · ran ≥ 3h 10m</span>',
     );
   });
 
@@ -86,15 +86,19 @@ describe("a card's run", () => {
     expect(card({ run: run({ endedAt: minutesAgo(5), ended: "released" }) })).toContain('<span class="card-run">no run</span>');
   });
 
-  it("shows no run line outside In Progress", () => {
-    expect(card({ status: "ready_for_deploy", run: run({ endedAt: minutesAgo(5), ended: "moved", endedTo: "ready_for_deploy" }) })).not.toContain(
-      "card-run",
+  it("shows how long the last run took outside In Progress, and nothing where none ran", () => {
+    expect(card({ status: "ready_for_deploy", run: run({ endedAt: minutesAgo(40), ended: "moved", endedTo: "ready_for_deploy" }) })).toContain(
+      '<span class="card-run">ana · took 1h 20m</span>',
     );
+    expect(card({ status: "done", run: run({ lastHeardAt: minutesAgo(50), endedAt: minutesAgo(5), ended: "stale" }) })).toContain(
+      '<span class="card-run">ana · took ≥ 1h 10m</span>',
+    );
+    expect(card({ status: "todo" })).not.toContain("card-run");
   });
 
   it("words a run started this minute, and each way a run ends", () => {
     expect(runLine(run({ startedAt: now.toISOString(), lastHeardAt: now.toISOString() }), now).text).toBe(
-      "ana · started just now · heard just now",
+      "ana · running <1m · heard just now",
     );
     expect(runEnding(run({ ended: "moved", endedTo: "ready_for_test" }))).toBe("moved to Ready for test");
     expect(runEnding(run({ ended: "released" }))).toBe("released, unfinished");

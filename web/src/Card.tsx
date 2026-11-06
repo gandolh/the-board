@@ -1,17 +1,23 @@
 import { openRun, parseTodoKey, type Ticket } from "@brief-board/shared";
-import { runLine } from "./runs";
+import { endedRunLine, runLine } from "./runs";
 import { since, when } from "./time";
 
 /**
  * One ticket on the board: key, title, labels, and how long it has sat in its
  * column. A todo's card shows its slug where a brief's shows its key: the lane
  * already names the project. An In Progress card shows its run, or says it
- * has none. A card with open questions for the owner shows how many, in any
+ * has none; a card elsewhere, how long its last run took. A card with open questions for the owner shows how many, in any
  * column.
  */
 export function Card({ ticket, now, onOpen }: { ticket: Ticket; now: Date; onOpen: (key: string) => void }) {
   const todo = ticket.number === null ? parseTodoKey(ticket.key) : null;
-  const run = ticket.status === "in_progress" ? runLine(openRun(ticket), now) : null;
+  // In Progress: the open run, or "no run". Elsewhere: how long the last run took, if one ran.
+  const run =
+    ticket.status === "in_progress"
+      ? runLine(openRun(ticket), now)
+      : ticket.run && ticket.run.endedAt !== null
+        ? { text: endedRunLine(ticket.run, now), stale: false }
+        : null;
   return (
     <button type="button" className="card" onClick={() => onOpen(ticket.key)} aria-label={`${ticket.key}: ${ticket.title}`}>
       <span className="card-key">{todo ? todo.slug : ticket.key}</span>

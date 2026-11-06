@@ -171,13 +171,13 @@ describe("runs", () => {
     expect((await run(["show", key])).out).toContain("Run:     no run");
     await earlier(2 * HOUR, () => run(["start", key, "--author", "ana"]));
     const show = (await run(["show", key])).out;
-    expect(show).toContain("Run:     run by ana, started 2h ago, heard 2h ago");
+    expect(show).toContain("Run:     run by ana, started 2h ago, heard 2h ago, running 2h");
     expect(show).not.toContain("Earlier runs");
     expect((await run(["list", "--status", "in_progress"])).out).toContain(`Ticket ${key.split("-").pop()}  (run by ana)`);
     await run(["move", key, "ready_for_deploy", "-m", "npm run deploy", "--author", "ana"]);
     const after = (await run(["show", key])).out;
     expect(after).toContain("Run:     no run");
-    expect(after).toMatch(/Earlier runs \(1\):\n {2}\[[^\]]+\] ana: moved to Ready for deploy, /);
+    expect(after).toMatch(/Earlier runs \(1\):\n {2}\[[^\]]+\] ana: moved to Ready for deploy, took 2h, ended /);
   });
 
   it("a second start passes the run on, and warns on stderr when it was fresh and someone else's", async () => {
@@ -198,10 +198,23 @@ describe("runs", () => {
     expect((await run(["start", key, "--author", "cy"])).err).toBe("");
   });
 
+  it("shows each run's duration: running, took, and at least start to last heard when stale", async () => {
+    const key = await ticket();
+    await earlier(6 * HOUR, () => run(["start", key, "--author", "ana"]));
+    await earlier(5 * HOUR, () => run(["comment", key, "-m", "a first step", "--author", "ana"]));
+    const stale = (await run(["show", key])).out;
+    expect(stale).toContain("Run:     stale run by ana, started 6h ago, heard 5h ago, ran ≥ 1h");
+    expect((await run(["runs"])).out.split("\n").find((line) => line.startsWith(key))).toMatch(/ ana +ran ≥ 1h +started 6h ago/);
+    await run(["comment", key, "-m", "back", "--author", "ana"]);
+    expect((await run(["show", key])).out).toContain("Run:     run by ana, started 6h ago, heard 0m ago, running 6h");
+    await run(["move", key, "done", "--author", "ana"]);
+    expect((await run(["show", key])).out).toMatch(/ana: moved to Done, took 6h, ended /);
+  });
+
   it("marks a stale run in show and list", async () => {
     const key = await ticket();
     await earlier(5 * HOUR, () => run(["start", key, "--author", "ana"]));
-    expect((await run(["show", key])).out).toContain("Run:     stale run by ana, started 5h ago, heard 5h ago");
+    expect((await run(["show", key])).out).toContain("Run:     stale run by ana, started 5h ago, heard 5h ago, ran ≥ <1m");
     expect((await run(["list"])).out).toContain("(stale run by ana, heard 5h ago)");
   });
 
@@ -215,7 +228,7 @@ describe("runs", () => {
     const show = (await run(["show", key])).out;
     expect(show).toContain("Status:  In Progress");
     expect(show).toContain("Run:     no run");
-    expect(show).toContain("ana: released, unfinished");
+    expect(show).toMatch(/ana: released, unfinished, took <1m, ended /);
     expect(show).toContain("Vite left on 5173");
     const again = await run(["release", key, "-m", "again"]);
     expect(again.code).toBe(2);
@@ -234,8 +247,8 @@ describe("runs", () => {
     const freshLine = lines.findIndex((line) => line.startsWith(fresh));
     expect(staleLine).toBeGreaterThanOrEqual(0);
     expect(staleLine).toBeLessThan(freshLine);
-    expect(lines[staleLine]).toMatch(/ bo +started 6h ago, heard 6h ago, stale$/);
-    expect(lines[freshLine]).toMatch(/ ana +started 0m ago, heard 0m ago$/);
+    expect(lines[staleLine]).toMatch(/ bo +ran ≥ <1m +started 6h ago, heard 6h ago, stale$/);
+    expect(lines[freshLine]).toMatch(/ ana +running <1m +started 0m ago, heard 0m ago$/);
     expect((await run(["runs", "--project", "nobody"])).out).toBe("No open runs in nobody.");
   });
 });

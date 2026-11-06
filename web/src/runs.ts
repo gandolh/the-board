@@ -1,4 +1,4 @@
-import { STATUS_LABELS, type Run } from "@brief-board/shared";
+import { runDurationText, STATUS_LABELS, type Run } from "@brief-board/shared";
 import { since } from "./time";
 
 /**
@@ -12,11 +12,20 @@ function ago(iso: string, now: Date): string {
   return span === "now" ? "just now" : `${span} ago`;
 }
 
-/** An In Progress ticket's run line: who, since when, when the board last heard from it; stale in the warning tone; or "no run". */
+/**
+ * An open run's line: who, how long it has been running, when the board last
+ * heard from it; a stale one in the warning tone, at least start to last
+ * heard; "no run" without one.
+ */
 export function runLine(run: Run | null, now: Date): { text: string; stale: boolean } {
   if (!run) return { text: "no run", stale: false };
-  if (run.stale) return { text: `${run.author} · stale run, heard ${ago(run.lastHeardAt, now)}`, stale: true };
-  return { text: `${run.author} · started ${ago(run.startedAt, now)} · heard ${ago(run.lastHeardAt, now)}`, stale: false };
+  if (run.stale) return { text: `${run.author} · stale run, heard ${ago(run.lastHeardAt, now)} · ${runDurationText(run, now)}`, stale: true };
+  return { text: `${run.author} · ${runDurationText(run, now)} · heard ${ago(run.lastHeardAt, now)}`, stale: false };
+}
+
+/** A run that ended: who, and how long it took. */
+export function endedRunLine(run: Run, now: Date): string {
+  return `${run.author} · ${runDurationText(run, now)}`;
 }
 
 /** How an ended run ended. */

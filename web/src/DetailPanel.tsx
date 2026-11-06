@@ -1,7 +1,7 @@
 import { Dialog } from "@base-ui/react/dialog";
 import { useEffect, useRef, useState } from "react";
 import Markdown from "react-markdown";
-import { openRun, STATUS_LABELS, type TicketDetailResponse } from "@brief-board/shared";
+import { openRun, runDurationText, STATUS_LABELS, type TicketDetailResponse } from "@brief-board/shared";
 import { fetchTicket } from "./api";
 import { ROLE_LABELS } from "./labels";
 import { runEnding, runLine } from "./runs";
@@ -182,7 +182,7 @@ export function DetailPanel({ ticketKey, refreshedAt, onClose }: { ticketKey: st
                     {ended.map((earlier) => (
                       <li key={earlier.id}>
                         <span>
-                          {earlier.author}: {runEnding(earlier)}
+                          {earlier.author}: {runEnding(earlier)}, {runDurationText(earlier, refreshedAt ?? new Date())}
                         </span>
                         <span className="muted">
                           , {when(earlier.startedAt)} to {when(earlier.endedAt!)}

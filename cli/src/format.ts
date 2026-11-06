@@ -1,6 +1,7 @@
 import {
   movesFrom,
   openRun,
+  runDurationText,
   STATUS_LABELS,
   type MessageRole,
   type MoveCheck,
@@ -65,9 +66,9 @@ export function ago(iso: string, now: Date): string {
   return `${Math.floor(hours / 24)}d`;
 }
 
-/** An open run: "run by ana, started 2h ago, heard 20m ago", or "stale run by ana, ...". */
+/** An open run: "run by ana, started 2h ago, heard 20m ago, running 2h", or "stale run by ana, ..., ran ≥ 1h". */
 export function openRunText(run: Run, now: Date): string {
-  return `${run.stale ? "stale run" : "run"} by ${run.author}, started ${ago(run.startedAt, now)} ago, heard ${ago(run.lastHeardAt, now)} ago`;
+  return `${run.stale ? "stale run" : "run"} by ${run.author}, started ${ago(run.startedAt, now)} ago, heard ${ago(run.lastHeardAt, now)} ago, ${runDurationText(run, now)}`;
 }
 
 /** How an ended run ended. */
@@ -86,7 +87,8 @@ export function ticketLine(ticket: Ticket, now: Date = new Date()): string {
 
 /** `runs`: one open run per line. */
 export function openRunLine({ key, run }: OpenRunEntry, now: Date = new Date()): string {
-  return `${key.padEnd(24)} ${run.author.padEnd(16)} started ${ago(run.startedAt, now)} ago, heard ${ago(run.lastHeardAt, now)} ago${run.stale ? ", stale" : ""}`;
+  const duration = runDurationText(run, now).padEnd(16);
+  return `${key.padEnd(24)} ${run.author.padEnd(16)} ${duration} started ${ago(run.startedAt, now)} ago, heard ${ago(run.lastHeardAt, now)} ago${run.stale ? ", stale" : ""}`;
 }
 
 /** `questions`: one open question per line, with its ticket, number, who asked and when. */
@@ -115,7 +117,7 @@ export function ticketDetail(
   ];
   if (ended.length > 0) {
     lines.push(`Earlier runs (${ended.length}):`);
-    for (const run of ended) lines.push(`  [${run.startedAt}] ${run.author}: ${runEnding(run)}, ${run.endedAt}`);
+    for (const run of ended) lines.push(`  [${run.startedAt}] ${run.author}: ${runEnding(run)}, ${runDurationText(run, now)}, ended ${run.endedAt}`);
     lines.push("");
   }
   if (questions.length > 0) {
