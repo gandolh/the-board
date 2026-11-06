@@ -377,3 +377,15 @@ card, "took 1h 20m" for a run that ended, and at least start to last heard
 for a stale one ("ran ≥ 3h 10m"). One formatter in `shared` serves the
 board and the CLI's `show` and `runs`. 218 tests. Not deployed; it goes
 with briefs 08 and 09.
+
+## [2026-11-06] done | Brief 11, one list of what needs the owner
+
+[Brief 11](briefs/done/11-one-list-of-what-needs-the-owner.md), `88ffb13`
+on the branch `briefs-2026-11-06`. One derived list of what waits on the
+owner: open questions, Blocked tickets, stale runs, Ready for test and
+Ready for deploy, oldest first in each, from a new read route. `brief-board
+needs` prints it; a strip above the lanes counts each kind and narrows the
+board to one at a click, and hides when nothing waits. The guide tells a
+session that runs agents to show `needs` first at a hand-back. Briefs 08 to
+11 are all built on that branch, 229 tests, and go out in one deploy: the
+server first, then the local CLI rebuild.

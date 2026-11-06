@@ -72,7 +72,7 @@ colon raw or as `%3A`.
 ## CLI
 
 `create`, `start`, `move`, `comment`, `release`, `answer`, `show`, `list`,
-`runs`, `questions`, `sync` and `guide`. The project is `--project`, else
+`runs`, `questions`, `needs`, `sync` and `guide`. The project is `--project`, else
 the `corpus/board-name` of the nearest `corpus/` from the working directory
 up to the git root (2026-11-03, for a nested corpus such as churchix), else
 the git root's directory name; `create` looks for the brief in that same
@@ -140,7 +140,9 @@ move. The rules per brief state: [sync.md](sync.md).
 
 ## Board UI
 
-`web/src/`; `api.ts` holds the only requests, both GETs, built from
+`web/src/`; `api.ts` holds the only requests, three GETs (the board, a
+ticket, and since 2026-11-06 what needs the owner, for the strip above the
+lanes that narrows the board to one kind at a click), built from
 `API_BASE` in `base.ts` (`/brief-board-api`). Vite's `base` is
 `BRIEF_BOARD_BASE`, default `/brief-board/`, so assets load from
 `/brief-board/assets/`; in dev, Vite proxies `/brief-board-api` to

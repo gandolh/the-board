@@ -66,3 +66,44 @@ answered the same day:
   brief-board server` from vps-deploy; rebuild the local CLI
   (`docs/getting-started.md`); `brief-board needs` lists today's Ready for
   deploy tickets.
+
+## Outcome
+
+Built 2026-11-06 in `88ffb13`, on the branch `briefs-2026-11-06`, after
+briefs 08 to 10. Ticket brief-board-11 is in Ready for deploy.
+
+- **The route.** `GET /api/needs[?project=]` returns the list from
+  `Store.needs`, built from the tickets, questions and runs; nothing is
+  stored. Kinds in decision 1's order (open questions, Blocked, stale runs,
+  Ready for test, Ready for deploy), oldest first in each. Each entry names
+  the ticket, `reason` (the question with its number, the block reason,
+  "stale run by ana", or the message of the move into Ready for test or
+  deploy, "no message" when that move carried none), `by` and `since` (when
+  asked, when last heard, or when the ticket entered its column). A ticket
+  both Blocked and with an open question is under each.
+- **Hidden tickets.** Questions and stale runs count wherever their ticket
+  is, as `questions` and `runs` list them; the three column kinds count only
+  tickets on the board, not those hidden by a superseded brief. My call: the
+  brief doesn't say, and a superseded brief's column is not the owner's to
+  act on.
+- **`brief-board needs [--project]`** prints a count line, then each kind
+  with its entries (first line of the reason, who, how long ago); "Nothing
+  needs the owner." when empty, exit 0 either way. The count words come from
+  `shared/src/needs.ts`, which the strip uses too.
+- **The strip.** `web/src/NeedsStrip.tsx`, above the lanes, polled like the
+  board: "Needs you  3 questions · 1 blocked · 1 stale run · 2 to test · 7 to
+  deploy", hidden at all zeros. "Opening the matching tickets" I built as a
+  filter: a click narrows the board to that kind's tickets (with the tag
+  filter, if one is set), a second click or "Show all" clears it. The panel
+  still opens one ticket at a time. The UI stays read-only.
+- **Guide.** Section 7 opens with "At a hand-back, show the owner
+  `brief-board needs` first." To keep the guide under its cap (109 of 110
+  lines), the release lines in that section were folded into one.
+- **Outside the file list:** `web/src/api.ts` (the third GET),
+  `web/src/styles.css`, `docs/architecture.md`, the wiki's
+  `architecture.md`.
+
+229 tests (from 218), typecheck, lint and the web build pass; no browser
+walk (the strip's markup and the filter's keys are tested, the click wiring
+in `App.tsx` is not). Owner steps: [status.md](../../wiki/status.md), "Next
+(owner)" item 1, one deploy for briefs 08 to 11.
