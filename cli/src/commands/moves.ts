@@ -1,6 +1,6 @@
 import { checkMove, type Question, type Status } from "@brief-board/shared";
 import { Rejected, UsageError } from "../errors.js";
-import { ago, label, refusal } from "../format.js";
+import { ago, label, leftoverLines, refusal } from "../format.js";
 import { statusArg, type Runtime } from "../runtime.js";
 
 /** `-m`, and `--question` as often as there are questions for the owner. */
@@ -15,7 +15,10 @@ function asked(rt: Runtime, key: string, questions: Question[] | undefined): voi
   rt.out(`${key}: asked question${questions.length === 1 ? "" : "s"} ${questions.map((q) => q.number).join(", ")}`);
 }
 
-/** Check the move locally first, so an agent reads the rules from the CLI, not from a 400. */
+/**
+ * Check the move locally first, so an agent reads the rules from the CLI, not
+ * from a 400. A move that ends a run prints what the run still held.
+ */
 async function moveTo(rt: Runtime, key: string, to: Status, message: string | undefined, author: string, questions?: string[]): Promise<void> {
   const client = rt.client();
   const { ticket } = await client.ticket(key);
@@ -23,6 +26,7 @@ async function moveTo(rt: Runtime, key: string, to: Status, message: string | un
   if (!check.ok) throw new Rejected(refusal(key, ticket.status, to, check).join("\n"));
   const result = await client.move(key, { to, message, author, questions });
   rt.out(`${key}: ${label(ticket.status)} → ${label(result.ticket.status)}`);
+  for (const line of leftoverLines(key, result.endedRun)) rt.out(line);
   asked(rt, key, result.questions);
 }
 

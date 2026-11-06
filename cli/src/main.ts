@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { create } from "./commands/create.js";
 import { guide } from "./commands/guide.js";
+import { drop, hold } from "./commands/holds.js";
 import { comment, move, start } from "./commands/moves.js";
 import { needs } from "./commands/needs.js";
 import { answer, questions } from "./commands/questions.js";
@@ -27,10 +28,12 @@ const USAGE = `brief-board: track corpus briefs on the board.
   move <ticket> <status> [-m <message>]
   comment <ticket> -m <message>
   release <ticket> -m <message>       end the run of an agent that was stopped; the ticket stays In Progress
+  hold <ticket> <kind> <value>        the open run holds a port, pid, container or path it started
+  drop <ticket> <kind> <value>        the open run no longer holds it
   answer <ticket> <n> -m <answer>     record the owner's answer to question n
   show <ticket>
   list [--status <status>] [--all]
-  runs                                 every open run across projects, stalest first
+  runs                                 every open run across projects, stalest first, with what each holds
   questions                            every open question across projects, oldest first
   needs                                everything waiting on the owner: questions, Blocked, stale runs, to test, to deploy
   sync                                 read every project's briefs into the board
@@ -49,6 +52,8 @@ const COMMANDS: Record<string, Command> = {
   move,
   comment,
   release,
+  hold,
+  drop,
   answer,
   show,
   list,

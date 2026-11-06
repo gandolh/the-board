@@ -253,6 +253,85 @@ describe("runs", () => {
   });
 });
 
+describe("holds", () => {
+  // The board outlives each test, so every test holds values of its own.
+  it("hold and drop on the open run; show lists what it holds", async () => {
+    const key = await ticket();
+    await run(["start", key, "--author", "ana"]);
+    expect((await run(["show", key])).out).toContain("Holds:   nothing");
+    expect(await run(["hold", key, "port", "5201"])).toMatchObject({ code: 0, out: `${key}: the run holds port 5201`, err: "" });
+    expect((await run(["hold", key, "Path", "tmp/os-copy"])).out).toBe(`${key}: the run holds path tmp/os-copy`);
+    expect((await run(["hold", key, "port", "5201"])).out).toBe(`${key}: the run already holds port 5201`);
+    expect((await run(["show", key])).out).toContain("Holds:   port 5201, path tmp/os-copy");
+    expect(await run(["drop", key, "port", "5201"])).toMatchObject({ code: 0, out: `${key}: dropped port 5201` });
+    expect((await run(["show", key])).out).toContain("Holds:   path tmp/os-copy");
+  });
+
+  it("warns on stderr when another open run holds the same, and still holds it", async () => {
+    const first = await ticket();
+    const second = await ticket();
+    await run(["start", first, "--author", "ana"]);
+    await run(["hold", first, "container", "vite-5202"]);
+    await run(["start", second, "--author", "bo"]);
+    const res = await run(["hold", second, "container", "vite-5202"]);
+    expect(res.code).toBe(0);
+    expect(res.out).toBe(`${second}: the run holds container vite-5202`);
+    expect(res.err).toBe(
+      `brief-board: warning: container vite-5202 is also held by the open run on ${first} (ana, heard 0m ago). The hold goes ahead: it is a record, not a lock.`,
+    );
+  });
+
+  it("with no open run, or dropping what the run doesn't hold, is a usage mistake", async () => {
+    const key = await ticket();
+    const none = await run(["hold", key, "port", "5203"]);
+    expect(none.code).toBe(1);
+    expect(none.err).toBe(`brief-board: ${key} has no open run (it is To Do); brief-board start ${key} opens one`);
+    await run(["start", key]);
+    await run(["hold", key, "pid", "5203"]);
+    const notHeld = await run(["drop", key, "port", "5203"]);
+    expect(notHeld.code).toBe(1);
+    expect(notHeld.err).toBe(`brief-board: ${key}'s run holds no port 5203; it holds pid 5203`);
+    expect((await run(["hold", key, "socket", "x"])).err).toBe('brief-board: "socket" is not a kind to hold. One of: port, pid, container, path');
+    expect((await run(["hold", key, "port"])).code).toBe(1);
+  });
+
+  it("the end move prints what the run still held, and show keeps it on the ended run", async () => {
+    const key = await ticket();
+    await run(["start", key, "--author", "ana"]);
+    await run(["hold", key, "port", "5204"]);
+    await run(["hold", key, "container", "vite-5204"]);
+    const moved = await run(["move", key, "ready_for_test", "-m", "Open :5204"]);
+    expect(moved.out).toBe(
+      `${key}: In Progress → Ready for test\n${key}: the run ended still holding port 5204, container vite-5204 (kept on the run as leftovers)`,
+    );
+    const show = (await run(["show", key])).out;
+    expect(show).not.toContain("Holds:");
+    expect(show).toMatch(/ana: moved to Ready for test, took <1m, ended [^;\n]+; leftovers: port 5204, container vite-5204/);
+    // A move that ends no run prints none.
+    expect((await run(["move", key, "done"])).out).toBe(`${key}: Ready for test → Done`);
+  });
+
+  it("release prints what the run still held", async () => {
+    const key = await ticket();
+    await run(["start", key, "--author", "ana"]);
+    await run(["hold", key, "port", "5205"]);
+    const released = await run(["release", key, "-m", "Stopped", "--author", "controller"]);
+    expect(released.out).toBe(
+      `${key}: released the run by ana; the ticket stays In Progress\n${key}: the run ended still holding port 5205 (kept on the run as leftovers)`,
+    );
+    expect((await run(["show", key])).out).toMatch(/ana: released, unfinished, took <1m, ended [^;\n]+; leftovers: port 5205/);
+  });
+
+  it("runs shows each open run's holds in its last column", async () => {
+    const key = await ticket();
+    await run(["start", key, "--author", "ana"]);
+    await run(["hold", key, "port", "5206"]);
+    await run(["hold", key, "path", "tmp/copy-5206"]);
+    const line = (await run(["runs"])).out.split("\n").find((candidate) => candidate.startsWith(key));
+    expect(line).toMatch(/ ana +running <1m +started 0m ago, heard 0m ago +port 5206, path tmp\/copy-5206$/);
+  });
+});
+
 describe("questions", () => {
   it("a move with two --question stores both, numbered, and show lists them", async () => {
     const key = await ticket();

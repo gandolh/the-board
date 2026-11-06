@@ -52,6 +52,14 @@ describe("the guide", () => {
     expect(starting).toContain("Stop\nwhat you started before your end move.");
   });
 
+  it("says to hold what outlives a command and drop it when stopped, and that a release's holds are the leftovers", () => {
+    const starting = guide.slice(guide.indexOf("## 3."), guide.indexOf("## 4."));
+    expect(starting).toContain("Hold what you start that outlives a command, and drop it when you stop it:");
+    expect(starting).toContain("brief-board hold|drop <ticket> port|pid|container|path <value>");
+    const controller = guide.slice(guide.indexOf("## 7."), guide.indexOf("## 8."));
+    expect(controller).toContain("Release prints what the run still held; stop those, or tell the owner.");
+  });
+
   it("tells a session that runs agents to name them, check runs before a sync, and release a stopped agent's run", () => {
     const controller = guide.slice(guide.indexOf("## 7. Running other agents"), guide.indexOf("## 8."));
     expect(controller).toContain("Give each agent a name to pass as --author");
@@ -74,7 +82,7 @@ describe("the guide", () => {
   });
 
   it("stays short enough to read before every brief", () => {
-    // 80 until runs, the section for a session that runs other agents, and the report lines.
-    expect(guide.split("\n").length).toBeLessThanOrEqual(110);
+    // 80 until runs, the section for a session that runs other agents, the report lines and holds.
+    expect(guide.split("\n").length).toBeLessThanOrEqual(115);
   });
 });

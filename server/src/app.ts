@@ -6,9 +6,11 @@ import {
   answerRequestSchema,
   boardQuerySchema,
   commentRequestSchema,
+  holdRequestSchema,
   moveRequestSchema,
   needsQuerySchema,
   NO_OPEN_RUN,
+  NOT_HELD,
   parseKey,
   QUESTION_NOT_OPEN,
   questionParamsSchema,
@@ -24,8 +26,10 @@ import {
   type AnswerResponse,
   type BoardResponse,
   type CommentResponse,
+  type DropResponse,
   type ErrorBody,
   type HealthResponse,
+  type HoldResponse,
   type MoveCheck,
   type MoveResponse,
   type NeedsResponse,
@@ -382,7 +386,7 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     const result = store.move(key, move.to, move.message, move.author ?? DEFAULT_AUTHOR, move.questions);
     if (!result) return notFound(reply, key);
     if (!result.ok) return refused(reply, key, move.to, result.check);
-    const body: MoveResponse = { ticket: result.ticket, comment: result.comment, questions: result.questions };
+    const body: MoveResponse = { ticket: result.ticket, comment: result.comment, questions: result.questions, endedRun: result.endedRun };
     return body;
   });
 
@@ -417,6 +421,45 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
       return fail(reply, 400, { code: NO_OPEN_RUN, message: `${key} has no open run to release (it is ${STATUS_LABELS[ticket.status]})` });
     }
     const body: ReleaseResponse = result;
+    return body;
+  });
+
+  /** A hold or a drop on a ticket with no open run. */
+  const noRunToHold = (reply: FastifyReply, key: string, status: Status) =>
+    fail(reply, 400, {
+      code: NO_OPEN_RUN,
+      message: `${key} has no open run (it is ${STATUS_LABELS[status]}); brief-board start ${key} opens one`,
+    });
+
+  app.post("/api/tickets/:key/hold", async (request, reply) => {
+    const key = keyOf(request.params, reply);
+    if (!key) return reply;
+    const fields = parse(holdRequestSchema, request.body, reply);
+    if (!fields) return reply;
+    const ticket = store.getTicket(key);
+    if (!ticket) return notFound(reply, key);
+    if (ticket.status === "backlog") return syncOwned(reply, key, "writes on it");
+    const result = store.hold(key, fields.kind, fields.value);
+    if (!result) return noRunToHold(reply, key, ticket.status);
+    const body: HoldResponse = result;
+    return body;
+  });
+
+  app.post("/api/tickets/:key/drop", async (request, reply) => {
+    const key = keyOf(request.params, reply);
+    if (!key) return reply;
+    const fields = parse(holdRequestSchema, request.body, reply);
+    if (!fields) return reply;
+    const ticket = store.getTicket(key);
+    if (!ticket) return notFound(reply, key);
+    if (ticket.status === "backlog") return syncOwned(reply, key, "writes on it");
+    const result = store.drop(key, fields.kind, fields.value);
+    if (!result.ok && result.reason === "no_open_run") return noRunToHold(reply, key, ticket.status);
+    if (!result.ok) {
+      const holds = result.holds.length ? `it holds ${result.holds.map((hold) => `${hold.kind} ${hold.value}`).join(", ")}` : "it holds nothing";
+      return fail(reply, 400, { code: NOT_HELD, message: `${key}'s run holds no ${fields.kind} ${fields.value}; ${holds}` });
+    }
+    const body: DropResponse = { run: result.run };
     return body;
   });
 

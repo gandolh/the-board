@@ -3,7 +3,10 @@ import {
   type AnswerResponse,
   type BoardResponse,
   type CommentResponse,
+  type DropResponse,
   type ErrorBody,
+  type HoldRequest,
+  type HoldResponse,
   type MoveRequest,
   type MoveResponse,
   type NeedsResponse,
@@ -120,6 +123,14 @@ export class BoardClient {
 
   release(key: string, body: ReleaseRequest): Promise<ReleaseResponse> {
     return this.call("POST", `/api/tickets/${encodeURIComponent(key)}/release`, body);
+  }
+
+  hold(key: string, body: HoldRequest): Promise<HoldResponse> {
+    return this.call("POST", `/api/tickets/${encodeURIComponent(key)}/hold`, body);
+  }
+
+  drop(key: string, body: HoldRequest): Promise<DropResponse> {
+    return this.call("POST", `/api/tickets/${encodeURIComponent(key)}/drop`, body);
   }
 
   runs(): Promise<RunsResponse> {

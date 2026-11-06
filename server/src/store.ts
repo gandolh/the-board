@@ -2,6 +2,8 @@ import {
   checkMove,
   type Comment,
   type HistoryEvent,
+  type Hold,
+  type HoldKind,
   type Lane,
   type MessageRole,
   type MoveCheck,
@@ -12,6 +14,7 @@ import {
   type Question,
   type Run,
   type RunEnding,
+  type RunWithHolds,
   type Status,
   type SummarySource,
   type Ticket,
@@ -19,13 +22,15 @@ import {
 import type { Db } from "./db.js";
 
 /**
- * Reads and writes for tickets, comments, history, runs and questions. Every write
- * that touches more than one row runs in a transaction. Only `sync.ts` changes
- * a status without the move table.
+ * Reads and writes for tickets, comments, history, runs, holds and questions.
+ * Every write that touches more than one row runs in a transaction. Only
+ * `sync.ts` changes a status without the move table.
  *
  * A run opens with any move into In Progress and ends with any move out of
  * it; `release` and sync end it too. Whether an open run is stale is worked
- * out here on every read, from its last write and `staleMs`.
+ * out here on every read, from its last write and `staleMs`. A run's holds
+ * belong to it: when it ends, what it still holds stays on it as leftovers,
+ * and the next run starts with none.
  */
 
 /** How long a run may go without a write on its ticket before it reads as stale. */
@@ -66,6 +71,12 @@ interface RunRow {
   ended_at: string | null;
   ended: RunEnding | null;
   ended_status: Status | null;
+}
+
+interface HoldRow {
+  kind: HoldKind;
+  value: string;
+  held_at: string;
 }
 
 interface QuestionRow {
@@ -294,20 +305,85 @@ export class Store {
     return row ? this.toRun(row) : null;
   }
 
-  /** Every run on the ticket, oldest first. */
-  runs(key: string): Run[] {
-    return (this.db.prepare("SELECT * FROM runs WHERE ticket_key = ? ORDER BY id").all(key) as RunRow[]).map((row) => this.toRun(row));
+  /** What run `id` holds, or held when it ended, in the order it took them. */
+  private holds(id: number): Hold[] {
+    return (this.db.prepare("SELECT kind, value, held_at FROM holds WHERE run_id = ? ORDER BY id").all(id) as HoldRow[]).map((row) => ({
+      kind: row.kind,
+      value: row.value,
+      heldAt: row.held_at,
+    }));
   }
 
-  /** Every open run across projects, stalest (the oldest last write) first. */
-  openRuns(): OpenRunEntry[] {
+  private toRunWithHolds(row: RunRow): RunWithHolds {
+    return { ...this.toRun(row), holds: this.holds(row.id) };
+  }
+
+  /** Every run on the ticket, oldest first, each with its holds or leftovers. */
+  runs(key: string): RunWithHolds[] {
+    return (this.db.prepare("SELECT * FROM runs WHERE ticket_key = ? ORDER BY id").all(key) as RunRow[]).map((row) =>
+      this.toRunWithHolds(row),
+    );
+  }
+
+  /** The run with this id, with its holds. */
+  private runById(id: number): RunWithHolds {
+    return this.toRunWithHolds(this.db.prepare("SELECT * FROM runs WHERE id = ?").get(id) as RunRow);
+  }
+
+  /**
+   * Every open run across projects, stalest (the oldest last write) first,
+   * with what each holds. With `holding`, only the runs that hold that kind
+   * and value.
+   */
+  openRuns(holding?: { kind: HoldKind; value: string }): OpenRunEntry[] {
     const rows = this.db
       .prepare(
         `SELECT r.*, t.project, t.title FROM runs r JOIN tickets t ON t.key = r.ticket_key
-         WHERE r.ended_at IS NULL ORDER BY r.last_heard_at, r.id`,
+         WHERE r.ended_at IS NULL
+           AND (@kind IS NULL OR EXISTS (SELECT 1 FROM holds h WHERE h.run_id = r.id AND h.kind = @kind AND h.value = @value))
+         ORDER BY r.last_heard_at, r.id`,
       )
-      .all() as (RunRow & { project: string; title: string })[];
-    return rows.map((row) => ({ key: row.ticket_key, project: row.project, title: row.title, run: this.toRun(row) }));
+      .all({ kind: holding?.kind ?? null, value: holding?.value ?? null }) as (RunRow & { project: string; title: string })[];
+    return rows.map((row) => ({ key: row.ticket_key, project: row.project, title: row.title, run: this.toRunWithHolds(row) }));
+  }
+
+  /**
+   * `hold`: the ticket's open run holds `kind` `value`, a write on the run.
+   * Holding what it holds already changes nothing. `clashes` are the other
+   * open runs holding the same, as they stood before this write; the hold
+   * goes ahead regardless. Null when the ticket has no open run.
+   */
+  hold(key: string, kind: HoldKind, value: string): { held: boolean; run: RunWithHolds; clashes: OpenRunEntry[] } | null {
+    return this.db.transaction(() => {
+      const open = this.openRun(key);
+      if (!open) return null;
+      const clashes = this.openRuns({ kind, value }).filter((entry) => entry.run.id !== open.id);
+      const inserted = this.db
+        .prepare("INSERT OR IGNORE INTO holds (run_id, kind, value, held_at) VALUES (?, ?, ?, ?)")
+        .run(open.id, kind, value, this.now());
+      this.touchRun(key);
+      return { held: inserted.changes > 0, run: this.runById(open.id), clashes };
+    })();
+  }
+
+  /**
+   * `drop`: the ticket's open run no longer holds `kind` `value`, a write on
+   * the run. `no_open_run` when there is no open run; `not_held`, with what
+   * it does hold, when it doesn't hold that.
+   */
+  drop(
+    key: string,
+    kind: HoldKind,
+    value: string,
+  ): { ok: true; run: RunWithHolds } | { ok: false; reason: "no_open_run" } | { ok: false; reason: "not_held"; holds: Hold[] } {
+    return this.db.transaction(() => {
+      const open = this.openRun(key);
+      if (!open) return { ok: false as const, reason: "no_open_run" as const };
+      const deleted = this.db.prepare("DELETE FROM holds WHERE run_id = ? AND kind = ? AND value = ?").run(open.id, kind, value);
+      if (deleted.changes === 0) return { ok: false as const, reason: "not_held" as const, holds: this.holds(open.id) };
+      this.touchRun(key);
+      return { ok: true as const, run: this.runById(open.id) };
+    })();
   }
 
   /** Open a run. The caller has made sure none is open: the schema allows one per ticket. */
@@ -462,7 +538,7 @@ export class Store {
     author: string,
     questions?: readonly string[],
   ):
-    | { ok: true; ticket: Ticket; comment: Comment | null; questions: Question[] }
+    | { ok: true; ticket: Ticket; comment: Comment | null; questions: Question[]; endedRun: RunWithHolds | null }
     | { ok: false; check: Extract<MoveCheck, { ok: false }> }
     | null {
     return this.db.transaction(() => {
@@ -472,7 +548,8 @@ export class Store {
       if (!check.ok) return { ok: false as const, check };
       const body = message?.trim();
       // The run's last write is the move that ends it; a move into In Progress opens the next.
-      if (ticket.status === "in_progress") {
+      const open = ticket.status === "in_progress" ? this.openRun(key) : null;
+      if (open) {
         this.touchRun(key);
         this.endRun(key, "moved", to);
       }
@@ -482,7 +559,7 @@ export class Store {
         ? this.addComment(key, { author, body, role: check.rule.role, move: { from: ticket.status, to } })
         : null;
       const asked = this.ask(key, questions, author);
-      return { ok: true as const, ticket: this.getTicket(key)!, comment, questions: asked };
+      return { ok: true as const, ticket: this.getTicket(key)!, comment, questions: asked, endedRun: open && this.runById(open.id) };
     })();
   }
 
@@ -531,9 +608,10 @@ export class Store {
   /**
    * `release`: end the open run without a move, for an agent that was
    * stopped. The ticket stays In Progress, and a comment says the run ended
-   * unfinished and why. Null when the ticket has no open run.
+   * unfinished and why. The run comes back with what it still held. Null
+   * when the ticket has no open run.
    */
-  release(key: string, message: string, author: string): { ticket: Ticket; run: Run; comment: Comment } | null {
+  release(key: string, message: string, author: string): { ticket: Ticket; run: RunWithHolds; comment: Comment } | null {
     return this.db.transaction(() => {
       const open = this.openRun(key);
       if (!open) return null;
@@ -544,8 +622,7 @@ export class Store {
         role: null,
         move: null,
       });
-      const run = this.runs(key).find((candidate) => candidate.id === open.id)!;
-      return { ticket: this.getTicket(key)!, run, comment };
+      return { ticket: this.getTicket(key)!, run: this.runById(open.id), comment };
     })();
   }
 

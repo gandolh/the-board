@@ -3,11 +3,13 @@ import {
   openRun,
   runDurationText,
   STATUS_LABELS,
+  type Hold,
   type MessageRole,
   type MoveCheck,
   type OpenQuestionEntry,
   type OpenRunEntry,
   type Run,
+  type RunWithHolds,
   type Status,
   type Ticket,
   type TicketDetailResponse,
@@ -71,6 +73,17 @@ export function openRunText(run: Run, now: Date): string {
   return `${run.stale ? "stale run" : "run"} by ${run.author}, started ${ago(run.startedAt, now)} ago, heard ${ago(run.lastHeardAt, now)} ago, ${runDurationText(run, now)}`;
 }
 
+/** "port 5173, container vite-dev": a run's holds, or "" when it holds nothing. */
+export function holdList(holds: readonly Hold[]): string {
+  return holds.map((hold) => `${hold.kind} ${hold.value}`).join(", ");
+}
+
+/** What a run still held when it ended, as one line; none when it held nothing. */
+export function leftoverLines(key: string, run: RunWithHolds | null): string[] {
+  if (!run?.holds.length) return [];
+  return [`${key}: the run ended still holding ${holdList(run.holds)} (kept on the run as leftovers)`];
+}
+
 /** How an ended run ended. */
 export function runEnding(run: Run): string {
   if (run.ended === "moved") return `moved to ${run.endedTo ? label(run.endedTo) : "another column"}`;
@@ -85,10 +98,11 @@ export function ticketLine(ticket: Ticket, now: Date = new Date()): string {
   return `${ticket.key.padEnd(24)} ${label(ticket.status).padEnd(16)} ${ticket.title}${tags}${mark}`;
 }
 
-/** `runs`: one open run per line. */
+/** `runs`: one open run per line, what it holds in the last column. */
 export function openRunLine({ key, run }: OpenRunEntry, now: Date = new Date()): string {
   const duration = runDurationText(run, now).padEnd(16);
-  return `${key.padEnd(24)} ${run.author.padEnd(16)} ${duration} started ${ago(run.startedAt, now)} ago, heard ${ago(run.lastHeardAt, now)} ago${run.stale ? ", stale" : ""}`;
+  const times = `started ${ago(run.startedAt, now)} ago, heard ${ago(run.lastHeardAt, now)} ago${run.stale ? ", stale" : ""}`;
+  return `${key.padEnd(24)} ${run.author.padEnd(16)} ${duration} ${times.padEnd(38)} ${holdList(run.holds)}`.trimEnd();
 }
 
 /** `questions`: one open question per line, with its ticket, number, who asked and when. */
@@ -104,10 +118,12 @@ export function ticketDetail(
 ): string[] {
   const open = openRun(ticket);
   const ended = runs.filter((run) => run.endedAt !== null);
+  const holds = open ? (runs.find((run) => run.id === open.id)?.holds ?? []) : [];
   const lines = [
     `${ticket.key}: ${ticket.title}`,
     `Status:  ${label(ticket.status)}${ticket.hidden ? " (hidden: the brief was superseded)" : ""}`,
     `Run:     ${open ? openRunText(open, now) : "no run"}`,
+    ...(open ? [`Holds:   ${holdList(holds) || "nothing"}`] : []),
     `Tags:    ${ticket.tags.length ? ticket.tags.join(", ") : "none"}`,
     `${ticket.number === null ? "Todo: " : "Brief:"}   ${ticket.briefPath}`,
     "",
@@ -117,7 +133,10 @@ export function ticketDetail(
   ];
   if (ended.length > 0) {
     lines.push(`Earlier runs (${ended.length}):`);
-    for (const run of ended) lines.push(`  [${run.startedAt}] ${run.author}: ${runEnding(run)}, ${runDurationText(run, now)}, ended ${run.endedAt}`);
+    for (const run of ended) {
+      const leftovers = run.holds.length ? `; leftovers: ${holdList(run.holds)}` : "";
+      lines.push(`  [${run.startedAt}] ${run.author}: ${runEnding(run)}, ${runDurationText(run, now)}, ended ${run.endedAt}${leftovers}`);
+    }
     lines.push("");
   }
   if (questions.length > 0) {

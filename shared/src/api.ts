@@ -48,6 +48,30 @@ export const runSchema = z.object({
 });
 export type Run = z.infer<typeof runSchema>;
 
+/** What a run can hold: what an agent starts that outlives one command. */
+export const HOLD_KINDS = ["port", "pid", "container", "path"] as const;
+export const holdKindSchema = z.enum(HOLD_KINDS);
+export type HoldKind = z.infer<typeof holdKindSchema>;
+
+/**
+ * Something a run declares it started: a dev server's port, a pid, a
+ * container, a copied folder. Free text, checked against nothing on the
+ * machine. A record, never a lock: another run may hold the same value.
+ */
+export const holdSchema = z.object({
+  kind: holdKindSchema,
+  value: z.string(),
+  heldAt: timestamp,
+});
+export type Hold = z.infer<typeof holdSchema>;
+
+/**
+ * A run with its holds: what it holds while open, and once it ended, what
+ * it still held then (its leftovers). The board's tickets carry a plain run.
+ */
+export const runWithHoldsSchema = runSchema.extend({ holds: z.array(holdSchema) });
+export type RunWithHolds = z.infer<typeof runWithHoldsSchema>;
+
 /**
  * A question for the owner, asked with `--question` on a move, a comment or
  * a start. It belongs to the ticket, not to a run: it outlives the end move,
@@ -194,8 +218,8 @@ export const ticketDetailResponseSchema = z.object({
   ticket: ticketSchema,
   comments: z.array(commentSchema),
   history: z.array(historyEventSchema),
-  /** Every run on the ticket, oldest first. */
-  runs: z.array(runSchema),
+  /** Every run on the ticket, oldest first, each with its holds or leftovers. */
+  runs: z.array(runWithHoldsSchema),
   /** Every question on the ticket, by number. */
   questions: z.array(questionSchema),
 });
@@ -232,6 +256,8 @@ export const moveResponseSchema = z.object({
   ticket: ticketSchema,
   /** The move's message, stored as a comment; null when it carried none. */
   comment: commentSchema.nullable(),
+  /** The run this move ended, with what it still held; null when it ended none. */
+  endedRun: runWithHoldsSchema.nullable(),
   /** The questions it asked, numbered. */
   questions: z.array(questionSchema),
 });
@@ -291,26 +317,60 @@ export type ReleaseRequest = z.infer<typeof releaseRequestSchema>;
 
 export const releaseResponseSchema = z.object({
   ticket: ticketSchema,
-  /** The run, ended as `released`. */
-  run: runSchema,
+  /** The run, ended as `released`, with what it still held. */
+  run: runWithHoldsSchema,
   comment: commentSchema,
 });
 export type ReleaseResponse = z.infer<typeof releaseResponseSchema>;
 
 // --- GET /api/runs ---------------------------------------------------------------
 
-/** An open run with the ticket it works. */
+/** An open run with the ticket it works, and what it holds. */
 export const openRunEntrySchema = z.object({
   key: z.string(),
   project: z.string(),
   title: z.string(),
-  run: runSchema,
+  run: runWithHoldsSchema,
 });
 export type OpenRunEntry = z.infer<typeof openRunEntrySchema>;
 
 /** Every open run across projects, stalest first (the oldest last write first). */
 export const runsResponseSchema = z.object({ runs: z.array(openRunEntrySchema) });
 export type RunsResponse = z.infer<typeof runsResponseSchema>;
+
+// --- POST /api/tickets/:key/hold and /drop ----------------------------------------
+
+/** The code of a `drop` of something the open run doesn't hold. */
+export const NOT_HELD = "not_held";
+
+/**
+ * `hold` adds one to the ticket's open run, and `drop` takes one off; both
+ * count as a write on the run. No open run is `no_open_run`.
+ */
+export const holdRequestSchema = z.object({
+  kind: holdKindSchema,
+  value: z.string().trim().min(1).max(500),
+});
+export type HoldRequest = z.infer<typeof holdRequestSchema>;
+
+export const holdResponseSchema = z.object({
+  /** False when the run held it already, which changes nothing. */
+  held: z.boolean(),
+  /** The open run, with everything it holds now. */
+  run: runWithHoldsSchema,
+  /**
+   * The other open runs that hold the same kind and value, stalest first.
+   * The hold goes ahead anyway: a hold is a record, never a lock.
+   */
+  clashes: z.array(openRunEntrySchema),
+});
+export type HoldResponse = z.infer<typeof holdResponseSchema>;
+
+export const dropResponseSchema = z.object({
+  /** The open run, with what it still holds. */
+  run: runWithHoldsSchema,
+});
+export type DropResponse = z.infer<typeof dropResponseSchema>;
 
 // --- POST /api/tickets/:key/questions/:number/answer ---------------------------
 

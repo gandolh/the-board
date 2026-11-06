@@ -7,7 +7,9 @@ import {
   type AnswerResponse,
   type BoardResponse,
   type CommentResponse,
+  type DropResponse,
   type ErrorBody,
+  type HoldResponse,
   type MoveResponse,
   type NeedsResponse,
   type QuestionsResponse,
@@ -493,6 +495,129 @@ describe("runs", () => {
     await release("p-01", "stopped");
     expect((await sync("p", [{ number: 1, state: "done" }])).warnings).toEqual([]);
     expect((await detail("p-01")).ticket.status).toBe("done");
+  });
+});
+
+describe("holds", () => {
+  const HOUR = 60 * 60 * 1000;
+  const later = (ms: number) => {
+    clock = new Date(clock.getTime() + ms);
+  };
+  const start = (key: string, author?: string) => call({ method: "POST", url: `/api/tickets/${key}/start`, payload: { author } });
+  const hold = (key: string, kind: string, value: string) =>
+    call({ method: "POST", url: `/api/tickets/${key}/hold`, payload: { kind, value } });
+  const drop = (key: string, kind: string, value: string) =>
+    call({ method: "POST", url: `/api/tickets/${key}/drop`, payload: { kind, value } });
+  const release = (key: string, message: string) =>
+    call({ method: "POST", url: `/api/tickets/${key}/release`, payload: { message } });
+  const holdsOf = (holds: { kind: string; value: string }[]) => holds.map((h) => `${h.kind} ${h.value}`);
+
+  it("hold adds to the open run and drop takes off, each a write on the run; holding twice changes nothing", async () => {
+    await put("p-01");
+    await start("p-01", "ana");
+    later(HOUR);
+    const res = await hold("p-01", "port", " 5173 ");
+    expect(res.statusCode).toBe(200);
+    const body = res.json<HoldResponse>();
+    expect(body).toMatchObject({ held: true, clashes: [], run: { author: "ana", lastHeardAt: clock.toISOString() } });
+    expect(body.run.holds).toEqual([{ kind: "port", value: "5173", heldAt: clock.toISOString() }]);
+    await hold("p-01", "container", "vite-dev");
+    expect((await hold("p-01", "port", "5173")).json<HoldResponse>()).toMatchObject({ held: false, run: { holds: [{}, {}] } });
+    later(HOUR);
+    const dropped = await drop("p-01", "port", "5173");
+    expect(dropped.statusCode).toBe(200);
+    expect(dropped.json<DropResponse>().run).toMatchObject({ lastHeardAt: clock.toISOString(), holds: [{ kind: "container", value: "vite-dev" }] });
+    const { ticket, runs } = await detail("p-01");
+    expect(ticket.run?.lastHeardAt).toBe(clock.toISOString());
+    expect(holdsOf(runs[0]!.holds)).toEqual(["container vite-dev"]);
+    // The board's tickets carry the plain run.
+    expect((await board()).lanes[0]!.tickets[0]!.run).not.toHaveProperty("holds");
+  });
+
+  it("drop of something the run doesn't hold is 400 not_held, naming what it holds", async () => {
+    await put("p-01");
+    await start("p-01");
+    expect((await drop("p-01", "port", "5173")).json<ErrorBody>()).toEqual({ code: "not_held", message: "p-01's run holds no port 5173; it holds nothing" });
+    await hold("p-01", "path", "tmp/os-copy");
+    await hold("p-01", "pid", "4242");
+    expect((await drop("p-01", "port", "5173")).json<ErrorBody>().message).toBe("p-01's run holds no port 5173; it holds path tmp/os-copy, pid 4242");
+  });
+
+  it("warns of another open run holding the same kind and value, and holds it anyway", async () => {
+    await put("p-01");
+    await put("q-01");
+    await put("r-01");
+    await start("p-01", "ana");
+    await hold("p-01", "port", "5173");
+    await start("r-01", "cy");
+    await hold("r-01", "port", "5173");
+    await move("r-01", "done");
+    later(HOUR);
+    await start("q-01", "bo");
+    const res = (await hold("q-01", "port", "5173")).json<HoldResponse>();
+    expect(res.held).toBe(true);
+    // The ended run on r-01 still lists it as a leftover, but only open runs clash.
+    expect(res.clashes.map((entry) => [entry.key, entry.run.author, holdsOf(entry.run.holds)])).toEqual([["p-01", "ana", ["port 5173"]]]);
+    expect((await hold("q-01", "container", "5173")).json<HoldResponse>().clashes).toEqual([]);
+    // Both hold it now: the record, not a lock.
+    const { runs } = (await call({ url: "/api/runs" })).json<RunsResponse>();
+    expect(runs.map((entry) => [entry.key, holdsOf(entry.run.holds)])).toEqual([
+      ["p-01", ["port 5173"]],
+      ["q-01", ["port 5173", "container 5173"]],
+    ]);
+  });
+
+  it("needs an open run: no_open_run names start, and an unknown kind or ticket is refused", async () => {
+    await put("p-01");
+    const none = await hold("p-01", "port", "5173");
+    expect(none.statusCode).toBe(400);
+    expect(none.json<ErrorBody>()).toEqual({ code: "no_open_run", message: "p-01 has no open run (it is To Do); brief-board start p-01 opens one" });
+    expect((await drop("p-01", "port", "5173")).json<ErrorBody>().code).toBe("no_open_run");
+    await start("p-01");
+    expect((await hold("p-01", "socket", "x")).json<ErrorBody>().code).toBe("invalid_request");
+    expect((await hold("p-01", "port", "  ")).json<ErrorBody>().code).toBe("invalid_request");
+    expect((await hold("p-02", "port", "5173")).statusCode).toBe(404);
+  });
+
+  it("an end move returns what the run still held and keeps it on the run; the next run starts with none", async () => {
+    await put("p-01");
+    await start("p-01", "ana");
+    await hold("p-01", "port", "5173");
+    await hold("p-01", "container", "vite-dev");
+    await drop("p-01", "container", "vite-dev");
+    const res = (await move("p-01", "ready_for_test", "open :5173")).json<MoveResponse>();
+    expect(res.endedRun).toMatchObject({ author: "ana", ended: "moved", endedTo: "ready_for_test" });
+    expect(holdsOf(res.endedRun!.holds)).toEqual(["port 5173"]);
+    // A move that ends no run returns none.
+    expect((await move("p-01", "in_progress", "fails on tabs")).json<MoveResponse>().endedRun).toBeNull();
+    const { runs } = await detail("p-01");
+    expect(runs.map((run) => [run.ended, holdsOf(run.holds)])).toEqual([
+      ["moved", ["port 5173"]],
+      [null, []],
+    ]);
+  });
+
+  it("release returns what the run still held, and keeps it on the run", async () => {
+    await put("p-01");
+    await start("p-01", "ana");
+    await hold("p-01", "port", "5173");
+    const res = (await release("p-01", "Stopped by the controller")).json<ReleaseResponse>();
+    expect(res.run).toMatchObject({ ended: "released" });
+    expect(holdsOf(res.run.holds)).toEqual(["port 5173"]);
+    expect(holdsOf((await detail("p-01")).runs[0]!.holds)).toEqual(["port 5173"]);
+    expect((await hold("p-01", "port", "5174")).json<ErrorBody>().code).toBe("no_open_run");
+  });
+
+  it("a run that sync ends as stale keeps its holds as leftovers, and a run passed on keeps them", async () => {
+    await put("p-01");
+    await start("p-01", "ana");
+    await hold("p-01", "port", "5173");
+    await start("p-01", "bo");
+    expect(holdsOf((await detail("p-01")).runs[0]!.holds)).toEqual(["port 5173"]);
+    later(5 * HOUR);
+    await sync("p", [{ number: 1, state: "done" }]);
+    const { runs } = await detail("p-01");
+    expect(runs.map((run) => [run.author, run.ended, holdsOf(run.holds)])).toEqual([["bo", "stale", ["port 5173"]]]);
   });
 });
 

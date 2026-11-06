@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { MIGRATIONS, openDatabase } from "./db.js";
 
 describe("the migrations", () => {
-  it("upgrade a board from before Backlog with every ticket, tag, comment and history row kept, and add runs and questions", () => {
+  it("upgrade a board from before Backlog with every ticket, tag, comment and history row kept, and add runs, holds and questions", () => {
     const dir = mkdtempSync(join(tmpdir(), "brief-board-db-"));
     const path = join(dir, "board.db");
     try {
@@ -45,13 +45,20 @@ describe("the migrations", () => {
       // A ticket holds at most one open run, and any number of ended ones.
       const run = db.prepare("INSERT INTO runs (ticket_key, author, started_at, last_heard_at, ended_at, ended) VALUES ('p-01', 'agent', ?, ?, ?, ?)");
       run.run(at, at, at, "moved");
-      run.run(at, at, null, null);
+      const open = Number(run.run(at, at, null, null).lastInsertRowid);
       expect(() => run.run(at, at, null, null)).toThrow(/UNIQUE/);
       expect(() => run.run(at, at, at, null)).toThrow(/CHECK/);
+      // A run holds each kind and value once, of the four kinds only.
+      const hold = db.prepare("INSERT INTO holds (run_id, kind, value, held_at) VALUES (?, ?, ?, ?)");
+      hold.run(open, "port", "5173", at);
+      hold.run(open, "container", "5173", at);
+      expect(() => hold.run(open, "port", "5173", at)).toThrow(/UNIQUE/);
+      expect(() => hold.run(open, "socket", "x", at)).toThrow(/CHECK/);
       // And the children still cascade from the rebuilt table.
       db.prepare("DELETE FROM tickets WHERE key = 'p-01'").run();
       expect(db.prepare("SELECT COUNT(*) AS n FROM comments").get()).toEqual({ n: 0 });
       expect(db.prepare("SELECT COUNT(*) AS n FROM runs").get()).toEqual({ n: 0 });
+      expect(db.prepare("SELECT COUNT(*) AS n FROM holds").get()).toEqual({ n: 0 });
       // Questions are numbered once per ticket, and an answer comes with its time.
       db.prepare(
         `INSERT INTO tickets (key, project, number, title, summary, summary_source, brief_path, status, hidden, created_at, updated_at, status_changed_at)

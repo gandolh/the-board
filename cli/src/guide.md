@@ -31,6 +31,8 @@ Progress, start records the resume and the run passes to you; add
 Start a long-lived process, such as a dev server, as your runtime's background
 task, so /tasks shows it with its command line, never with & or nohup. Stop
 what you started before your end move.
+Hold what you start that outlives a command, and drop it when you stop it:
+  brief-board hold|drop <ticket> port|pid|container|path <value>
 
 ## 4. Blocking
 Ask the owner before you block. Most questions get answered in the session;
@@ -81,6 +83,7 @@ For a session that starts agents and waits on them:
   it: stop what it started, release its run, hand back. Otherwise stop it and
   release its run yourself; the ticket stays In Progress for the owner:
   brief-board release <ticket> -m "<why, and what it left running: a port, a container>"
+  Release prints what the run still held; stop those, or tell the owner.
 
 ## 8. When the board is down
 A command printing "the board isn't reachable" or "the board refused the token"

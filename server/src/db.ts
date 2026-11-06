@@ -3,9 +3,10 @@ import { dirname } from "node:path";
 import Database from "better-sqlite3";
 
 /**
- * The board's SQLite file. Tickets, their labels, comments, history, runs
- * and questions. The schema is versioned with `PRAGMA user_version`: each migration
- * runs once, in order, inside a transaction, and bumps the version.
+ * The board's SQLite file. Tickets, their labels, comments, history, runs,
+ * what each run holds, and questions. The schema is versioned with
+ * `PRAGMA user_version`: each migration runs once, in order, inside a
+ * transaction, and bumps the version.
  *
  * A ticket's key is its primary key, in canonical form (`atrium-03`), and
  * `(project, number)` is unique too: one ticket per brief. A todo's ticket
@@ -115,6 +116,20 @@ export const MIGRATIONS: string[] = [
     CHECK ((answered_at IS NULL) = (answer IS NULL))
   );
   CREATE INDEX questions_open ON questions (answered_at, asked_at);
+  `,
+  // 2026-11-06: holds. What a run declares it started (a port, a pid, a
+  // container, a path), free text, checked against nothing. A drop deletes
+  // the row; what is left when the run ends stays on it as its leftovers.
+  `
+  CREATE TABLE holds (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    run_id INTEGER NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
+    kind TEXT NOT NULL CHECK (kind IN ('port', 'pid', 'container', 'path')),
+    value TEXT NOT NULL,
+    held_at TEXT NOT NULL,
+    UNIQUE (run_id, kind, value)
+  );
+  CREATE INDEX holds_by_value ON holds (kind, value);
   `,
 ];
 
