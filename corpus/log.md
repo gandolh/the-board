@@ -340,3 +340,18 @@ A stale run's duration reads as at least start to last heard; the needs-you
 list holds open questions, Blocked tickets, stale runs, Ready for test and
 Ready for deploy, shown as a strip of counts above the lanes, hidden at all
 zeros. All as written.
+
+## [2026-11-06] done | Brief 08, a ticket knows the run that works it
+
+[Brief 08](briefs/done/08-a-ticket-knows-the-run-that-works-it.md),
+`44a1222` on the branch `briefs-2026-11-06`. A ticket now records its runs:
+any move into In Progress opens one, any move out ends it, every write keeps
+it fresh, and after 4 hours with none it reads as stale. `start` passes an
+open run to a new author and warns when it was fresh; `release` and `runs`
+are new; sync leaves a ticket whose run is fresh and closes one whose run
+is stale. The guide puts the end move before the brief goes to `done/` and
+has a section for a session that runs other agents.
+[decisions.md](wiki/decisions.md) has the revisit note on "The corpus wins";
+[glossary.md](wiki/glossary.md) has Run and Stale; [sync.md](wiki/sync.md)
+and [status.md](wiki/status.md) are updated. 199 tests. Not deployed: the
+server goes first, then the local CLI rebuild.

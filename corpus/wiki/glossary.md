@@ -1,6 +1,6 @@
 ---
-summary: The board's vocabulary. Ticket vs brief vs todo, project, lane, project tag and tag, sync, the guide, the statuses (Backlog, To Do, In Progress, Blocked, Ready for test, Ready for deploy, Done), and the messages a move can carry (conclusion, block reason, confirmation, test notes, deploy steps), each with the words they replace.
-updated: 2026-11-03
+summary: The board's vocabulary. Ticket vs brief vs todo, project, lane, project tag and tag, sync, the guide, a run and a stale run, the statuses (Backlog, To Do, In Progress, Blocked, Ready for test, Ready for deploy, Done), and the messages a move can carry (conclusion, block reason, confirmation, test notes, deploy steps), each with the words they replace.
+updated: 2026-11-06
 ---
 
 # Glossary
@@ -57,9 +57,15 @@ _Avoid_: import, scan
 
 **Run**:
 One agent session working one ticket, from `brief-board start` to its end
-move (or a `release` when it stops unfinished). Proposed in brief 08; not
-built yet.
+move, or to a `release` by whoever stopped the agent. A record on the
+ticket, never a lock; it ends `moved`, `released` or `stale`.
 _Avoid_: claim, lease, job
+
+**Stale** (of a run):
+An open run with no write on its ticket for longer than the board's
+threshold (4 hours by default), worked out when the board is read. The next
+write makes it fresh again.
+_Avoid_: dead, expired, abandoned
 
 ## Statuses
 

@@ -1,6 +1,6 @@
 ---
-summary: Locked calls for brief-board, each with date, rejected alternative and reason. One ticket per brief keyed <project>-<NN> with no hand-made tickets (revisited 2026-11-03: open todos get sync-owned tickets in a Backlog column); Blocked only by agreement with the owner; which moves are allowed and which need a message; six columns with Ready for test and Ready for deploy as the owner's; the corpus wins over the board; one CLI on PATH that other repos name without a path; a read-only UI; one project tag per ticket decides its lane; sync only by hand; a down board never stops work (revisited 2026-11-02: the container now runs always, agents still carry on without it); Base UI for the UI's widgets; the CLI authenticates with one shared token, and the board sits on the VPS behind sign-in (2026-11-02); a corpus nested deeper names itself, as churchix and scoala-ramna-theme do (2026-11-03). Read before proposing to change any of these.
-updated: 2026-11-03
+summary: Locked calls for brief-board, each with date, rejected alternative and reason. One ticket per brief keyed <project>-<NN> with no hand-made tickets (revisited 2026-11-03: open todos get sync-owned tickets in a Backlog column); Blocked only by agreement with the owner; which moves are allowed and which need a message; six columns with Ready for test and Ready for deploy as the owner's; the corpus wins over the board (revisited 2026-11-06: sync waits for a fresh run); one CLI on PATH that other repos name without a path; a read-only UI; one project tag per ticket decides its lane; sync only by hand; a down board never stops work (revisited 2026-11-02: the container now runs always, agents still carry on without it); Base UI for the UI's widgets; the CLI authenticates with one shared token, and the board sits on the VPS behind sign-in (2026-11-02); a corpus nested deeper names itself, as churchix and scoala-ramna-theme do (2026-11-03). Read before proposing to change any of these.
+updated: 2026-11-06
 ---
 
 # Decisions
@@ -77,6 +77,15 @@ _2026-10-08_. When a ticket and its brief disagree, the brief is right and the
 ticket gets corrected. The board shows what is happening across projects. It
 never decides it. Rejected: making the board the record of status, which would
 put two sources of truth side by side.
+
+**Revisited 2026-11-06**, with runs (brief 08): sync now waits for a fresh
+run. A brief in `done/` whose ticket is In Progress with an open run heard
+from within the stale threshold (4 hours by default) keeps its ticket, and
+the sync report warns that the run's end move decides. A stale run ends as
+`stale` and the ticket closes as before. What stays: the corpus wins once
+the run ends or goes stale, and a run is a record, never a lock. Rejected:
+closing regardless, which on 2026-11-05 refused an agent's end move and left
+its deploy steps on a Done card.
 
 ## One CLI, and other repos name it without a path
 _2026-10-08_. The only client is a CLI that lives in this repo. Every project

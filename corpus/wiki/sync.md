@@ -1,6 +1,6 @@
 ---
-summary: How `brief-board sync` turns every project's corpus/briefs/ and open corpus/todos/ into tickets, as built 2026-10-09 with todos and Backlog 2026-11-03. What the CLI reads (projects to depth three and their board-name, titles, summaries, the heading shapes it strips, which todos are open), what the server does per brief state (create, refresh, close, hide, warn) and per todo (create, refresh, remove), what the dry run compares, why the report folds closes and hides into "updated", and why briefs restarting at 01 in 2026-11 needed no fix (closed 2026-11-03).
-updated: 2026-11-03
+summary: How `brief-board sync` turns every project's corpus/briefs/ and open corpus/todos/ into tickets, as built 2026-10-09 with todos and Backlog 2026-11-03. What the CLI reads (projects to depth three and their board-name, titles, summaries, the heading shapes it strips, which todos are open), what the server does per brief state (create, refresh, close, hide, warn; since 2026-11-06 it leaves an In Progress ticket whose run is fresh and closes one whose run is stale) and per todo (create, refresh, remove), what the dry run compares, why the report folds closes and hides into "updated", and why briefs restarting at 01 in 2026-11 needed no fix (closed 2026-11-03).
+updated: 2026-11-06
 ---
 
 # Sync
@@ -64,14 +64,20 @@ the payload. Sync is the one writer that skips the move table.
 | `todo/` | none | creates it in To Do, `summarySource: sync` |
 | `todo/` | exists | refreshes title and path; the summary only if sync wrote it, so an agent's summary stays |
 | `todo/` | Done | nothing, with a warning: the board can't tell which side is wrong |
-| `done/` | To Do, In Progress, Blocked | closes it, with a `via: sync` history event and the comment "Closed by sync: the brief is in done/." |
+| `done/` | To Do, Blocked, In Progress with no open run | closes it, with a `via: sync` history event and the comment "Closed by sync: the brief is in done/." |
+| `done/` | In Progress, its run fresh | refreshes title and path only, with a warning that the run's end move decides (2026-11-06) |
+| `done/` | In Progress, its run stale | ends the run as `stale` and closes the ticket; the comment and a warning name the run and when it was last heard (2026-11-06) |
 | `done/` | Ready for test, Ready for deploy, Done | refreshes title and path only (the file moved); the corpus can't say whether the owner tested or deployed |
 | `done/` | none | nothing; sync doesn't backfill history |
 | `superseded/` | exists | hides it; a ticket whose brief has left `superseded/` is shown again |
 | missing | exists | nothing, with a warning |
 
 Two briefs with one number warn, and the first wins. Sync writes as author
-`sync`.
+`sync`, and its writes never count as a run's: a run is fresh or stale by the
+writes made while it is open ([glossary.md](glossary.md), Run and Stale).
+Since 2026-11-06 the guide puts the end move before the brief goes to
+`done/`, so a live run never meets a sync with its brief in `done/`; the
+fresh-run rule covers an agent that gets the order wrong.
 
 **Todos** are sync's alone. Each open todo has a ticket in Backlog, keyed
 `<project>:<slug>` with no number, created the first time sync sees it and

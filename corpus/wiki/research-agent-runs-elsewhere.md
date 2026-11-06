@@ -167,7 +167,7 @@ No new todo. Everything worth doing fits brief 08 or the two todos.
 
 ## What changed
 
-[Brief 08](../briefs/todo/08-a-ticket-knows-the-run-that-works-it.md) keeps
+[Brief 08](../briefs/done/08-a-ticket-knows-the-run-that-works-it.md) keeps
 a run alive by its own writes, records how it ended, adds `brief-board runs`
 and a guide section for the session that runs agents, and lists five owner
 decisions. [a-run-lists-what-it-holds](../todos/a-run-lists-what-it-holds.md)

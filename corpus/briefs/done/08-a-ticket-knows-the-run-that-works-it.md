@@ -156,3 +156,50 @@ asked for by the guide but not required.
 - Ready for deploy with the owner's commands (vps-deploy's
   `node cli.ts brief-board deploy` and `server`, and `npm link` again only if
   the CLI's entry changed).
+
+## Outcome
+
+Built 2026-11-06 in `44a1222`, on the branch `briefs-2026-11-06`. Ticket
+brief-board-08 is in Ready for deploy.
+
+- **The run.** A `runs` table (migration 3) with at most one open run per
+  ticket, held by a partial unique index. `Store.move` opens a run on any
+  move into In Progress (so a move back from Ready for test opens one too)
+  and ends the open one as `moved`, with the column, on any move out. The
+  comment, `PUT` and start routes set its last-heard time; sync's own writes
+  don't. Stale is worked out on read from `BRIEF_BOARD_STALE_HOURS`
+  (default 4). A ticket carries its latest run, open or ended, so brief 10
+  can show a closed run's duration without a contract change; the detail
+  lists all runs.
+- **Start** posts to a new `POST /api/tickets/:key/start`, which does the
+  move or the resume in one transaction. On a resume the run passes to the
+  new author with a comment ("The run passes from ana to bo."), or opens if
+  none is open; the response's `passedFrom` lets the CLI warn on stderr when
+  that run was fresh. `release` (`POST /api/tickets/:key/release`, message
+  required) ends the run as `released`; `no_open_run` when there is none.
+  `runs` reads a new `GET /api/runs`, stalest first, and takes `--project`.
+- **Sync** leaves an In Progress ticket whose run is fresh, with a warning;
+  a stale run ends as `stale`, the ticket closes, and the comment and a
+  warning name the run and when it was last heard.
+- **On the board.** The In Progress card shows "ana · started 2h ago ·
+  heard 20m ago", "ana · stale run, heard 5h ago" in a new `--warn` orange,
+  or "no run"; the panel has the same line and an "Earlier runs" list.
+  `show` prints `Run:` and "Earlier runs"; `list` adds "(run by ana)" or
+  "(stale run by ana, heard 5h ago)".
+- **Guide.** The end move before the brief goes to `done/`; start opens a
+  run; dev servers as background tasks, stopped before the end move; a new
+  section 7, "Running other agents". The guide test's cap went from 80 to
+  100 lines (it is 98).
+- **My reading of "the history says so".** A release or a stale end is not
+  a status change, and the history table holds status changes, so neither
+  writes a history row. The run's ending, the earlier-runs list and the
+  comment carry it. Adding a history kind would mean rebuilding that table
+  for a row that says "In Progress → In Progress".
+- **Outside the file list:** `server/src/config.ts`, `index.ts` and
+  `config.test.ts` (the stale setting), `.env.example`,
+  `docs/getting-started.md` and `docs/architecture.md`, the new
+  `web/src/runs.ts`, `web/src/styles.css`, and the wiki's `architecture.md`.
+
+199 tests (from 170), typecheck and lint pass; the web build and a browser
+walk were skipped. Owner steps: [status.md](../../wiki/status.md), "Next
+(owner)" item 1. The CLI rebuild comes after the server deploy.

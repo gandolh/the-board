@@ -1,6 +1,6 @@
 ---
-summary: How brief-board is put together, as built 2026-10-09, with the 2026-11-02 sub-path, token and sign-in, and the 2026-11-03 todo keys. npm workspaces with a Fastify + SQLite API, a read-only Vite + React board, and the brief-board CLI that agents use; how the CLI finds the board without any repo holding a path; keys, the CLI's exit codes, the server's error codes, how the board UI polls and lays out, build gotchas, and what each project's CLAUDE.md says. The owner starts the server by hand on 127.0.0.1:8806.
-updated: 2026-11-02
+summary: How brief-board is put together, as built 2026-10-09, with the 2026-11-02 sub-path, token and sign-in, the 2026-11-03 todo keys, and the 2026-11-06 runs. npm workspaces with a Fastify + SQLite API, a read-only Vite + React board, and the brief-board CLI that agents use; how the CLI finds the board without any repo holding a path; keys, the CLI's exit codes, the server's error codes, how the board UI polls and lays out, build gotchas, and what each project's CLAUDE.md says. The owner starts the server by hand on 127.0.0.1:8806.
+updated: 2026-11-06
 ---
 
 # Architecture
@@ -72,7 +72,11 @@ colon raw or as `%3A`.
 ## CLI
 
 `create`, `start` (a resume when the ticket is already In Progress), `move`,
-`comment`, `show`, `list`, `sync` and `guide`. The project is `--project`,
+`comment`, `release`, `show`, `list`, `runs`, `sync` and `guide`. Since
+2026-11-06 `start` posts to `/api/tickets/:key/start`, which opens a run or,
+on a resume, passes the open run to the new author; the CLI warns on stderr
+when that run was fresh and someone else's. `release` ends a stopped agent's
+run without a move, and `runs` lists the open ones, stalest first. The project is `--project`,
 else the `corpus/board-name` of the nearest `corpus/` from the working
 directory up to the git root (2026-11-03, for a nested corpus such as
 churchix), else the git root's directory name; `create` looks for the brief in
@@ -88,7 +92,9 @@ that same corpus. The author is `--author`, else `BRIEF_BOARD_AUTHOR`, else
   the board is unreachable, printed as one line. A 4xx that isn't the
   contract's JSON (another service on the port) counts as unreachable.
 - `guide` prints `cli/src/guide.md` with the move table filled in from
-  `shared` at print time; a test holds it under 80 lines.
+  `shared` at print time; a test holds it under 100 lines (80 until
+  2026-11-06, when runs and the section for a session that runs other agents
+  came in).
 
 ## Server
 
@@ -98,11 +104,20 @@ that same corpus. The author is `--author`, else `BRIEF_BOARD_AUTHOR`, else
 deduplicated, and never include the project. A `PUT` that creates answers
 201. Error codes: `invalid_request`, `invalid_key`, `not_found`,
 `move_not_allowed`, `message_required`, `sync_owned` (a move, comment or
-`PUT` on a todo's ticket, 2026-11-03), `internal`, and `unauthorized` (a 401
+`PUT` on a todo's ticket, 2026-11-03), `no_open_run` (a `release` with
+nothing to release, 2026-11-06), `internal`, and `unauthorized` (a 401
 from the sign-in guard, [sign-in.md](sign-in.md)). Migrations run with
 foreign keys off, because rebuilding `tickets` (copy, drop, rename, as
 SQLite changes a CHECK) would otherwise cascade the drop into every comment
-and history row; each checks the keys before it commits. Since 2026-11-02 the
+and history row; each checks the keys before it commits. Runs (2026-11-06)
+are their own table, with at most one open run per ticket held by a partial
+unique index. `Store` opens one on any move into In Progress and ends it on
+any move out; the routes for comments, `PUT` and start set its last-heard
+time, and sync's own writes don't. Stale is worked out on read from
+`BRIEF_BOARD_STALE_HOURS` (default 4). A ticket carries its latest run, open
+or ended, and the ticket detail lists all of them. A release or a stale end
+is not a status change, so it leaves no history row; the run's ending and a
+comment record it. Since 2026-11-02 the
 vendored `wardAuth` plugin is the one guard in front of every route;
 `config.ts` reads the settings.
 

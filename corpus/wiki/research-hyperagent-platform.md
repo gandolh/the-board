@@ -95,7 +95,7 @@ unconfirmed. A link to the video the owner saw would settle this section.
 ## How it runs a fleet, against the board
 
 "Here" says whether brief-board has it, has it briefed in
-[brief 08](../briefs/todo/08-a-ticket-knows-the-run-that-works-it.md) or
+[brief 08](../briefs/done/08-a-ticket-knows-the-run-that-works-it.md) or
 [brief 09](../briefs/todo/09-the-hand-back-goes-on-the-board.md), or lacks it.
 
 | Hyperagent | Source | Here |
