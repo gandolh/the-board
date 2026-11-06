@@ -410,3 +410,10 @@ when you stop it, and a release's holds are what to clean up.
 [glossary.md](wiki/glossary.md) has Hold and Leftover. 243 tests. Not
 deployed; it goes out with briefs 08 to 11, the server first, then the local
 CLI rebuild.
+
+## [2026-11-06] todo | Brief 13: @fastify/static to 10.1.9, not before 2026-11-18
+
+Filed with Wicket's brief 09 for the same bump, at the owner's ask: the fix
+came out on 2026-11-04 and waits until 2026-11-18, and the build waits for
+the deploy of briefs 08-12, since a typecheck here rebuilds the CLI every
+agent uses.
