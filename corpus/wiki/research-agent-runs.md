@@ -11,6 +11,8 @@ was done the same day for the whole estate (the ro-housing repo's todo
 `check-every-hop-of-a-pasted-link` came out of it). This page takes the part
 that bears on the board.
 
+Later on 2026-11-06 the owner said they meant hyperagent.com, the hosted agent platform, not the projects below; [research-hyperagent-platform.md](research-hyperagent-platform.md) covers it.
+
 ## The evidence: the run of 2026-11-05
 
 That evening one session ran up to five background agents, one project each,
@@ -70,7 +72,7 @@ patterns are about what the board records, not about running agents.
    can see that 5173 is taken. Hyperlight's "nothing is ambient", turned into
    a ledger. Run profiles (light, walk, Docker) could hang off the same
    record later, so a controller sees how many Docker-heavy runs are open.
-3. **The hand-back on the board** (todo `the-hand-back-goes-on-the-board`).
+3. **The hand-back on the board** (brief 09, promoted from its todo on 2026-11-06).
    One structured report at the end move (commits, checks run, checks
    skipped, owner steps, questions), with each open question shown on the card
    until answered, without blocking the ticket. Hyperlight's large-output rule

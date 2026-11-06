@@ -17,7 +17,8 @@ knows what to clean up, and a second agent sees that a port is taken. A
 `hold` on a port that another open run holds warns and still goes ahead:
 holds are a record, never a lock.
 
-A first step needs no build and can go into the guide with brief 08. Start a
+A first step needs no build and goes into the guide with brief 08 (step 8,
+since 2026-11-06). Start a
 long-lived process, such as a dev server, as the runtime's background task so
 that `/tasks` shows it with its command line, never with `&` or `nohup`, and
 stop what you started before your end move.

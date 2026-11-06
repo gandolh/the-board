@@ -90,5 +90,5 @@ and [07, a nested corpus names itself](../briefs/done/07-a-nested-corpus-names-i
 
 - [a-run-lists-what-it-holds](../todos/a-run-lists-what-it-holds.md), after
   brief 08.
-- [the-hand-back-goes-on-the-board](../todos/the-hand-back-goes-on-the-board.md),
-  questions first; needs no run, so it can go before brief 08.
+- The hand-back (questions as a card badge) became brief 09 on 2026-11-06;
+  it needs no run, so it can go before or after brief 08.

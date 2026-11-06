@@ -37,28 +37,33 @@ response) recovers with its next activity. The survey's judgement 1 has the full
 
 ## Owner decisions before building
 
-1. **Stale after** how long without a write on the ticket. Default: 4 hours.
+**Answered 2026-11-06:** the owner took the default for all five: stale
+after 4 hours, liveness from the run's own writes (no `beat`), the
+revisit note, `release` by whoever stops the agent, and `--author`
+asked for by the guide but not required.
+
+1. **Stale after** how long without a write on the ticket. **Decided: 4 hours.**
    With the guide's new order a live run never meets sync with its brief in
    `done/`, so the threshold mostly decides what the card shows. (The first
    draft said 24 hours from the start.)
-2. **Liveness from the run's own writes**, as above. Default: yes. The
+2. **Liveness from the run's own writes**, as above. **Decided: yes.** The
    alternative is a lease kept by a `brief-board beat` an agent runs between
    steps, with a shorter threshold; it fails the wrong way when an agent
    forgets, since a working run then reads as dead.
 3. **A revisit note** on decisions.md's "The corpus wins; the board is a
-   view": sync now waits for a fresh run before closing its ticket. Default:
-   yes, a dated "Revisited 2026-11-0x" paragraph, since the corpus still wins
+   view": sync now waits for a fresh run before closing its ticket. **Decided:
+   yes**, a dated "Revisited 2026-11-0x" paragraph, since the corpus still wins
    once the run ends or goes stale.
 4. **`release`, run by whoever stops the agent.** A stopped agent can't close
    its own run, so the controller session, or the session the owner stops it
    from, runs `brief-board release <ticket> -m "<why, and what it left
-   running>"`. The ticket stays In Progress for the owner to decide. Default:
-   yes. The alternative, moving to Blocked, needs the owner's agreement first
+   running>"`. The ticket stays In Progress for the owner to decide. **Decided:
+   yes.** The alternative, moving to Blocked, needs the owner's agreement first
    by the decision on Blocked.
 5. **Names on runs.** `--author` defaults to `$BRIEF_BOARD_AUTHOR`, else
    `agent`, so five runs all read "agent". Default: the guide asks the
    controller to give each agent a name to pass as `--author`, and nothing
-   requires it. The alternative: `start` refuses without `--author`.
+   requires it. **Decided: this default.** The alternative: `start` refuses without `--author`.
 
 ## Files you OWN
 
@@ -124,6 +129,12 @@ response) recovers with its next activity. The survey's judgement 1 has the full
      message it (stop what it started, release its run, hand back);
      otherwise stop it, then run `release` for it, naming in `-m` what it
      left running (a dev server's port, a container).
+   And for every agent, in "Starting or resuming": start a long-lived
+   process (a dev server) as the runtime's background task, so `/tasks`
+   shows it with its command line, never with `&` or `nohup`, and stop
+   what you started before the end move. This is the no-build first step
+   of the todo `a-run-lists-what-it-holds`, which stays a todo for its
+   `hold` and `drop` commands.
 9. **The server.** The run lives in the database beside the ticket (a table
    or columns, the builder's call), migrated like the Backlog migration was.
    `start`, the moves, comments and `release` go through the existing token

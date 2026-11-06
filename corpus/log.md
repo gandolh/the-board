@@ -301,3 +301,26 @@ ticket as a derived badge, with `brief-board questions`, and can go before 08;
 needs no build. No `next` command and no new todo.
 [status.md](wiki/status.md) lists brief 08 and the two todos. Ticket
 brief-board-08's summary updated.
+
+## [2026-11-06] decision | Brief 08's five calls; the hand-back becomes brief 09
+
+The owner took brief 08's default on all five: a run is stale after 4
+hours without a write, liveness comes from the run's own writes (no
+`beat`), the revisit note on "The corpus wins; the board is a view",
+`release` by whoever stops an agent, and `--author` asked for, not
+required. The todo `the-hand-back-goes-on-the-board` was promoted to brief
+09 with the derived badge (not a seventh column) and `brief-board
+questions`; it needs no run. The todo `a-run-lists-what-it-holds` stays a
+todo for `hold` and `drop`; its no-build guide line (long-lived processes
+as background tasks, stopped before the end move) joins brief 08's step 8.
+
+## [2026-11-06] research | Hyperagent, the platform the owner meant
+
+The owner said the HyperAgent they meant is hyperagent.com, the hosted agent
+platform from the Airtable team (now Hyperagent, Inc.), seen in ThePrimeagen's
+promos. [research-hyperagent-platform.md](wiki/research-hyperagent-platform.md)
+has what it is, its fleet patterns against briefs 08 and 09, and three ranked
+candidates: run duration and tokens on the board, one needs-you list, and a
+Discord nudge from just-a-bot. ThePrimeagen's segments could not be found. No
+brief or todo written; [research-agent-runs.md](wiki/research-agent-runs.md)
+points to the new page.

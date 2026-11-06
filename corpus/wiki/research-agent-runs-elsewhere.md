@@ -172,6 +172,6 @@ a run alive by its own writes, records how it ended, adds `brief-board runs`
 and a guide section for the session that runs agents, and lists five owner
 decisions. [a-run-lists-what-it-holds](../todos/a-run-lists-what-it-holds.md)
 has the smallest `hold` and the guide line.
-[the-hand-back-goes-on-the-board](../todos/the-hand-back-goes-on-the-board.md)
+[brief 09](../briefs/todo/09-the-hand-back-goes-on-the-board.md) (promoted 2026-11-06)
 puts questions on the ticket, independent of runs, with `brief-board
 questions`.
