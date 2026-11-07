@@ -428,3 +428,19 @@ audit's other findings are new since 2026-11-06 and were left: `zod`
 (high, direct), `fast-uri` (moderate, under Fastify), `minimatch` (moderate,
 dev only, through eslint). 243 tests, typecheck and lint pass; the built
 server serves the page. Deploys with briefs 08-12.
+
+## [2026-11-07] done | Brief 14, a blocked brief or todo waits in Backlog
+
+[Brief 14](briefs/done/14-a-blocked-brief-or-todo-waits-in-backlog.md),
+`bacab80`, after a grill where the owner took every default: Backlog with a
+badge, `brief-board blocked`, off the needs list, the folder named
+`blocked/` with Blocked and Blocked by kept apart. Two calls settled there:
+an agent whose brief waits mid-run moves the file and releases its run, and
+sync treats an In Progress ticket with no open run like a stale one. Sync
+reads `briefs/blocked/` and `todos/blocked/`; a ticket keeps its condition
+in a new `blocked_by` column (migration 6). Outside the file list: the
+Backlog refusal in `app.ts` and its CLI twin, and the stale-run wording in
+`web/src/runs.ts`. [sync.md](wiki/sync.md), [glossary.md](wiki/glossary.md)
+(Blocked by), [decisions.md](wiki/decisions.md) (one ticket per brief
+revisited; Blocked by agreement stands) and [status.md](wiki/status.md)
+follow. 270 tests. Not deployed; it goes out with briefs 08-13.

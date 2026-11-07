@@ -29,9 +29,20 @@ describe("the guide", () => {
     }
   });
 
-  it("says Backlog belongs to sync, and promoting the todo is the way out", () => {
-    expect(guide).toContain("Open todos have tickets in Backlog, keyed <project>:<slug>, owned by sync:");
-    expect(guide).toContain("never move or comment on one. Promoting the todo to a brief takes it off.");
+  it("says Backlog belongs to sync, holds todos and blocked briefs, and how each leaves", () => {
+    expect(guide).toContain("Backlog belongs to sync. It holds open todos' tickets, keyed <project>:<slug>,");
+    expect(guide).toContain("and blocked briefs' tickets: never start, move or comment on one.");
+    expect(guide).toContain("the todo, or moving the brief back to briefs/todo/, takes it off.");
+  });
+
+  it("tells an agent to move a brief that waits on something outside it to blocked/, then release", () => {
+    const blocking = guide.slice(guide.indexOf("## 4. Blocking"), guide.indexOf("## 5."));
+    expect(blocking).toContain("That is for a step the owner takes.");
+    expect(blocking).toContain('corpus/briefs/blocked/ with "**Blocked by:** <condition>" under its title');
+    expect(blocking).toContain("todo goes to corpus/todos/blocked/ with blocked-by: in its frontmatter");
+    expect(blocking).toContain('  brief-board release <ticket> -m "Blocked by: <condition>"');
+    expect(blocking).toContain("The next sync puts the ticket in Backlog; `brief-board blocked` lists them all.");
+    expect(blocking).toContain("When the condition is met, move the file back and delete the line.");
   });
 
   it("says where a corpus whose folder name isn't its board name puts the name", () => {
@@ -82,7 +93,8 @@ describe("the guide", () => {
   });
 
   it("stays short enough to read before every brief", () => {
-    // 80 until runs, the section for a session that runs other agents, the report lines and holds.
-    expect(guide.split("\n").length).toBeLessThanOrEqual(115);
+    // 80 until runs, the section for a session that runs other agents, the report lines and holds;
+    // 115 until blocked/ folders.
+    expect(guide.split("\n").length).toBeLessThanOrEqual(125);
   });
 });

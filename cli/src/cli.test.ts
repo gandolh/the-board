@@ -513,6 +513,7 @@ describe("sync", () => {
     expect(res.out).toContain("beta: 2 brief(s), 1 todo, 1 done, 0 superseded; in todo: 7\n");
     expect(res.out).toContain("Todo tickets it would create: alpha:no-status, alpha:plain-line-open, alpha:walls-step-2");
     expect(res.out).toContain("Todo tickets it would remove: none");
+    expect(res.out).toContain("Blocked: 0 brief(s), 0 todo(s)");
     expect((await run(["show", "alpha-01"], { env: env() })).code).toBe(2);
   });
 
@@ -643,3 +644,54 @@ function freePort(): Promise<number> {
     });
   });
 }
+
+describe("blocked/ folders", () => {
+  it("syncs a blocked brief and todo into Backlog, lists them by condition, and lets the brief out from todo/", async () => {
+    const dir = join(scratch, "projects");
+    const root = join(dir, "waiting-room");
+    for (const sub of ["briefs/todo", "briefs/blocked", "todos/blocked"]) mkdirSync(join(root, "corpus", sub), { recursive: true });
+    writeFileSync(join(root, "corpus/briefs/blocked/14-sonar.md"), "# Task 14: SonarQube on the box\n\n**Blocked by:** A stronger  machine\n");
+    writeFileSync(join(root, "corpus/todos/blocked/bitwarden.md"), "---\ntitle: Bitwarden\nblocked-by: a stronger machine\n---\n");
+    writeFileSync(join(root, "corpus/todos/blocked/sonarr.md"), "# Sonarr\n");
+    const env = { BRIEF_BOARD_URL: url, BRIEF_BOARD_TOKEN: TOKEN, BRIEF_BOARD_PROJECTS_DIR: dir };
+
+    const dry = await run(["sync", "--dry-run"], { env });
+    expect(dry.out).toContain("waiting-room: 1 brief(s), 0 todo, 1 blocked, 0 done, 0 superseded; 2 open todo(s), 2 blocked");
+    expect(dry.out).toContain("Blocked: 1 brief(s), 2 todo(s)");
+    expect(dry.out).toContain(`warning: ${join(root, "corpus/todos/blocked/sonarr.md")}: in blocked/ but names no condition`);
+
+    const synced = await run(["sync"], { env });
+    expect(synced.code).toBe(0);
+    expect(synced.out).toContain("Synced 1 project(s), 1 brief(s): 1 created, 0 updated, 0 unchanged.");
+
+    const listed = await run(["blocked", "--project", "waiting-room"], { env });
+    expect(listed.out.split("\n")[0]).toBe("3 blocked, waiting on 2 conditions.");
+    // One group for both spellings, named by the first it meets.
+    expect(listed.out).toMatch(/\na stronger machine \(2\):\n {2}waiting-room-14 .*\n {2}waiting-room:bitwarden /);
+    expect(listed.out).toContain("not given (1):\n  waiting-room:sonarr");
+    expect(listed.out.indexOf("a stronger machine")).toBeLessThan(listed.out.indexOf("not given"));
+
+    const shown = await run(["show", "waiting-room-14"], { env });
+    expect(shown.out).toContain("Status:  Backlog\nBlocked by: A stronger machine");
+    const line = (await run(["list", "--project", "waiting-room"], { env })).out;
+    expect(line).toMatch(/waiting-room-14\s+Backlog\s+SonarQube on the box {2}\(blocked by A stronger machine\)/);
+
+    const started = await run(["start", "waiting-room-14"], { env });
+    expect(started.code).toBe(2);
+    expect(started.err).toContain("its brief is in blocked/");
+
+    // The condition is met: the brief goes back to todo/ and its line goes.
+    rmSync(join(root, "corpus/briefs/blocked/14-sonar.md"));
+    writeFileSync(join(root, "corpus/briefs/todo/14-sonar.md"), "# Task 14: SonarQube on the box\n");
+    expect((await run(["sync"], { env })).code).toBe(0);
+    expect((await run(["show", "waiting-room-14"], { env })).out).toContain("Status:  To Do\nRun:");
+    const after = (await run(["blocked", "--project", "waiting-room"], { env })).out;
+    expect(after).toContain("2 blocked, waiting on 2 conditions.\n\na stronger machine (1):\n  waiting-room:bitwarden ");
+    expect(after).not.toContain("waiting-room-14");
+    expect((await run(["start", "waiting-room-14"], { env })).code).toBe(0);
+  });
+
+  it("says when nothing is blocked", async () => {
+    expect((await run(["blocked", "--project", "nobody-here"])).out).toBe("Nothing is blocked in nobody-here.");
+  });
+});

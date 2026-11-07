@@ -1,4 +1,14 @@
-import { formatKey, formatTodoKey, openRun, type SyncRequest, type SyncResponse, type SyncTodo, type Ticket } from "@brief-board/shared";
+import {
+  BLOCKED_BY_NOT_GIVEN,
+  formatKey,
+  formatTodoKey,
+  openRun,
+  STATUS_LABELS,
+  type SyncRequest,
+  type SyncResponse,
+  type SyncTodo,
+  type Ticket,
+} from "@brief-board/shared";
 import type { Store } from "./store.js";
 
 /**
@@ -20,19 +30,37 @@ import type { Store } from "./store.js";
  *   closes, and the comment and a warning say so.
  * - `done`, no ticket: nothing. Sync does not backfill history.
  * - `superseded`, a ticket: hide it.
- * A ticket whose brief is missing from its project's payload gets a warning and
- * no change.
+ * - `blocked` (2026-11-07), a brief that waits on a condition outside the
+ *   work: its ticket waits in Backlog, which no agent can start or move, with
+ *   the condition kept on it. No ticket: create it there. To Do or Blocked:
+ *   move it there, with a history event and a comment. In Progress: the same
+ *   once its run is stale (the run ends) or gone (released); a fresh run's
+ *   end move decides. Ready for test, Ready for deploy and Done stay, with
+ *   their condition refreshed and a warning.
+ * - `todo`, its ticket in Backlog: the brief is back from `blocked/`, so the
+ *   ticket goes to To Do and loses its condition, with a comment.
+ * - `done` closes a Backlog ticket as it closes a To Do one.
+ * A brief's condition follows its folder: set while it is in `blocked/`,
+ * cleared anywhere else. A ticket whose brief is missing from its project's
+ * payload gets a warning and no change.
  *
  * Todos (2026-11-03) are sync's alone: each open todo has a ticket in Backlog,
  * made when sync first sees it, kept to the todo's title, summary and path,
  * and deleted once the todo is gone from the payload (promoted, dropped or
- * closed). A project sent without `todos`, by a CLI from before Backlog, keeps
- * its todo tickets as they are.
+ * closed). A todo in `todos/blocked/` keeps its key and carries its condition.
+ * Todo tickets are told apart by having no number, never by sitting in
+ * Backlog, since a blocked brief's ticket sits there too. A project sent
+ * without `todos`, by a CLI from before Backlog, keeps its todo tickets as
+ * they are.
  */
 
 const SYNC_AUTHOR = "sync";
 const CLOSED_BY_SYNC = "Closed by sync: the brief is in done/.";
-const CLOSABLE: Ticket["status"][] = ["todo", "in_progress", "blocked"];
+const CLOSABLE: Ticket["status"][] = ["backlog", "todo", "in_progress", "blocked"];
+const waiting = (condition: string) => `Waiting in Backlog: the brief is in blocked/ (blocked by ${condition}).`;
+const UNBLOCKED_BY_SYNC = "Unblocked by sync: the brief is back in todo/.";
+/** Where a brief that is in blocked/ leaves its ticket alone, apart from the condition, title and path. */
+const PAST_WORK: Ticket["status"][] = ["ready_for_test", "ready_for_deploy", "done"];
 
 export function runSync(store: Store, request: SyncRequest): SyncResponse {
   return store.db.transaction(() => {
@@ -58,9 +86,10 @@ export function runSync(store: Store, request: SyncRequest): SyncResponse {
         seen.add(brief.number);
         const key = formatKey(project, brief.number);
         const ticket = existing.get(brief.number);
+        const blockedBy = brief.state === "blocked" ? brief.blockedBy?.trim() || BLOCKED_BY_NOT_GIVEN : null;
 
         if (!ticket) {
-          if (brief.state === "todo") {
+          if (brief.state === "todo" || brief.state === "blocked") {
             store.insertTicket({
               key,
               project,
@@ -71,6 +100,7 @@ export function runSync(store: Store, request: SyncRequest): SyncResponse {
               briefPath: brief.briefPath,
               author: SYNC_AUTHOR,
               via: "sync",
+              blockedBy,
             });
             result.created++;
           }
@@ -90,8 +120,42 @@ export function runSync(store: Store, request: SyncRequest): SyncResponse {
         if (ticket.summarySource === "sync" && ticket.summary !== brief.summary) changes.summary = brief.summary;
         const hidden = brief.state === "superseded";
         if (ticket.hidden !== hidden) changes.hidden = hidden;
+        if (ticket.blockedBy !== blockedBy) changes.blockedBy = blockedBy;
         let changed = Object.keys(changes).length > 0;
         if (changed) store.updateTicket(key, changes);
+
+        if (blockedBy !== null) {
+          if (ticket.status === "todo" || ticket.status === "blocked") {
+            store.setStatus(key, ticket.status, "backlog", SYNC_AUTHOR, "sync");
+            store.addComment(key, { author: SYNC_AUTHOR, body: waiting(blockedBy), role: "comment", move: null });
+            changed = true;
+          } else if (ticket.status === "in_progress") {
+            const run = openRun(ticket);
+            if (run && !run.stale) {
+              result.warnings.push(`${key}: its brief is in blocked/, but its run by ${run.author} is open; the run's end move decides`);
+            } else {
+              let body = waiting(blockedBy);
+              if (run) {
+                store.endRun(key, "stale", "backlog");
+                body += ` The run by ${run.author}, last heard ${run.lastHeardAt}, was stale and ends here.`;
+                result.warnings.push(`${key}: waits in Backlog; its run by ${run.author} was stale (last heard ${run.lastHeardAt}) and ends here`);
+              }
+              store.setStatus(key, ticket.status, "backlog", SYNC_AUTHOR, "sync");
+              store.addComment(key, { author: SYNC_AUTHOR, body, role: "comment", move: null });
+              changed = true;
+            }
+          } else if (PAST_WORK.includes(ticket.status)) {
+            result.warnings.push(
+              `${key} is ${STATUS_LABELS[ticket.status]} on the board but its brief is in blocked/; only its condition, title and path were refreshed`,
+            );
+          }
+        }
+
+        if (brief.state === "todo" && ticket.status === "backlog") {
+          store.setStatus(key, "backlog", "todo", SYNC_AUTHOR, "sync");
+          store.addComment(key, { author: SYNC_AUTHOR, body: UNBLOCKED_BY_SYNC, role: "comment", move: null });
+          changed = true;
+        }
 
         if (brief.state === "done" && CLOSABLE.includes(ticket.status)) {
           const run = openRun(ticket);
@@ -132,6 +196,7 @@ function syncTodos(store: Store, project: string, todos: SyncTodo[], tickets: Ti
     const key = formatTodoKey(project, todo.slug);
     seen.add(key);
     const ticket = existing.get(key);
+    const blockedBy = todo.blockedBy === undefined || todo.blockedBy === null ? null : todo.blockedBy.trim() || BLOCKED_BY_NOT_GIVEN;
     if (!ticket) {
       store.insertTicket({
         key,
@@ -143,6 +208,7 @@ function syncTodos(store: Store, project: string, todos: SyncTodo[], tickets: Ti
         briefPath: todo.path,
         author: SYNC_AUTHOR,
         via: "sync",
+        blockedBy,
       });
       counts.created++;
       continue;
@@ -151,6 +217,7 @@ function syncTodos(store: Store, project: string, todos: SyncTodo[], tickets: Ti
     if (ticket.title !== todo.title) changes.title = todo.title;
     if (ticket.summary !== todo.summary) changes.summary = todo.summary;
     if (ticket.briefPath !== todo.path) changes.briefPath = todo.path;
+    if (ticket.blockedBy !== blockedBy) changes.blockedBy = blockedBy;
     if (Object.keys(changes).length > 0) {
       store.updateTicket(key, changes);
       counts.updated++;

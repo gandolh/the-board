@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { STATUSES, type Lane, type Run, type Ticket } from "@brief-board/shared";
-import { Board } from "./Board";
+import { Board, cellTickets } from "./Board";
 import { Card } from "./Card";
 import { runEnding, runLine } from "./runs";
 
@@ -23,6 +23,7 @@ const ticket = (fields: Partial<Ticket>): Ticket => ({
   statusChangedAt: now.toISOString(),
   run: null,
   openQuestions: 0,
+  blockedBy: null,
   ...fields,
 });
 
@@ -103,6 +104,7 @@ describe("a card's run", () => {
     expect(runEnding(run({ ended: "moved", endedTo: "ready_for_test" }))).toBe("moved to Ready for test");
     expect(runEnding(run({ ended: "released" }))).toBe("released, unfinished");
     expect(runEnding(run({ ended: "stale" }))).toBe("stale; sync closed the ticket");
+    expect(runEnding(run({ ended: "stale", endedTo: "backlog" }))).toBe("stale; sync put the ticket in Backlog");
   });
 });
 
@@ -118,5 +120,32 @@ describe("a card's questions", () => {
 
   it("shows no badge when none are open", () => {
     expect(card({ openQuestions: 0 })).not.toContain("badge-questions");
+  });
+});
+
+describe("a blocked card", () => {
+  const card = (fields: Partial<Ticket>) => renderToStaticMarkup(<Card ticket={ticket(fields)} now={now} onOpen={() => {}} />);
+
+  it("says what it waits on in a badge, with the whole condition in its title", () => {
+    const html = card({ key: "p-14", number: 14, status: "backlog", blockedBy: "a stronger machine" });
+    expect(html).toContain('<span class="badge-blocked" title="Blocked by: a stronger machine">Blocked by: a stronger machine</span>');
+    expect(card({})).not.toContain("badge-blocked");
+  });
+
+  it("comes after the other cards in Backlog", () => {
+    const tickets = [
+      ticket({ key: "p-14", number: 14, status: "backlog", blockedBy: "a stronger machine" }),
+      ticket({ key: "p:a", number: null, status: "backlog" }),
+      ticket({ key: "p:b", number: null, status: "backlog", blockedBy: "the home media machine" }),
+      ticket({ key: "p:c", number: null, status: "backlog" }),
+      ticket({ key: "p-01", status: "todo" }),
+    ];
+    expect(cellTickets(tickets, "backlog").map((t) => t.key)).toEqual(["p:a", "p:c", "p-14", "p:b"]);
+    const html = renderToStaticMarkup(
+      <Board lanes={[{ project: "p", tickets }]} now={now} toggled={new Set()} onToggle={() => {}} onOpen={() => {}} />,
+    );
+    const order = ["p:a", "p:c", "p-14", "p:b"].map((key) => html.indexOf(`aria-label="${key}:`));
+    expect(order.every((at) => at >= 0)).toBe(true);
+    expect([...order].sort((x, y) => x - y)).toEqual(order);
   });
 });

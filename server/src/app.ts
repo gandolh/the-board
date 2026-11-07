@@ -314,13 +314,17 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     fail(reply, 404, { code: "not_found", message: `no ticket ${key}; file a brief, then sync or PUT it` });
 
   /**
-   * A todo's ticket in Backlog belongs to sync: it goes when the todo is
-   * promoted, and anything written on it would go with it.
+   * A ticket in Backlog belongs to sync. A todo's goes when the todo is
+   * promoted, and anything written on it would go with it; a blocked brief's
+   * waits on its condition and leaves when the brief is back in `todo/`.
    */
   const syncOwned = (reply: FastifyReply, key: string, what: string) =>
     fail(reply, 400, {
       code: SYNC_OWNED,
-      message: `${key} is a todo's ticket in Backlog, and only sync ${what}. Promote the todo to a brief instead: the next sync takes this ticket off and files the brief's in To Do.`,
+      message:
+        parseKey(key) === null
+          ? `${key} is a todo's ticket in Backlog, and only sync ${what}. Promote the todo to a brief instead: the next sync takes this ticket off and files the brief's in To Do.`
+          : `${key} waits in Backlog because its brief is in blocked/, and only sync ${what}. When its condition is met, move the brief back to briefs/todo/: the next sync puts the ticket in To Do.`,
     });
 
   app.get("/api/tickets/:key", async (request, reply) => {
