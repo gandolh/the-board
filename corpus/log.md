@@ -417,3 +417,14 @@ Filed with Wicket's brief 09 for the same bump, at the owner's ask: the fix
 came out on 2026-11-04 and waits until 2026-11-18, and the build waits for
 the deploy of briefs 08-12, since a typecheck here rebuilds the CLI every
 agent uses.
+
+## [2026-11-07] done | Brief 13, @fastify/static at 10.1.10
+
+[Brief 13](briefs/done/13-fastify-static-moves-to-10-1-9.md), `aa9e921`, built at the
+owner's ask on 2026-11-07, before its 2026-11-18 date. `@fastify/static`
+10.1.10 (the current 10.1.x) pinned in `server/package.json`; `glob` 14.0.4
+in the lockfile, and GHSA-3g3m-2fjr-6pw4 no longer in `npm audit`. The
+audit's other findings are new since 2026-11-06 and were left: `zod`
+(high, direct), `fast-uri` (moderate, under Fastify), `minimatch` (moderate,
+dev only, through eslint). 243 tests, typecheck and lint pass; the built
+server serves the page. Deploys with briefs 08-12.
