@@ -1,6 +1,6 @@
 ---
-summary: The board's vocabulary. Ticket vs brief vs todo, project, lane, project tag and tag, sync, the guide, a run and a stale run, a hold and a leftover, a question, the statuses (Backlog, To Do, In Progress, Blocked, Ready for test, Ready for deploy, Done), and the messages a move can carry (conclusion, block reason, confirmation, test notes, deploy steps), each with the words they replace.
-updated: 2026-11-06
+summary: The board's vocabulary. Ticket vs brief vs todo, project, lane, project tag and tag, sync, the guide, a run and a stale run, a hold and a leftover, a question, the statuses (Backlog, To Do, In Progress, Blocked, Ready for test, Ready for deploy, Done) and Blocked by, the condition a file in a blocked/ folder waits on, and the messages a move can carry (conclusion, block reason, confirmation, test notes, deploy steps), each with the words they replace.
+updated: 2026-11-07
 ---
 
 # Glossary
@@ -88,8 +88,9 @@ _Avoid_: dead, expired, abandoned
 ## Statuses
 
 **Backlog**:
-The first column: one ticket per open todo. Only sync puts tickets there and
-takes them off; no agent moves one. In the API: `backlog`.
+The first column: one ticket per open todo, and since 2026-11-07 the ticket of
+each brief in `blocked/`. Only sync puts tickets there and takes them off; no
+agent starts or moves one. In the API: `backlog`.
 _Avoid_: icebox, ideas
 
 **To Do**, **In Progress**:
@@ -98,7 +99,14 @@ Ready to start, being worked by an agent. In the API: `todo`, `in_progress`.
 **Blocked**:
 A ticket set aside until the owner does something outside the session. An
 agent sets it only after the owner agrees. In the API: `blocked`.
-_Avoid_: on hold, deferred, waiting
+_Avoid_: on hold, deferred, waiting; Blocked by (a file's condition, not a status)
+
+**Blocked by**:
+The condition a brief in `corpus/briefs/blocked/` or a todo in
+`corpus/todos/blocked/` waits on: one short line someone can check, such as
+"a stronger machine" or "2026-11-18". Its ticket waits in Backlog. In the API:
+`blockedBy`.
+_Avoid_: parked, waiting on; Blocked (that is the status)
 
 **Ready for test**:
 Work the agent has finished that the owner needs to try. In the API:
