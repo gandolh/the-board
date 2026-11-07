@@ -1,6 +1,6 @@
 ---
-summary: Snapshot as of 2026-11-03, per area. Live on the VPS since 2026-11-03; first sync 2026-11-03 (23 projects, 30 tickets in To Do). The board, CLI, sync and guide built 2026-10-09 and rolled out to every project's CLAUDE.md but vps-deploy's; Base UI under the panel and lanes 2026-10-23. Down since 2026-10-13; briefs 01-05 (2026-11-02) built it for the VPS behind sign-in (sync in group folders, the sub-path, the CLI's token, sign-in, the container and the vps-deploy stack), not deployed, with the owner's steps, which vps-deploy's npm run setup:brief-board runs (2026-11-03); ward-auth 0.7.0 with its rename route off (2026-11-03); the numbering question after the estate restarted brief numbering, closed 2026-11-03; Backlog for open todos (brief 06) and nested corpora naming themselves (brief 07, churchix and scoala-ramna-theme) built 2026-11-03, not deployed; brief 08 (runs: a run on each ticket kept fresh by its writes, release, brief-board runs, sync waiting for a fresh run, the guide's end-move order and its section for a session that runs other agents) built 2026-11-06, not deployed; brief 09 (questions for the owner on the ticket, a badge, brief-board answer and questions, the report lines in the guide) built 2026-11-06, not deployed; brief 10 (each run's duration, worked out from its times, one shared formatter) built 2026-11-06, not deployed; brief 11 (one derived list of what needs the owner: brief-board needs and a strip above the lanes) built 2026-11-06, not deployed; brief 12 (a run lists what it holds: brief-board hold and drop, the leftovers printed when a run ends, holds in show and runs) built 2026-11-06, not deployed.
-updated: 2026-11-06
+summary: Snapshot as of 2026-11-03, per area. Live on the VPS since 2026-11-03; first sync 2026-11-03 (23 projects, 30 tickets in To Do). The board, CLI, sync and guide built 2026-10-09 and rolled out to every project's CLAUDE.md but vps-deploy's; Base UI under the panel and lanes 2026-10-23. Down since 2026-10-13; briefs 01-05 (2026-11-02) built it for the VPS behind sign-in (sync in group folders, the sub-path, the CLI's token, sign-in, the container and the vps-deploy stack), not deployed, with the owner's steps, which vps-deploy's npm run setup:brief-board runs (2026-11-03); ward-auth 0.7.0 with its rename route off (2026-11-03); the numbering question after the estate restarted brief numbering, closed 2026-11-03; Backlog for open todos (brief 06) and nested corpora naming themselves (brief 07, churchix and scoala-ramna-theme) built 2026-11-03, not deployed; brief 08 (runs: a run on each ticket kept fresh by its writes, release, brief-board runs, sync waiting for a fresh run, the guide's end-move order and its section for a session that runs other agents) built 2026-11-06, not deployed; brief 09 (questions for the owner on the ticket, a badge, brief-board answer and questions, the report lines in the guide) built 2026-11-06, not deployed; brief 10 (each run's duration, worked out from its times, one shared formatter) built 2026-11-06, not deployed; brief 11 (one derived list of what needs the owner: brief-board needs and a strip above the lanes) built 2026-11-06, not deployed; brief 12 (a run lists what it holds: brief-board hold and drop, the leftovers printed when a run ends, holds in show and runs) built 2026-11-06, not deployed; brief 13 (@fastify/static 10.1.10, the glob advisory gone) built 2026-11-07, not deployed; npm audit's new zod (high) and fast-uri findings open.
+updated: 2026-11-07
 ---
 
 # Status
@@ -81,7 +81,8 @@ from 2026-10-13. Brief numbering restarted at 01 on 2026-11-02 (see
    on first start; tickets already In Progress show "no run" until their next
    start. Then, as a check, a
    `--question` on a test ticket shows its badge on the live board, and
-   `brief-board needs` lists today's Ready for deploy tickets.
+   `brief-board needs` lists today's Ready for deploy tickets. The same
+   deploy carries brief 13's `@fastify/static` 10.1.10.
 2. Backlog (brief 06) and nested corpora (brief 07) are deployed: the owner
    deployed the board on 2026-11-04 and synced it since (last on 2026-11-05).
 3. For local development only: add brief-board to Ward's local seed
@@ -94,6 +95,10 @@ from 2026-10-13. Brief numbering restarted at 01 on 2026-11-02 (see
 
 - The sync report folds closes and hides into "updated"; separate counts need
   contract fields.
+- `npm audit` (2026-11-07) still lists `zod` below 4.6.6 (high,
+  GHSA-mrhx-c7xc-m3w5; direct in `shared` and `server`), `fast-uri` under
+  Fastify (moderate) and `minimatch` through eslint (moderate, dev only).
+  No todo yet; see brief 13's outcome.
 
 ## First sync
 
@@ -114,6 +119,8 @@ and [11, one list of what needs the owner](../briefs/done/11-one-list-of-what-ne
 are built (2026-11-06), merged into main the same day, not deployed.
 [12, a run lists what it holds](../briefs/done/12-a-run-lists-what-it-holds.md)
 is built (2026-11-06), not deployed.
+[13, @fastify/static moves to 10.1.9](../briefs/done/13-fastify-static-moves-to-10-1-9.md)
+is built (2026-11-07, at 10.1.10), not deployed.
 
 ## Todos
 
