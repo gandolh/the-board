@@ -4,8 +4,8 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { UsageError } from "../errors.js";
-import { briefSummary, briefTitle, cut, SUMMARY_MAX, todoIsOpen, todoStatus, todoTitle } from "./parse.js";
-import { findProjects, projectsDir, readProjects, readTodos } from "./read.js";
+import { BLOCKED_BY_MAX, blockedBy, briefSummary, briefTitle, cut, SUMMARY_MAX, todoIsOpen, todoStatus, todoTitle } from "./parse.js";
+import { findProjects, projectsDir, readProject, readProjects, readTodos } from "./read.js";
 
 const FIXTURES = fileURLToPath(new URL("../../test/fixtures/projects/", import.meta.url));
 /**
@@ -128,18 +128,20 @@ describe("todos", () => {
 
   it("sends the open ones directly in corpus/todos/, and never a subfolder's", () => {
     expect(readTodos(join(FIXTURES, "alpha"))).toEqual([
-      { slug: "no-status", title: "no-status", summary: "Just prose, no heading and no status.", path: "corpus/todos/no-status.md" },
+      { slug: "no-status", title: "no-status", summary: "Just prose, no heading and no status.", path: "corpus/todos/no-status.md", blockedBy: null },
       {
         slug: "plain-line-open",
         title: "A plain status line",
         summary: "The first paragraph after the status line.",
         path: "corpus/todos/plain-line-open.md",
+        blockedBy: null,
       },
       {
         slug: "walls-step-2",
         title: "Walls meet at every step",
         summary: "A slug that ends in digits. Its ticket key must never read as a brief number.",
         path: "corpus/todos/walls-step-2.md",
+        blockedBy: null,
       },
     ]);
   });
@@ -246,6 +248,86 @@ describe("the projects directory", () => {
       expect(projectsDir({ BRIEF_BOARD_PROJECTS_DIR: "/srv/projects" }, home)).toBe("/srv/projects");
     } finally {
       rmSync(home, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("blocked briefs and todos", () => {
+  it("read the condition from frontmatter, else from a Blocked by line under the title", () => {
+    expect(blockedBy("---\ntitle: T\nblocked-by: a stronger machine\n---\n\n# T\n")).toBe("a stronger machine");
+    expect(blockedBy("---\nblocked-by: 'the home media machine'\n---\n")).toBe("the home media machine");
+    expect(blockedBy("# Task 14: T\n\n**Blocked by:** a stronger machine\n\n## Context\n")).toBe("a stronger machine");
+    expect(blockedBy("# T\n\n**Blocked by**: 2026-11-18\n")).toBe("2026-11-18");
+    expect(blockedBy("# T\nBlocked by:   two   spaces  \n")).toBe("two spaces");
+  });
+
+  it("find none when the file names none, or only far below the title", () => {
+    expect(blockedBy("# T\n\nText.\n")).toBeNull();
+    expect(blockedBy("# T\n\n**Blocked by:**\n")).toBeNull();
+    expect(blockedBy("# T\n\na\n\nb\n\nc\n\nd\n\ne\n\n**Blocked by:** too far\n")).toBeNull();
+  });
+
+  it("cut a condition at 120 characters", () => {
+    const long = "x".repeat(200);
+    expect(blockedBy(`# T\n**Blocked by:** ${long}\n`)).toBe("x".repeat(BLOCKED_BY_MAX));
+  });
+
+  it("keep the Blocked by line out of a brief's summary", () => {
+    expect(briefSummary("# T\n\n**Blocked by:** a stronger machine\n\nThe first real paragraph.")).toBe("The first real paragraph.");
+  });
+
+  const project = () => {
+    const root = mkdtempSync(join(tmpdir(), "brief-board-blocked-"));
+    for (const dir of ["briefs/todo", "briefs/blocked", "todos/blocked", "todos/closed"]) mkdirSync(join(root, "corpus", dir), { recursive: true });
+    return root;
+  };
+
+  it("read briefs/blocked/ and todos/blocked/, and warn of a file that names no condition", () => {
+    const root = project();
+    try {
+      writeFileSync(join(root, "corpus/briefs/todo/01-a.md"), "# Task 01: A\n");
+      writeFileSync(join(root, "corpus/briefs/blocked/02-b.md"), "# Task 02: B\n\n**Blocked by:** a stronger machine\n\n## Context\n\nWhy.\n");
+      writeFileSync(join(root, "corpus/briefs/blocked/03-c.md"), "# Task 03: C\n\n## Context\n\nNo line.\n");
+      writeFileSync(join(root, "corpus/todos/open.md"), "# Open\n");
+      writeFileSync(join(root, "corpus/todos/blocked/sonarqube.md"), "---\ntitle: SonarQube\nblocked-by: a stronger machine\n---\n");
+      writeFileSync(join(root, "corpus/todos/blocked/shelved.md"), "---\nstatus: dropped\n---\n");
+      writeFileSync(join(root, "corpus/todos/closed/archived.md"), "# Archived\n");
+      const warnings: string[] = [];
+      const read = readProject(root, "p", (message) => warnings.push(message));
+      expect(read.briefs.map((b) => [b.number, b.state, b.blockedBy])).toEqual([
+        [1, "todo", undefined],
+        [2, "blocked", "a stronger machine"],
+        [3, "blocked", "not given"],
+      ]);
+      expect(read.briefs[1]!.summary).toBe("Why.");
+      expect(read.todos!.map((t) => [t.slug, t.path, t.blockedBy])).toEqual([
+        ["open", "corpus/todos/open.md", null],
+        ["sonarqube", "corpus/todos/blocked/sonarqube.md", "a stronger machine"],
+      ]);
+      expect(warnings).toEqual([
+        `${join(root, "corpus/briefs/blocked/03-c.md")}: in blocked/ but names no condition (a "**Blocked by:**" line under the title, or blocked-by: in the frontmatter); sent as "not given"`,
+      ]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("stop on one todo slug in todos/ and todos/blocked/, naming both files", () => {
+    const root = project();
+    try {
+      writeFileSync(join(root, "corpus/todos/sonarqube.md"), "---\nstatus: dropped\n---\n");
+      writeFileSync(join(root, "corpus/todos/blocked/sonarqube.md"), "---\nblocked-by: x\n---\n");
+      expect(() => readTodos(root)).toThrow(UsageError);
+      expect(() => readTodos(root)).toThrow(`${join(root, "corpus/todos/sonarqube.md")} and ${join(root, "corpus/todos/blocked/sonarqube.md")}`);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("read nothing blocked from a corpus with no blocked/ folders", () => {
+    for (const p of readProjects(FIXTURES)) {
+      expect(p.briefs.filter((b) => b.state === "blocked")).toEqual([]);
+      expect((p.todos ?? []).filter((t) => t.blockedBy !== null)).toEqual([]);
     }
   });
 });

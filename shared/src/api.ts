@@ -17,7 +17,7 @@ export const SUMMARY_SOURCES = ["agent", "sync"] as const;
 export const summarySourceSchema = z.enum(SUMMARY_SOURCES);
 export type SummarySource = z.infer<typeof summarySourceSchema>;
 
-/** How a run ended: its ticket moved out of In Progress, someone released it, or sync closed its ticket while it was stale. */
+/** How a run ended: its ticket moved out of In Progress, someone released it, or sync closed its ticket (or put it in Backlog) while it was stale. */
 export const RUN_ENDINGS = ["moved", "released", "stale"] as const;
 export const runEndingSchema = z.enum(RUN_ENDINGS);
 export type RunEnding = z.infer<typeof runEndingSchema>;
@@ -43,7 +43,7 @@ export const runSchema = z.object({
   /** Null while the run is open. */
   endedAt: timestamp.nullable(),
   ended: runEndingSchema.nullable(),
-  /** The column a `moved` run's ticket went to; null otherwise. */
+  /** The column a `moved` run's ticket went to, or Backlog for a stale run sync ended there; null otherwise. */
   endedTo: statusSchema.nullable(),
 });
 export type Run = z.infer<typeof runSchema>;
@@ -117,6 +117,12 @@ export const ticketSchema = z.object({
   run: runSchema.nullable(),
   /** How many of its questions wait for the owner's answer: the card's badge, in any column. */
   openQuestions: z.number().int().nonnegative(),
+  /**
+   * What its brief or todo waits on, from a file in a `blocked/` folder; null
+   * when it waits on nothing. Not the Blocked status: sync keeps it, and such
+   * a ticket waits in Backlog.
+   */
+  blockedBy: z.string().nullable(),
 });
 export type Ticket = z.infer<typeof ticketSchema>;
 
@@ -455,8 +461,8 @@ export type NeedsResponse = z.infer<typeof needsResponseSchema>;
 
 // --- POST /api/sync --------------------------------------------------------------
 
-/** Where a brief sits in its project's corpus. */
-export const BRIEF_STATES = ["todo", "done", "superseded"] as const;
+/** Where a brief sits in its project's corpus. `blocked` waits on a condition outside the work. */
+export const BRIEF_STATES = ["todo", "blocked", "done", "superseded"] as const;
 export const briefStateSchema = z.enum(BRIEF_STATES);
 export type BriefState = z.infer<typeof briefStateSchema>;
 
@@ -466,16 +472,29 @@ export const syncBriefSchema = z.object({
   summary: z.string(),
   briefPath: z.string().min(1),
   state: briefStateSchema,
+  /**
+   * The condition a brief in `blocked/` waits on. A CLI from before
+   * `blocked/` leaves it out, and never sends that state.
+   */
+  blockedBy: z.string().nullable().optional(),
 });
 export type SyncBrief = z.infer<typeof syncBriefSchema>;
 
-/** An open todo: a `.md` file directly in `corpus/todos/` that is not dropped, closed, promoted or done. */
+/** The condition sent for a file in a `blocked/` folder that names none. */
+export const BLOCKED_BY_NOT_GIVEN = "not given";
+
+/** An open todo: a `.md` file directly in `corpus/todos/` or `corpus/todos/blocked/` that is not dropped, closed, promoted or done. */
 export const syncTodoSchema = z.object({
   slug: z.string().regex(TODO_SLUG),
   title: z.string().min(1),
   summary: z.string(),
   /** Relative to the project's repo root, e.g. `corpus/todos/linux-apps-sound.md`. */
   path: z.string().min(1),
+  /**
+   * The condition, for a todo in `corpus/todos/blocked/`; null for one in
+   * `corpus/todos/`. A CLI from before `blocked/` leaves it out.
+   */
+  blockedBy: z.string().nullable().optional(),
 });
 export type SyncTodo = z.infer<typeof syncTodoSchema>;
 

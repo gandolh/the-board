@@ -10,7 +10,9 @@ import Database from "better-sqlite3";
  *
  * A ticket's key is its primary key, in canonical form (`atrium-03`), and
  * `(project, number)` is unique too: one ticket per brief. A todo's ticket
- * (`atrium:night-mode`) has no number and sits in Backlog, and only it does.
+ * (`atrium:night-mode`) has no number and always sits in Backlog; since
+ * 2026-11-07 a brief's ticket sits there too while its brief is in
+ * `blocked/`, with `blocked_by` holding what it waits on.
  */
 export type Db = Database.Database;
 
@@ -130,6 +132,33 @@ export const MIGRATIONS: string[] = [
     UNIQUE (run_id, kind, value)
   );
   CREATE INDEX holds_by_value ON holds (kind, value);
+  `,
+  // 2026-11-07: a brief or todo in a blocked/ folder. Its ticket waits in
+  // Backlog with the condition in blocked_by, so a ticket with a number may
+  // now sit in Backlog too; one without a number still always does. The CHECK
+  // changes, so the table is rebuilt as in the second migration.
+  `
+  CREATE TABLE tickets_new (
+    key TEXT PRIMARY KEY,
+    project TEXT NOT NULL,
+    number INTEGER,
+    title TEXT NOT NULL,
+    summary TEXT NOT NULL,
+    summary_source TEXT NOT NULL CHECK (summary_source IN ('agent', 'sync')),
+    brief_path TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('backlog', 'todo', 'in_progress', 'blocked', 'ready_for_test', 'ready_for_deploy', 'done')),
+    hidden INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    status_changed_at TEXT NOT NULL,
+    blocked_by TEXT,
+    UNIQUE (project, number),
+    CHECK (number IS NOT NULL OR status = 'backlog')
+  );
+  INSERT INTO tickets_new (key, project, number, title, summary, summary_source, brief_path, status, hidden, created_at, updated_at, status_changed_at, blocked_by)
+    SELECT key, project, number, title, summary, summary_source, brief_path, status, hidden, created_at, updated_at, status_changed_at, NULL FROM tickets;
+  DROP TABLE tickets;
+  ALTER TABLE tickets_new RENAME TO tickets;
   `,
 ];
 

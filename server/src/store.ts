@@ -49,6 +49,7 @@ interface TicketRow {
   created_at: string;
   updated_at: string;
   status_changed_at: string;
+  blocked_by: string | null;
 }
 
 interface CommentRow {
@@ -136,6 +137,7 @@ export class Store {
       openQuestions: (
         this.db.prepare("SELECT COUNT(*) AS n FROM questions WHERE ticket_key = ? AND answered_at IS NULL").get(row.key) as { n: number }
       ).n,
+      blockedBy: row.blocked_by,
     };
   }
 
@@ -408,7 +410,7 @@ export class Store {
   endRun(key: string, how: RunEnding, to: Status | null = null): void {
     this.db
       .prepare("UPDATE runs SET ended_at = ?, ended = ?, ended_status = ? WHERE ticket_key = ? AND ended_at IS NULL")
-      .run(this.now(), how, how === "moved" ? to : null, key);
+      .run(this.now(), how, to, key);
   }
 
   getTicket(key: string): Ticket | null {
@@ -432,8 +434,9 @@ export class Store {
   }
 
   /**
-   * A new ticket: a brief's in To Do, or, with no number, a todo's in Backlog.
-   * The schema holds that pairing too.
+   * A new ticket: a brief's in To Do, a todo's (no number) in Backlog, and
+   * a blocked brief's in Backlog too, since it waits on its condition. The
+   * schema holds that a ticket with no number is in Backlog.
    */
   insertTicket(fields: {
     key: string;
@@ -445,15 +448,17 @@ export class Store {
     briefPath: string;
     author: string;
     via: "move" | "sync";
+    blockedBy?: string | null;
   }): void {
     const at = this.now();
-    const status: Status = fields.number === null ? "backlog" : "todo";
+    const blockedBy = fields.blockedBy ?? null;
+    const status: Status = fields.number === null || blockedBy !== null ? "backlog" : "todo";
     this.db
       .prepare(
-        `INSERT INTO tickets (key, project, number, title, summary, summary_source, brief_path, status, hidden, created_at, updated_at, status_changed_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)`,
+        `INSERT INTO tickets (key, project, number, title, summary, summary_source, brief_path, status, hidden, created_at, updated_at, status_changed_at, blocked_by)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)`,
       )
-      .run(fields.key, fields.project, fields.number, fields.title, fields.summary, fields.summarySource, fields.briefPath, status, at, at, at);
+      .run(fields.key, fields.project, fields.number, fields.title, fields.summary, fields.summarySource, fields.briefPath, status, at, at, at, blockedBy);
     this.addHistory(fields.key, null, status, fields.author, fields.via);
   }
 
@@ -462,17 +467,18 @@ export class Store {
     this.db.prepare("DELETE FROM tickets WHERE key = ?").run(key);
   }
 
-  /** Update the fields given; bumps `updated_at`. */
+  /** Update the fields given; bumps `updated_at`. A `blockedBy` of null clears the condition. */
   updateTicket(
     key: string,
-    fields: Partial<{ title: string; summary: string; summarySource: SummarySource; briefPath: string; hidden: boolean }>,
+    fields: Partial<{ title: string; summary: string; summarySource: SummarySource; briefPath: string; hidden: boolean; blockedBy: string | null }>,
   ): void {
-    const columns: [string, string | number | undefined][] = [
+    const columns: [string, string | number | null | undefined][] = [
       ["title", fields.title],
       ["summary", fields.summary],
       ["summary_source", fields.summarySource],
       ["brief_path", fields.briefPath],
       ["hidden", fields.hidden === undefined ? undefined : fields.hidden ? 1 : 0],
+      ["blocked_by", fields.blockedBy],
       ["updated_at", this.now()],
     ];
     const set = columns.filter(([, value]) => value !== undefined);

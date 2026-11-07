@@ -14,7 +14,8 @@ export async function sync(rt: Runtime, args: string[]): Promise<void> {
   const { values, positionals } = rt.parse(args, { "dry-run": { type: "boolean" } });
   if (positionals.length > 0) throw new UsageError("sync takes no arguments: sync [--project <name>] [--dry-run]");
   const dir = projectsDir(rt.ctx.env, rt.ctx.home);
-  const projects = readProjects(dir, values.project);
+  const readWarnings: string[] = [];
+  const projects = readProjects(dir, values.project, (message) => readWarnings.push(message));
   if (values.project && projects.length === 0) {
     throw new UsageError(`no project "${values.project}" with a corpus/briefs/ up to three folders under ${dir}`);
   }
@@ -22,7 +23,11 @@ export async function sync(rt: Runtime, args: string[]): Promise<void> {
   if (values["dry-run"]) {
     rt.out(`Would sync ${projects.length} project(s) from ${dir}:`);
     for (const project of projects) rt.out(describe(project));
+    const blockedBriefs = projects.reduce((n, p) => n + p.briefs.filter((b) => b.state === "blocked").length, 0);
+    const blockedTodos = projects.reduce((n, p) => n + (p.todos ?? []).filter((t) => t.blockedBy).length, 0);
+    rt.out(`Blocked: ${blockedBriefs} brief(s), ${blockedTodos} todo(s)`);
     for (const line of await todoChanges(rt, projects)) rt.out(line);
+    for (const warning of readWarnings) rt.out(`warning: ${warning}`);
     return;
   }
 
@@ -39,16 +44,23 @@ export async function sync(rt: Runtime, args: string[]): Promise<void> {
     // A board from before Backlog drops the todos without a word.
     rt.out("warning: the board ignored the todos; it needs the update that added Backlog");
   }
-  for (const warning of result.warnings) rt.out(`warning: ${warning}`);
+  for (const warning of [...readWarnings, ...result.warnings]) rt.out(`warning: ${warning}`);
 }
 
-/** One project's line in a dry run: counts by state, the open briefs by number, and its open todos. */
+/**
+ * One project's line in a dry run: counts by state, the open briefs by
+ * number, and its open todos. Blocked briefs and todos are counted only
+ * where there are some, so the line reads as before until a project has a
+ * `blocked/` folder.
+ */
 function describe({ project, briefs, todos = [] }: SyncProject): string {
   const count = (state: string) => briefs.filter((b) => b.state === state).length;
   const todo = briefs.filter((b) => b.state === "todo").map((b) => b.number);
-  return `  ${project}: ${briefs.length} brief(s), ${count("todo")} todo, ${count("done")} done, ${count("superseded")} superseded${
+  const blocked = count("blocked");
+  const blockedTodos = todos.filter((t) => t.blockedBy).length;
+  return `  ${project}: ${briefs.length} brief(s), ${count("todo")} todo, ${blocked ? `${blocked} blocked, ` : ""}${count("done")} done, ${count("superseded")} superseded${
     todo.length ? `; in todo: ${todo.join(", ")}` : ""
-  }${todos.length ? `; ${todos.length} open todo(s)` : ""}`;
+  }${todos.length ? `; ${todos.length} open todo(s)${blockedTodos ? `, ${blockedTodos} blocked` : ""}` : ""}`;
 }
 
 /**

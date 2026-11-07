@@ -5,8 +5,9 @@ A view of brief progress across every project in ~/projects. Each ticket mirrors
 one corpus brief and is keyed <project>-<number>, like atrium-82. The corpus is
 the record. Do the corpus-flow steps every time, board or no board: move the
 brief to done/, write the log entry, update the wiki.
-Open todos have tickets in Backlog, keyed <project>:<slug>, owned by sync:
-never move or comment on one. Promoting the todo to a brief takes it off.
+Backlog belongs to sync. It holds open todos' tickets, keyed <project>:<slug>,
+and blocked briefs' tickets: never start, move or comment on one. Promoting
+the todo, or moving the brief back to briefs/todo/, takes it off.
 
 Run commands from inside the project's repo. A corpus whose folder name isn't
 its board name puts the name alone in corpus/board-name. <ticket> is a key, or
@@ -39,6 +40,14 @@ Ask the owner before you block. Most questions get answered in the session;
 answer them there and carry on. Move to Blocked only after the owner agrees to
 put the work off to another session:
   brief-board move <ticket> blocked -m "<what the owner must do or decide>"
+That is for a step the owner takes. When the owner agrees the work waits on
+something outside it instead (a stronger machine, a date), git mv the brief to
+corpus/briefs/blocked/ with "**Blocked by:** <condition>" under its title (a
+todo goes to corpus/todos/blocked/ with blocked-by: in its frontmatter). Word
+the condition like others waiting on the same thing. Then end your run:
+  brief-board release <ticket> -m "Blocked by: <condition>"
+The next sync puts the ticket in Backlog; `brief-board blocked` lists them all.
+When the condition is met, move the file back and delete the line.
 
 ## 5. Finishing
 Make the end move before you move the brief to done/ and before the commit

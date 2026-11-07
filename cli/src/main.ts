@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { blocked } from "./commands/blocked.js";
 import { create } from "./commands/create.js";
 import { guide } from "./commands/guide.js";
 import { drop, hold } from "./commands/holds.js";
@@ -36,6 +37,7 @@ const USAGE = `brief-board: track corpus briefs on the board.
   runs                                 every open run across projects, stalest first, with what each holds
   questions                            every open question across projects, oldest first
   needs                                everything waiting on the owner: questions, Blocked, stale runs, to test, to deploy
+  blocked                              every brief and todo in a blocked/ folder, grouped by what it waits on
   sync                                 read every project's briefs into the board
   guide                                the rules for using the board
 
@@ -60,6 +62,7 @@ const COMMANDS: Record<string, Command> = {
   runs,
   questions,
   needs,
+  blocked,
   sync,
   guide,
 };

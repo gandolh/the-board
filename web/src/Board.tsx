@@ -5,10 +5,17 @@ import { Card } from "./Card";
 /**
  * The board: the column headers once at the top, sticky, Backlog first, and a
  * lane per project tag under them. Lanes with open tickets come first, then the rest,
- * each group alphabetical. A lane with nothing open starts collapsed.
+ * each group alphabetical. A lane with nothing open starts collapsed. In each
+ * cell, blocked cards come after the others.
  */
 
 const isOpen = (ticket: Ticket) => ticket.status !== "done";
+
+/** A cell's cards in the server's order, the ones waiting on a condition last. */
+export function cellTickets(tickets: readonly Ticket[], status: Ticket["status"]): Ticket[] {
+  const inCell = tickets.filter((ticket) => ticket.status === status);
+  return [...inCell.filter((ticket) => ticket.blockedBy === null), ...inCell.filter((ticket) => ticket.blockedBy !== null)];
+}
 
 export function orderLanes(lanes: LaneData[]): LaneData[] {
   const byName = (a: LaneData, b: LaneData) => a.project.localeCompare(b.project, undefined, { sensitivity: "base" });
@@ -88,11 +95,9 @@ function Lane({
           {STATUSES.map((status) => (
             <div key={status} className={`cell col-${status}`}>
               <div className="cell-head">{STATUS_LABELS[status]}</div>
-              {lane.tickets
-                .filter((ticket) => ticket.status === status)
-                .map((ticket) => (
-                  <Card key={ticket.key} ticket={ticket} now={now} onOpen={onOpen} />
-                ))}
+              {cellTickets(lane.tickets, status).map((ticket) => (
+                <Card key={ticket.key} ticket={ticket} now={now} onOpen={onOpen} />
+              ))}
             </div>
           ))}
         </div>

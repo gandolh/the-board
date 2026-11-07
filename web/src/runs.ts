@@ -32,5 +32,5 @@ export function endedRunLine(run: Run, now: Date): string {
 export function runEnding(run: Run): string {
   if (run.ended === "moved") return run.endedTo ? `moved to ${STATUS_LABELS[run.endedTo]}` : "moved";
   if (run.ended === "released") return "released, unfinished";
-  return "stale; sync closed the ticket";
+  return run.endedTo === "backlog" ? "stale; sync put the ticket in Backlog" : "stale; sync closed the ticket";
 }

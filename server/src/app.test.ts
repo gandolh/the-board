@@ -901,6 +901,202 @@ describe("todos and Backlog", () => {
   });
 });
 
+describe("blocked briefs and todos", () => {
+  const HOUR = 60 * 60 * 1000;
+  const later = (ms: number) => {
+    clock = new Date(clock.getTime() + ms);
+  };
+  const start = (key: string, author?: string) => call({ method: "POST", url: `/api/tickets/${key}/start`, payload: { author } });
+  const release = (key: string, message: string) =>
+    call({ method: "POST", url: `/api/tickets/${key}/release`, payload: { message } });
+  const blocked = (number: number, blockedBy: string | null = "a stronger machine"): Partial<SyncBrief> => ({
+    number,
+    state: "blocked",
+    blockedBy,
+    briefPath: `corpus/briefs/blocked/${number}-x.md`,
+  });
+  const WAITING = "Waiting in Backlog: the brief is in blocked/ (blocked by a stronger machine).";
+  const todo = (slug: string, blockedBy: string | null = null) => ({
+    slug,
+    title: `Todo ${slug}`,
+    summary: "",
+    path: blockedBy === null ? `corpus/todos/${slug}.md` : `corpus/todos/blocked/${slug}.md`,
+    blockedBy,
+  });
+  const syncWith = async (briefs: Partial<SyncBrief>[], todos?: ReturnType<typeof todo>[]) =>
+    (
+      await call({
+        method: "POST",
+        url: "/api/sync",
+        payload: {
+          projects: [
+            {
+              project: "p",
+              briefs: briefs.map((b) => ({ title: `Brief ${b.number}`, summary: "", briefPath: `corpus/briefs/todo/${b.number}-x.md`, state: "todo", ...b })),
+              ...(todos ? { todos } : {}),
+            },
+          ],
+        },
+      })
+    ).json<SyncResponse>();
+
+  it("creates a blocked brief's ticket in Backlog with its condition, never in To Do", async () => {
+    const result = await syncWith([blocked(14)]);
+    expect(result).toMatchObject({ created: 1, warnings: [] });
+    const { ticket, history } = await detail("p-14");
+    expect(ticket).toMatchObject({ number: 14, status: "backlog", blockedBy: "a stronger machine", briefPath: "corpus/briefs/blocked/14-x.md" });
+    expect(history).toMatchObject([{ from: null, to: "backlog", via: "sync" }]);
+  });
+
+  it("names no condition as not given, and refreshes the condition when it changes", async () => {
+    await syncWith([blocked(14, null)]);
+    expect((await detail("p-14")).ticket.blockedBy).toBe("not given");
+    expect((await syncWith([blocked(14, "2026-11-18")])).updated).toBe(1);
+    expect((await detail("p-14")).ticket.blockedBy).toBe("2026-11-18");
+    expect((await syncWith([blocked(14, "2026-11-18")])).unchanged).toBe(1);
+  });
+
+  it("moves To Do and Blocked tickets to Backlog, with a history event and a comment", async () => {
+    await ticketIn("p-01", "todo");
+    await ticketIn("p-02", "blocked");
+    const result = await syncWith([blocked(1), blocked(2)]);
+    expect(result).toMatchObject({ updated: 2, warnings: [] });
+    for (const [key, from] of [["p-01", "todo"], ["p-02", "blocked"]] as const) {
+      const { ticket, history, comments } = await detail(key);
+      expect(ticket).toMatchObject({ status: "backlog", blockedBy: "a stronger machine" });
+      expect(history.at(-1)).toMatchObject({ from, to: "backlog", via: "sync", author: "sync" });
+      expect(comments.at(-1)).toMatchObject({ author: "sync", body: WAITING });
+    }
+  });
+
+  it("leaves an In Progress ticket with a fresh run, and warns, refreshing its condition", async () => {
+    await put("p-01");
+    await start("p-01", "ana");
+    const result = await syncWith([blocked(1)]);
+    expect(result.warnings).toEqual(["p-01: its brief is in blocked/, but its run by ana is open; the run's end move decides"]);
+    expect((await detail("p-01")).ticket).toMatchObject({ status: "in_progress", blockedBy: "a stronger machine", run: { ended: null } });
+  });
+
+  it("moves an In Progress ticket to Backlog once its run is stale, ending the run, or released", async () => {
+    await put("p-01");
+    await start("p-01", "ana");
+    const heard = clock.toISOString();
+    later(5 * HOUR);
+    const stale = await syncWith([blocked(1)]);
+    expect(stale.warnings).toEqual([`p-01: waits in Backlog; its run by ana was stale (last heard ${heard}) and ends here`]);
+    const first = await detail("p-01");
+    expect(first.ticket.status).toBe("backlog");
+    expect(first.runs).toMatchObject([{ author: "ana", ended: "stale", endedTo: "backlog" }]);
+    expect(first.comments.at(-1)?.body).toBe(`${WAITING} The run by ana, last heard ${heard}, was stale and ends here.`);
+
+    await put("p-02");
+    await start("p-02", "ben");
+    expect((await release("p-02", "Blocked by: a stronger machine")).statusCode).toBe(200);
+    expect((await syncWith([blocked(1), blocked(2)])).warnings).toEqual([]);
+    const second = await detail("p-02");
+    expect(second.ticket.status).toBe("backlog");
+    expect(second.history.at(-1)).toMatchObject({ from: "in_progress", to: "backlog", via: "sync" });
+    expect(second.comments.at(-1)?.body).toBe(WAITING);
+  });
+
+  it("leaves Ready for test, Ready for deploy and Done where they are, with the condition and a warning", async () => {
+    await ticketIn("p-01", "ready_for_test");
+    await ticketIn("p-02", "ready_for_deploy");
+    await ticketIn("p-03", "done");
+    const result = await syncWith([blocked(1), blocked(2), blocked(3)]);
+    expect(result.warnings).toEqual([
+      "p-01 is Ready for test on the board but its brief is in blocked/; only its condition, title and path were refreshed",
+      "p-02 is Ready for deploy on the board but its brief is in blocked/; only its condition, title and path were refreshed",
+      "p-03 is Done on the board but its brief is in blocked/; only its condition, title and path were refreshed",
+    ]);
+    expect((await detail("p-01")).ticket).toMatchObject({ status: "ready_for_test", blockedBy: "a stronger machine" });
+    expect((await detail("p-03")).ticket).toMatchObject({ status: "done", briefPath: "corpus/briefs/blocked/3-x.md" });
+  });
+
+  it("puts the ticket in To Do and clears the condition when the brief is back in todo/", async () => {
+    await syncWith([blocked(14)]);
+    const result = await syncWith([{ number: 14 }]);
+    expect(result).toMatchObject({ updated: 1, warnings: [] });
+    const { ticket, history, comments } = await detail("p-14");
+    expect(ticket).toMatchObject({ status: "todo", blockedBy: null, briefPath: "corpus/briefs/todo/14-x.md" });
+    expect(history.at(-1)).toMatchObject({ from: "backlog", to: "todo", via: "sync" });
+    expect(comments.at(-1)?.body).toBe("Unblocked by sync: the brief is back in todo/.");
+    // Then it is an agent's to start, as any To Do ticket.
+    expect((await start("p-14", "ana")).statusCode).toBe(200);
+  });
+
+  it("closes a blocked brief's ticket when the brief is done, and hides it when superseded", async () => {
+    await syncWith([blocked(1), blocked(2)]);
+    await syncWith([{ number: 1, state: "done" }, { number: 2, state: "superseded" }]);
+    expect((await detail("p-01")).ticket).toMatchObject({ status: "done", blockedBy: null });
+    expect((await detail("p-01")).comments.at(-1)?.body).toBe("Closed by sync: the brief is in done/.");
+    expect((await detail("p-02")).ticket).toMatchObject({ status: "backlog", hidden: true, blockedBy: null });
+  });
+
+  it("refuses a start, a move or a comment on a blocked brief's ticket, and says how it leaves Backlog", async () => {
+    await syncWith([blocked(14)]);
+    for (const res of [
+      await start("p-14", "ana"),
+      await move("p-14", "in_progress", "start"),
+      await call({ method: "POST", url: "/api/tickets/p-14/comments", payload: { body: "note" } }),
+    ]) {
+      expect(res.statusCode).toBe(400);
+      const body = res.json<ErrorBody>();
+      expect(body.code).toBe("sync_owned");
+      expect(body.message).toContain("its brief is in blocked/");
+      expect(body.message).toContain("move the brief back to briefs/todo/");
+    }
+  });
+
+  it("keeps a todo's key when its file moves into todos/blocked/ and back, refreshing its condition", async () => {
+    await syncWith([], [todo("sonarqube")]);
+    const into = await syncWith([], [todo("sonarqube", "a stronger machine")]);
+    expect(into.todos).toEqual({ created: 0, updated: 1, unchanged: 0, removed: 0 });
+    expect((await detail("p:sonarqube")).ticket).toMatchObject({
+      status: "backlog",
+      blockedBy: "a stronger machine",
+      briefPath: "corpus/todos/blocked/sonarqube.md",
+    });
+    await syncWith([], [todo("sonarqube")]);
+    expect((await detail("p:sonarqube")).ticket).toMatchObject({ blockedBy: null, briefPath: "corpus/todos/sonarqube.md" });
+    expect((await detail("p:sonarqube")).history).toHaveLength(1);
+  });
+
+  it("never removes a blocked brief's ticket as a gone todo", async () => {
+    await syncWith([blocked(14)], [todo("a")]);
+    const result = await syncWith([blocked(14)], []);
+    expect(result.todos).toEqual({ created: 0, updated: 0, unchanged: 0, removed: 1 });
+    expect((await detail("p-14")).ticket.status).toBe("backlog");
+  });
+
+  it("takes a payload from a CLI from before blocked/: no condition fields, and a blocked brief missing", async () => {
+    await syncWith([blocked(14)]);
+    const older = await call({
+      method: "POST",
+      url: "/api/sync",
+      payload: {
+        projects: [
+          {
+            project: "p",
+            briefs: [{ number: 1, title: "Brief 1", summary: "", briefPath: "corpus/briefs/todo/1-x.md", state: "todo" }],
+            todos: [{ slug: "a", title: "A", summary: "", path: "corpus/todos/a.md" }],
+          },
+        ],
+      },
+    });
+    expect(older.statusCode).toBe(200);
+    expect(older.json<SyncResponse>().warnings).toEqual(["p-14: no brief with this number in p's corpus; nothing changed"]);
+    expect((await detail("p-01")).ticket).toMatchObject({ status: "todo", blockedBy: null });
+    expect((await detail("p:a")).ticket.blockedBy).toBeNull();
+    expect((await detail("p-14")).ticket).toMatchObject({ status: "backlog", blockedBy: "a stronger machine" });
+  });
+
+  it("keeps blocked briefs and todos off the needs list", async () => {
+    await syncWith([blocked(14)], [todo("sonarqube", "a stronger machine")]);
+    expect((await call({ url: "/api/needs" })).json<NeedsResponse>().needs).toEqual([]);
+  });
+});
+
 describe("serving the board", () => {
   it("serves web/dist at /brief-board/ and falls back to index.html there, but not under /api", async () => {
     const dir = mkdtempSync(join(tmpdir(), "brief-board-web-"));

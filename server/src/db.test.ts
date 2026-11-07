@@ -34,14 +34,16 @@ describe("the migrations", () => {
         expect(db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get()).toEqual({ n: 1 });
       }
 
-      // A todo's ticket fits now, with no number, in Backlog and only there.
+      // A todo's ticket fits now, with no number, always in Backlog; a blocked
+      // brief's ticket, with its number, may wait there too.
       const insert = db.prepare(
         `INSERT INTO tickets (key, project, number, title, summary, summary_source, brief_path, status, hidden, created_at, updated_at, status_changed_at)
          VALUES (?, 'p', ?, 'T', '', 'sync', 'corpus/todos/a.md', ?, 0, ?, ?, ?)`,
       );
       insert.run("p:a", null, "backlog", at, at, at);
       expect(() => insert.run("p:b", null, "todo", at, at, at)).toThrow(/CHECK/);
-      expect(() => insert.run("p-02", 2, "backlog", at, at, at)).toThrow(/CHECK/);
+      insert.run("p-02", 2, "backlog", at, at, at);
+      expect(db.prepare("SELECT blocked_by FROM tickets WHERE key = 'p-01'").get()).toEqual({ blocked_by: null });
       // A ticket holds at most one open run, and any number of ended ones.
       const run = db.prepare("INSERT INTO runs (ticket_key, author, started_at, last_heard_at, ended_at, ended) VALUES ('p-01', 'agent', ?, ?, ?, ?)");
       run.run(at, at, at, "moved");
@@ -68,6 +70,44 @@ describe("the migrations", () => {
       ask.run(1, at, null, null);
       expect(() => ask.run(1, at, null, null)).toThrow(/UNIQUE/);
       expect(() => ask.run(2, at, "yes", null)).toThrow(/CHECK/);
+      db.close();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("add blocked_by to a board from before blocked/, keeping its runs, holds, questions and tags", () => {
+    const dir = mkdtempSync(join(tmpdir(), "brief-board-db-"));
+    const path = join(dir, "board.db");
+    try {
+      // The board as it stood on 2026-11-06: every migration before blocked/.
+      const before = MIGRATIONS.length - 1;
+      const old = new Database(path);
+      for (const migration of MIGRATIONS.slice(0, before)) old.exec(migration);
+      old.pragma(`user_version = ${before}`);
+      const at = "2026-11-06T10:00:00.000Z";
+      old
+        .prepare(
+          `INSERT INTO tickets (key, project, number, title, summary, summary_source, brief_path, status, hidden, created_at, updated_at, status_changed_at)
+           VALUES ('p-04', 'p', 4, 'A brief', '', 'sync', 'corpus/briefs/todo/04-a.md', 'in_progress', 0, ?, ?, ?)`,
+        )
+        .run(at, at, at);
+      old.prepare("INSERT INTO ticket_tags (ticket_key, tag) VALUES ('p-04', 'ui')").run();
+      const runId = Number(old.prepare("INSERT INTO runs (ticket_key, author, started_at, last_heard_at) VALUES ('p-04', 'agent', ?, ?)").run(at, at).lastInsertRowid);
+      old.prepare("INSERT INTO holds (run_id, kind, value, held_at) VALUES (?, 'port', '5173', ?)").run(runId, at);
+      old.prepare("INSERT INTO questions (ticket_key, number, text, author, asked_at) VALUES ('p-04', 1, 'Q?', 'agent', ?)").run(at);
+      old.close();
+
+      const db = openDatabase(path);
+      expect(db.pragma("user_version", { simple: true })).toBe(MIGRATIONS.length);
+      expect(db.prepare("SELECT key, status, blocked_by FROM tickets").all()).toEqual([{ key: "p-04", status: "in_progress", blocked_by: null }]);
+      for (const table of ["ticket_tags", "runs", "holds", "questions"]) {
+        expect(db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get()).toEqual({ n: 1 });
+      }
+      db.prepare("DELETE FROM tickets WHERE key = 'p-04'").run();
+      for (const table of ["ticket_tags", "runs", "holds", "questions"]) {
+        expect(db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get()).toEqual({ n: 0 });
+      }
       db.close();
     } finally {
       rmSync(dir, { recursive: true, force: true });

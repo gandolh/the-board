@@ -51,10 +51,14 @@ export function cut(text: string, max = SUMMARY_MAX): string {
   return `${window.slice(0, space > 0 ? space : max).trimEnd()}…`;
 }
 
+/** A `Status:` or `Blocked by:` line under the title, bold or not: never part of a summary. */
+const STATUS_LINE = /^\s*\**\s*(?:status|blocked[ -]by)\**\s*:/i;
+
 /**
  * The first paragraph under `## Context`, else under `## Problem`
  * (imbatranimOS), else the first paragraph after the H1 that is not a
- * `Status:` line. Links become text; the result is cut to about 600 characters.
+ * `Status:` or `Blocked by:` line. Links become text; the result is cut to
+ * about 600 characters.
  */
 export function briefSummary(markdown: string): string {
   const lines = markdown.split(/\r?\n/);
@@ -66,7 +70,7 @@ export function briefSummary(markdown: string): string {
   let paragraph = start === null ? null : paragraphAt(lines, start);
   if (paragraph === null) {
     const h1 = lines.findIndex((line) => /^#\s+/.test(line));
-    paragraph = paragraphAt(lines, h1 + 1, (line) => /^\s*\**status\**\s*:/i.test(line));
+    paragraph = paragraphAt(lines, h1 + 1, (line) => STATUS_LINE.test(line));
   }
   return paragraph ? cut(unlink(paragraph)) : "";
 }
@@ -124,4 +128,36 @@ export function todoTitle(markdown: string, slug: string): string {
 /** The first paragraph, as a brief's summary is found, with the frontmatter left out. */
 export function todoSummary(markdown: string): string {
   return briefSummary(frontmatter(markdown).body);
+}
+
+/* ── blocked/ ────────────────────────────────────────────────────────── */
+
+/** How long a condition may be; longer ones are cut. */
+export const BLOCKED_BY_MAX = 120;
+
+/** A condition trimmed, its whitespace runs made single spaces, cut at 120 characters; null if empty. */
+export function cleanCondition(raw: string): string | null {
+  const text = raw.replace(/\s+/g, " ").trim();
+  if (!text) return null;
+  return text.length > BLOCKED_BY_MAX ? text.slice(0, BLOCKED_BY_MAX).trimEnd() : text;
+}
+
+/**
+ * What a file in a `blocked/` folder waits on: the frontmatter's
+ * `blocked-by:`, else a `**Blocked by:** <condition>` line among the first
+ * five lines after the title, the way `status:` is found. Null when it names
+ * none.
+ */
+export function blockedBy(markdown: string): string | null {
+  const { fields, body } = frontmatter(markdown);
+  const declared = fields.get("blocked-by");
+  if (declared !== undefined) return cleanCondition(declared);
+  const lines = body.split(/\r?\n/);
+  const title = lines.findIndex((line) => /^#\s+/.test(line));
+  const near = lines.slice(title + 1).filter((line) => line.trim() !== "").slice(0, 5);
+  for (const line of near) {
+    const match = /^blocked[ -]by\s*\**\s*:\s*\**\s*(.*)$/i.exec(line.trim().replace(/^\*+\s*/, ""));
+    if (match) return cleanCondition(match[1]!.replace(/\*+$/, ""));
+  }
+  return null;
 }
