@@ -358,6 +358,20 @@ main {
   color: var(--surface);
 }
 
+/* What a blocked brief or todo waits on: Backlog's colour, never the Blocked status's red. Cut short; the title has it all. */
+.badge-blocked {
+  max-width: 100%;
+  overflow: hidden;
+  padding: 0 6px;
+  border-radius: 3px;
+  font-size: 12px;
+  font-weight: 650;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  background: var(--backlog);
+  color: var(--surface);
+}
+
 .card-foot {
   display: flex;
   flex-wrap: wrap;

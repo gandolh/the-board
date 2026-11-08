@@ -1,10 +1,10 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { BRIEF_STATES, TODO_SLUG, type SyncBrief, type SyncProject, type SyncTodo } from "@brief-board/shared";
+import { BLOCKED_BY_NOT_GIVEN, BRIEF_STATES, TODO_SLUG, type SyncBrief, type SyncProject, type SyncTodo } from "@brief-board/shared";
 import { readBoardName } from "../board-name.js";
 import { UsageError } from "../errors.js";
-import { briefSummary, briefTitle, todoIsOpen, todoSummary, todoTitle } from "./parse.js";
+import { blockedBy, briefSummary, briefTitle, todoIsOpen, todoSummary, todoTitle } from "./parse.js";
 
 /**
  * Read every project's briefs. It only reads: a project is a directory with
@@ -13,13 +13,22 @@ import { briefSummary, briefTitle, todoIsOpen, todoSummary, todoTitle } from "./
  * its `corpus/board-name` when it has one and else by its own directory name,
  * never the group's, so its key matches the one `create` infers. Nothing
  * deeper is looked at. A brief is
- * `corpus/briefs/{todo,done,superseded}/<digits>-<slug>.md`, one level deep.
- * Anything else there (`.gitkeep`, a folder of templates, a non-markdown
- * file) is skipped.
+ * `corpus/briefs/{todo,blocked,done,superseded}/<digits>-<slug>.md`, one level
+ * deep. Anything else there (`.gitkeep`, a folder of templates, a
+ * non-markdown file) is skipped.
  *
- * A todo is a `.md` file directly in `corpus/todos/`; subfolders, such as a
- * `closed/` archive, are never read. Only open ones are sent (`todoIsOpen`).
+ * A todo is a `.md` file directly in `corpus/todos/` or in
+ * `corpus/todos/blocked/`; every other subfolder, such as a `closed/` archive,
+ * is never read. Only open ones are sent (`todoIsOpen`).
+ *
+ * A file in a `blocked/` folder carries what it waits on (`blockedBy` in
+ * parse.ts). One that names nothing is still sent, as "not given", and
+ * `warn` names the file.
  */
+
+/** Where reading reports a file it sent anyway; the sync command prints these. */
+export type Warn = (message: string) => void;
+const quiet: Warn = () => {};
 
 const BRIEF_FILE = /^(\d+)-(.+)\.md$/;
 
@@ -50,29 +59,56 @@ function isDir(path: string): boolean {
   }
 }
 
+/** The condition of a file in a `blocked/` folder, or "not given" with a warning naming it. */
+function conditionOf(markdown: string, file: string, warn: Warn): string {
+  const condition = blockedBy(markdown);
+  if (condition !== null) return condition;
+  warn(`${file}: in blocked/ but names no condition (a "**Blocked by:**" line under the title, or blocked-by: in the frontmatter); sent as "${BLOCKED_BY_NOT_GIVEN}"`);
+  return BLOCKED_BY_NOT_GIVEN;
+}
+
 /**
- * A project's open todos, by slug. A todo's file name is its ticket's key, so
- * one the key cannot hold stops the run, naming the file.
+ * A project's open todos, by slug: those in `corpus/todos/`, then those in
+ * `corpus/todos/blocked/`. A todo's file name is its ticket's key, so one the
+ * key cannot hold, or a slug in both folders, stops the run, naming the files.
  */
-export function readTodos(root: string): SyncTodo[] {
+export function readTodos(root: string, warn: Warn = quiet): SyncTodo[] {
   const dir = join(root, "corpus", "todos");
   if (!isDir(dir)) return [];
   const todos: SyncTodo[] = [];
-  for (const name of readdirSync(dir).sort()) {
-    if (!name.endsWith(".md") || !statSync(join(dir, name)).isFile()) continue;
-    const slug = name.slice(0, -".md".length);
-    if (!TODO_SLUG.test(slug)) {
-      throw new UsageError(`${join(dir, name)}: a todo's file name becomes its ticket key; use letters, digits, dots, dashes and underscores only`);
+  const files = new Map<string, string>();
+  const read = (folder: string, prefix: string, blocked: boolean) => {
+    if (!isDir(folder)) return;
+    for (const name of readdirSync(folder).sort()) {
+      const file = join(folder, name);
+      if (!name.endsWith(".md") || !statSync(file).isFile()) continue;
+      const slug = name.slice(0, -".md".length);
+      if (!TODO_SLUG.test(slug)) {
+        throw new UsageError(`${file}: a todo's file name becomes its ticket key; use letters, digits, dots, dashes and underscores only`);
+      }
+      const twin = files.get(slug);
+      if (twin !== undefined) {
+        throw new UsageError(`${twin} and ${file}: one todo in two places; its ticket key is the slug, so keep one`);
+      }
+      files.set(slug, file);
+      const markdown = readFileSync(file, "utf8");
+      if (!todoIsOpen(markdown)) continue;
+      todos.push({
+        slug,
+        title: todoTitle(markdown, slug),
+        summary: todoSummary(markdown),
+        path: `${prefix}${name}`,
+        blockedBy: blocked ? conditionOf(markdown, file, warn) : null,
+      });
     }
-    const markdown = readFileSync(join(dir, name), "utf8");
-    if (!todoIsOpen(markdown)) continue;
-    todos.push({ slug, title: todoTitle(markdown, slug), summary: todoSummary(markdown), path: `corpus/todos/${name}` });
-  }
+  };
+  read(dir, "corpus/todos/", false);
+  read(join(dir, "blocked"), "corpus/todos/blocked/", true);
   return todos;
 }
 
 /** One project's briefs, in number order within each state, and its open todos. */
-export function readProject(root: string, project: string): SyncProject {
+export function readProject(root: string, project: string, warn: Warn = quiet): SyncProject {
   const briefs: SyncBrief[] = [];
   for (const state of BRIEF_STATES) {
     const dir = join(root, "corpus", "briefs", state);
@@ -87,10 +123,11 @@ export function readProject(root: string, project: string): SyncProject {
         summary: briefSummary(markdown),
         briefPath: `corpus/briefs/${state}/${name}`,
         state,
+        ...(state === "blocked" ? { blockedBy: conditionOf(markdown, join(dir, name), warn) } : {}),
       });
     }
   }
-  return { project, briefs, todos: readTodos(root) };
+  return { project, briefs, todos: readTodos(root, warn) };
 }
 
 /** A project's name and where it is. */
@@ -144,7 +181,7 @@ export function findProjects(dir: string): ProjectRoot[] {
  * named `only`, at any depth. Two projects sharing a name would share their
  * tickets' keys, so that stops the run before anything is read or sent.
  */
-export function readProjects(dir: string, only?: string): SyncProject[] {
+export function readProjects(dir: string, only?: string, warn: Warn = quiet): SyncProject[] {
   const roots = findProjects(dir).filter((project) => only === undefined || project.name === only);
   const seen = new Map<string, string>();
   for (const { name, root } of roots) {
@@ -154,5 +191,5 @@ export function readProjects(dir: string, only?: string): SyncProject[] {
     }
     seen.set(name, root);
   }
-  return roots.map(({ name, root }) => readProject(root, name));
+  return roots.map(({ name, root }) => readProject(root, name, warn));
 }

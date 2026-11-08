@@ -72,6 +72,13 @@ Each call below gives the default this brief builds:
    alternative is another folder name, if the owner finds "blocked" in two
    places confusing.
 
+**Settled at the grill, 2026-11-07.** The owner took every default above.
+Two calls the brief left open: an agent whose brief waits mid-run moves the
+file, then releases its run (`brief-board release <ticket> -m "Blocked by:
+…"`), and sync treats an In Progress ticket with no open run like one with a
+stale run, so the next sync puts it in Backlog. The build goes ahead now, in
+a cloud session, and ships with briefs 08 to 13.
+
 ## What to do
 
 1. **CLI, sync** (`cli/src/sync/read.ts`, `parse.ts`):
@@ -184,3 +191,45 @@ Each call below gives the default this brief builds:
   `node cli.ts brief-board server`. Only after that, rebuild the local CLI
   (`npm run build` in this repo), because the new CLI sends a payload the
   old server rejects. Then a sync, when the owner asks for one.
+
+## Outcome (2026-11-07)
+
+Built as the brief says, in `bacab80`, with the two calls from the grill.
+
+- **Contract.** `BRIEF_STATES` gains `blocked`; `blockedBy` is optional on
+  a sync brief and todo (an older CLI's payload parses as before) and a
+  nullable field on every ticket. `BLOCKED_BY_NOT_GIVEN` is "not given".
+- **Server.** Migration 6 rebuilds `tickets` with `blocked_by` and the
+  check `number IS NOT NULL OR status = 'backlog'`. Every row of the sync
+  table is built, plus "In Progress with no open run" (a released run) treated
+  as stale. A stale run sync ends on the way to Backlog records Backlog as
+  its end column, so it reads "stale; sync put the ticket in Backlog" on the
+  board and in `show`. `insertTicket` picks Backlog for a number with a
+  condition.
+- **CLI.** Both folders read, the condition parsed and cut at 120, "not
+  given" with a warning naming the file, the slug clash (checked against
+  every file, open or not), and the dry run's blocked counts, shown per
+  project only where there are some, plus a `Blocked:` total. `brief-board
+  blocked [--project]` groups by condition (trimmed, spaces collapsed, case
+  ignored) under the first spelling met. `show` adds `Blocked by:`, `list`
+  ends a blocked line with "(blocked by …)". A summary skips a `Blocked by:`
+  line as it skips `Status:`. The guide is 121 lines (cap raised to 125).
+- **Web.** The badge in `--backlog`'s colour, never `--blocked`'s red, cut
+  with an ellipsis and whole in its title; blocked cards last in their cell;
+  the panel's "Blocked by" row and the blocked brief's own note.
+
+**Outside the file list:** `server/src/app.ts` (the Backlog refusal said
+every Backlog ticket was a todo's), the CLI's twin of that message in
+`cli/src/format.ts` (owned) which the end-to-end test caught, `web/src/runs.ts`
+(the stale-run wording), and the doc comments in `shared/src/api.ts` on run
+endings.
+
+**Found.** A CLI from before this brief syncing a repo with a todo in
+`todos/blocked/` drops it from its payload, so the todo's ticket is removed
+until the new CLI syncs (recorded in sync.md); the deploy order already
+avoids it.
+
+Commits: bacab80
+Checks run: `npm test` (270 tests, from 243; 12 of the 13 new server sync tests fail against the old sync.ts, the 13th pins todo removal by number as the brief asks); `npm run typecheck` (web included); `npm run lint`; `npm run build`; a dry run against five real corpora (game-engine, ImbatranimOS, my-personal-skills, newspapper, the-board) counts "Blocked: 0 brief(s), 0 todo(s)" with every project line as before; the built server with a seeded account and a sample vps-deploy estate (a blocked brief, two blocked todos, one plain todo): `sync`, `blocked`, `show`, a refused `start`, and in Chromium the badges, the order in Backlog and the detail panel.
+Checks skipped: none.
+Owner steps: with briefs 08-13, from vps-deploy `node cli.ts brief-board deploy` and `node cli.ts brief-board server`; only then rebuild the local CLI (`npm run build` here); then a sync when you ask for one.

@@ -32,6 +32,7 @@ describe("the API contract", () => {
       statusChangedAt: now,
       run: null,
       openQuestions: 0,
+      blockedBy: null,
     };
     expect(ticketSchema.parse(ticket)).toEqual(ticket);
   });
@@ -68,7 +69,7 @@ describe("the API contract", () => {
     expect(moveRequestSchema.safeParse({ to: "closed" }).success).toBe(false);
   });
 
-  it("takes a brief's state as todo, done or superseded only", () => {
+  it("takes a brief's state as todo, blocked, done or superseded only", () => {
     const brief = { number: 1, title: "T", summary: "", briefPath: "corpus/briefs/todo/01-t.md" };
     expect(syncRequestSchema.safeParse({ projects: [{ project: "p", briefs: [{ ...brief, state: "done" }] }] }).success).toBe(true);
     expect(syncRequestSchema.safeParse({ projects: [{ project: "p", briefs: [{ ...brief, state: "archived" }] }] }).success).toBe(false);
@@ -95,7 +96,19 @@ describe("the API contract", () => {
       statusChangedAt: now,
       run: null,
       openQuestions: 0,
+      blockedBy: null,
     });
     expect(ticket.number).toBeNull();
+  });
+
+  it("takes a blocked brief with its condition, and a payload from a CLI from before blocked/", () => {
+    const brief = { number: 14, title: "T", summary: "", briefPath: "corpus/briefs/blocked/14-t.md", state: "blocked" };
+    const blocked = syncRequestSchema.parse({ projects: [{ project: "p", briefs: [{ ...brief, blockedBy: "a stronger machine" }] }] });
+    expect(blocked.projects[0]!.briefs[0]!.blockedBy).toBe("a stronger machine");
+    const todo = { slug: "sonarqube", title: "SonarQube", summary: "", path: "corpus/todos/blocked/sonarqube.md", blockedBy: "a stronger machine" };
+    expect(syncRequestSchema.safeParse({ projects: [{ project: "p", briefs: [], todos: [todo, { ...todo, slug: "x", blockedBy: null }] }] }).success).toBe(true);
+    const older = syncRequestSchema.parse({ projects: [{ project: "p", briefs: [{ ...brief, state: "todo" }], todos: [{ ...todo, blockedBy: undefined }] }] });
+    expect(older.projects[0]!.briefs[0]!.blockedBy).toBeUndefined();
+    expect(older.projects[0]!.todos![0]!.blockedBy).toBeUndefined();
   });
 });

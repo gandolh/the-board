@@ -1,6 +1,6 @@
 ---
-summary: Locked calls for brief-board, each with date, rejected alternative and reason. One ticket per brief keyed <project>-<NN> with no hand-made tickets (revisited 2026-11-03: open todos get sync-owned tickets in a Backlog column); Blocked only by agreement with the owner; which moves are allowed and which need a message; six columns with Ready for test and Ready for deploy as the owner's; the corpus wins over the board (revisited 2026-11-06: sync waits for a fresh run); one CLI on PATH that other repos name without a path; a read-only UI; one project tag per ticket decides its lane; sync only by hand; a down board never stops work (revisited 2026-11-02: the container now runs always, agents still carry on without it); Base UI for the UI's widgets; the CLI authenticates with one shared token, and the board sits on the VPS behind sign-in (2026-11-02); a corpus nested deeper names itself, as churchix and scoala-ramna-theme do (2026-11-03). Read before proposing to change any of these.
-updated: 2026-11-06
+summary: Locked calls for brief-board, each with date, rejected alternative and reason. One ticket per brief keyed <project>-<NN> with no hand-made tickets (revisited 2026-11-03: open todos get sync-owned tickets in a Backlog column; 2026-11-07: so do briefs in blocked/); Blocked only by agreement with the owner, apart from a blocked/ folder's Blocked by; which moves are allowed and which need a message; six columns with Ready for test and Ready for deploy as the owner's; the corpus wins over the board (revisited 2026-11-06: sync waits for a fresh run); one CLI on PATH that other repos name without a path; a read-only UI; one project tag per ticket decides its lane; sync only by hand; a down board never stops work (revisited 2026-11-02: the container now runs always, agents still carry on without it); Base UI for the UI's widgets; the CLI authenticates with one shared token, and the board sits on the VPS behind sign-in (2026-11-02); a corpus nested deeper names itself, as churchix and scoala-ramna-theme do (2026-11-03). Read before proposing to change any of these.
+updated: 2026-11-07
 ---
 
 # Decisions
@@ -27,6 +27,13 @@ takes its ticket off and the brief's ticket appears in To Do. What stays: no
 ticket made by hand, and the corpus is the only source. Rejected: a count of
 todos per lane, which is lighter but hides what they are.
 
+**Revisited 2026-11-07** (brief 14): Backlog also holds the ticket of a brief
+in `corpus/briefs/blocked/`, with its condition, so no agent can start it;
+sync moves it to To Do when the brief is back in `todo/`. Rejected: To Do
+with a badge and a refusing `start` (a new refusal, on a card where agents
+look for work), sync setting the Blocked status (it changes what Blocked means
+and fills the needs list), an eighth column (a status, move rows, a lane).
+
 ## Blocked happens by agreement, so nothing notifies the owner
 _2026-10-08_. An agent asks the owner before it moves a ticket to Blocked. Most
 questions get answered inside the session, and Blocked is for work the two of
@@ -36,6 +43,9 @@ session that names the ticket and says what they did, and that agent finishes
 the work. Rejected: agents blocking on their own whenever they hit a question,
 with a Discord ping through just-a-bot to tell the owner. That fills the
 Blocked column with questions the session could have settled.
+This stands (2026-11-07): work that waits on something outside it which is no
+step for the owner (a stronger machine, a date) goes to a `blocked/` folder
+instead, waits in Backlog and stays off the needs list ([glossary.md](glossary.md), Blocked by).
 
 ## Which moves are allowed, and which need a message
 _2026-10-08_. The happy path is To Do, In Progress, Done, and needs no message.

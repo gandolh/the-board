@@ -99,14 +99,23 @@ export function DetailPanel({ ticketKey, refreshedAt, onClose }: { ticketKey: st
                     ))
                   )}
                 </dd>
+                {shown.ticket.blockedBy !== null && (
+                  <>
+                    <dt>Blocked by</dt>
+                    <dd>{shown.ticket.blockedBy}</dd>
+                  </>
+                )}
                 <dt>{shown.ticket.number === null ? "Todo" : "Brief"}</dt>
                 <dd className="brief-path">
                   <code>{shown.ticket.briefPath}</code> <CopyButton text={shown.ticket.briefPath} label="Copy path" />
                 </dd>
               </dl>
-              {shown.ticket.status === "backlog" && (
-                <p className="muted">Sync keeps this ticket to its todo. It leaves Backlog when the todo is promoted to a brief.</p>
-              )}
+              {shown.ticket.status === "backlog" &&
+                (shown.ticket.number === null ? (
+                  <p className="muted">Sync keeps this ticket to its todo. It leaves Backlog when the todo is promoted to a brief.</p>
+                ) : (
+                  <p className="muted">Sync keeps this ticket to its brief in blocked/. It leaves Backlog when the brief goes back to todo/.</p>
+                ))}
 
               <h3>Summary</h3>
               <div className="markdown">

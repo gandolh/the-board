@@ -7,7 +7,8 @@ import { since, when } from "./time";
  * column. A todo's card shows its slug where a brief's shows its key: the lane
  * already names the project. An In Progress card shows its run, or says it
  * has none; a card elsewhere, how long its last run took. A card with open questions for the owner shows how many, in any
- * column.
+ * column. A card whose brief or todo is in a `blocked/` folder says what it
+ * waits on, cut short here and in full in the detail panel.
  */
 export function Card({ ticket, now, onOpen }: { ticket: Ticket; now: Date; onOpen: (key: string) => void }) {
   const todo = ticket.number === null ? parseTodoKey(ticket.key) : null;
@@ -24,6 +25,7 @@ export function Card({ ticket, now, onOpen }: { ticket: Ticket; now: Date; onOpe
       <span className="card-title">{ticket.title}</span>
       {run && <span className={`card-run${run.stale ? " card-run-stale" : ""}`}>{run.text}</span>}
       <span className="card-foot">
+        {ticket.blockedBy !== null && <BlockedBadge condition={ticket.blockedBy} />}
         {ticket.openQuestions > 0 && <QuestionBadge count={ticket.openQuestions} />}
         {ticket.tags.map((tag) => (
           <span key={tag} className="tag">
@@ -35,6 +37,16 @@ export function Card({ ticket, now, onOpen }: { ticket: Ticket; now: Date; onOpe
         </span>
       </span>
     </button>
+  );
+}
+
+/** "Blocked by: a stronger machine": what the brief or todo waits on. Not the Blocked status. */
+function BlockedBadge({ condition }: { condition: string }) {
+  const text = `Blocked by: ${condition}`;
+  return (
+    <span className="badge-blocked" title={text}>
+      {text}
+    </span>
   );
 }
 
