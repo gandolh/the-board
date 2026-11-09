@@ -90,7 +90,9 @@ from 2026-10-13. Brief numbering restarted at 01 on 2026-11-02 (see
    Done cell scrolls, and Older Done says "Nothing older than 14 days yet."
    until 2026-11-17. Briefs 08-14 are deployed (the owner confirmed on
    2026-11-09), and the local CLI was rebuilt from main with brief 15's
-   build.
+   build. Still unconfirmed from the 08-14 deploy: a `--question` on a test
+   ticket shows its badge on the live board (`brief-board needs` listing the
+   Ready for deploy tickets was seen working on 2026-11-09).
 2. Backlog (brief 06) and nested corpora (brief 07) are deployed: the owner
    deployed the board on 2026-11-04 and synced it since (last on 2026-11-05).
 3. For local development only: add brief-board to Ward's local seed
