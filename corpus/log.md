@@ -444,3 +444,13 @@ Backlog refusal in `app.ts` and its CLI twin, and the stale-run wording in
 (Blocked by), [decisions.md](wiki/decisions.md) (one ticket per brief
 revisited; Blocked by agreement stands) and [status.md](wiki/status.md)
 follow. 270 tests. Not deployed; it goes out with briefs 08-13.
+
+## [2026-11-09] todo | Brief 15: a long cell scrolls and older Done gets a page
+
+[Brief 15](briefs/todo/15-a-long-cell-scrolls-and-older-done-gets-a-page.md),
+written at the owner's ask: the Done column grows too tall. The 14-day Done
+window already exists (`DEFAULT_DONE_DAYS`), but the board went live on
+2026-11-03, so all 108 Done cards were inside it (imbatranimOS 32). The brief
+caps every cell at about five cards with a scroll and adds an "Older Done" page
+behind `GET /api/done`. Its four calls are the writer's defaults; the owner
+can change them before the build. It waits for the deploy of briefs 08-14.
