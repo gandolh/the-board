@@ -6,6 +6,7 @@ import {
   answerRequestSchema,
   boardQuerySchema,
   commentRequestSchema,
+  doneQuerySchema,
   holdRequestSchema,
   moveRequestSchema,
   needsQuerySchema,
@@ -26,6 +27,7 @@ import {
   type AnswerResponse,
   type BoardResponse,
   type CommentResponse,
+  type DoneResponse,
   type DropResponse,
   type ErrorBody,
   type HealthResponse,
@@ -262,6 +264,13 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     const query = parse(boardQuerySchema, request.query, reply);
     if (!query) return reply;
     const body: BoardResponse = { lanes: store.board(query.doneDays, query.tag) };
+    return body;
+  });
+
+  app.get("/api/done", async (request, reply) => {
+    const query = parse(doneQuerySchema, request.query, reply);
+    if (!query) return reply;
+    const body: DoneResponse = { tickets: store.olderDone(query.olderThanDays, query.tag) };
     return body;
   });
 

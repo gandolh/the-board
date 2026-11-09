@@ -2,12 +2,15 @@ import { useSyncExternalStore } from "react";
 import { appBase } from "./base";
 
 /**
- * The board's three pages, by path under the base: the board itself, the
- * login page and the account page. Small enough that a router library
- * would be the bigger part; the server answers every path under the base
- * with the board, so a reload lands on the same page.
+ * The board's pages, by path under the base: the board itself, older Done
+ * (`done`), the login page and the account page. Small enough that a router
+ * library would be the bigger part; the server answers every path under the
+ * base with the board, so a reload lands on the same page.
  */
-export type Page = "board" | "login" | "account";
+export type Page = "board" | "done" | "login" | "account";
+
+/** The pages with a path of their own; anything else under the base is the board. */
+const NAMED: readonly Page[] = ["done", "login", "account"];
 
 const listeners = new Set<() => void>();
 
@@ -24,7 +27,7 @@ function subscribe(listener: () => void): () => void {
 export function pageOf(pathname: string, base: string = appBase()): Page {
   const rest = pathname.startsWith(base) ? pathname.slice(base.length) : "";
   const name = rest.replace(/\/+$/, "");
-  return name === "login" ? "login" : name === "account" ? "account" : "board";
+  return NAMED.find((page) => page === name) ?? "board";
 }
 
 /** The path of a page, under the base. */

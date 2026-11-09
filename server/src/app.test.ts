@@ -7,6 +7,7 @@ import {
   type AnswerResponse,
   type BoardResponse,
   type CommentResponse,
+  type DoneResponse,
   type DropResponse,
   type ErrorBody,
   type HoldResponse,
@@ -56,6 +57,7 @@ const move = (key: string, to: Status, message?: string) =>
   call({ method: "POST", url: `/api/tickets/${key}/moves`, payload: { to, message } });
 const detail = async (key: string) => (await call({ url: `/api/tickets/${key}` })).json<TicketDetailResponse>();
 const board = async (query = "") => (await call({ url: `/api/board${query}` })).json<BoardResponse>();
+const olderDone = async (query = "") => (await call({ url: `/api/done${query}` })).json<DoneResponse>();
 const sync = async (project: string, briefs: Partial<SyncBrief>[]) =>
   (
     await call({
@@ -220,6 +222,66 @@ describe("the board", () => {
     await put("p-02", { tags: ["api"] });
     const lanes = (await board("?tag=ui")).lanes;
     expect(lanes.flatMap((lane) => lane.tickets.map((t) => t.key))).toEqual(["p-01"]);
+  });
+});
+
+describe("older Done", () => {
+  const DAY = 24 * 60 * 60 * 1000;
+  const keys = async (query = "") => (await olderDone(query)).tickets.map((t) => t.key);
+  const onBoard = async (query = "") => (await board(query)).lanes.flatMap((lane) => lane.tickets.map((t) => t.key));
+  /** Done at the clock's time, then the clock moves on `days`. */
+  const doneThen = async (key: string, days: number, tags: string[] = []) => {
+    await put(key, { tags });
+    for (const [to, message] of PATH_TO.done) await move(key, to, message);
+    clock = new Date(clock.getTime() + days * DAY);
+  };
+
+  it("lists only Done tickets that are not hidden and older than 14 days", async () => {
+    await doneThen("p-01", 0);
+    await sync("p", [{ number: 1, state: "superseded" }]);
+    await doneThen("p-02", 0);
+    await ticketIn("p-03", "ready_for_deploy");
+    await ticketIn("p-04", "todo");
+    clock = new Date(clock.getTime() + 20 * DAY);
+    await doneThen("p-05", 3);
+    expect(await keys()).toEqual(["p-02"]);
+    expect(await onBoard()).toEqual(["p-03", "p-04", "p-05"]);
+  });
+
+  it("orders by project as the board does, newest Done first in each", async () => {
+    await doneThen("beta-01", 1);
+    await doneThen("Alpha-02", 1);
+    await doneThen("beta-03", 1);
+    await doneThen("alpha-01", 1);
+    await doneThen("Alpha-01", 1);
+    clock = new Date(clock.getTime() + 15 * DAY);
+    expect(await keys()).toEqual(["Alpha-01", "Alpha-02", "alpha-01", "beta-03", "beta-01"]);
+  });
+
+  it("narrows to a tag, and moves the cutoff with olderThanDays", async () => {
+    await doneThen("p-01", 10, ["ui"]);
+    await doneThen("p-02", 10, ["api"]);
+    expect(await keys()).toEqual(["p-01"]);
+    expect(await keys("?olderThanDays=5")).toEqual(["p-02", "p-01"]);
+    expect(await keys("?olderThanDays=5&tag=ui")).toEqual(["p-01"]);
+    expect(await keys("?tag=none")).toEqual([]);
+  });
+
+  it("puts a ticket exactly at the cutoff on the board, and a millisecond later on the page", async () => {
+    await doneThen("p-01", 14);
+    expect(await onBoard()).toEqual(["p-01"]);
+    expect(await keys()).toEqual([]);
+    clock = new Date(clock.getTime() + 1);
+    expect(await onBoard()).toEqual([]);
+    expect(await keys()).toEqual(["p-01"]);
+  });
+
+  it("refuses an olderThanDays outside the board's bounds", async () => {
+    for (const bad of ["-1", "3651", "1.5", "x"]) {
+      const res = await call({ url: `/api/done?olderThanDays=${bad}` });
+      expect(res.statusCode).toBe(400);
+      expect(res.json<ErrorBody>().code).toBe("invalid_request");
+    }
   });
 });
 

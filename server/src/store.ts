@@ -638,7 +638,7 @@ export class Store {
    * there. With `tag`, only tickets carrying that label.
    */
   board(doneDays: number, tag?: string): Lane[] {
-    const cutoff = new Date(this.clock().getTime() - doneDays * 24 * 60 * 60 * 1000).toISOString();
+    const cutoff = this.doneCutoff(doneDays);
     const rows = this.db
       .prepare(
         `SELECT * FROM tickets t
@@ -655,5 +655,31 @@ export class Store {
       else lanes.push({ project: row.project, tickets: [this.toTicket(row)] });
     }
     return lanes;
+  }
+
+  /**
+   * The older Done page: Done tickets, not hidden, that got there before the
+   * cutoff `olderThanDays` back. The board keeps those at or after the same
+   * cutoff, so with the same days a ticket is on one of the two, never both.
+   * By project as the board orders its lanes, newest Done first in each.
+   * With `tag`, only tickets carrying that label.
+   */
+  olderDone(olderThanDays: number, tag?: string): Ticket[] {
+    const rows = this.db
+      .prepare(
+        `SELECT * FROM tickets t
+         WHERE t.hidden = 0
+           AND t.status = 'done'
+           AND t.status_changed_at < @cutoff
+           AND (@tag IS NULL OR EXISTS (SELECT 1 FROM ticket_tags g WHERE g.ticket_key = t.key AND g.tag = @tag))
+         ORDER BY t.project COLLATE NOCASE, t.project, t.status_changed_at DESC, t.key`,
+      )
+      .all({ cutoff: this.doneCutoff(olderThanDays), tag: tag ?? null }) as TicketRow[];
+    return rows.map((row) => this.toTicket(row));
+  }
+
+  /** The instant `days` back from now that splits the board's Done from the older Done page. */
+  private doneCutoff(days: number): string {
+    return new Date(this.clock().getTime() - days * 24 * 60 * 60 * 1000).toISOString();
   }
 }

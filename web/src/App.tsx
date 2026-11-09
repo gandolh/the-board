@@ -1,31 +1,36 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Lane as LaneData, NeedKind } from "@brief-board/shared";
-import { useSession } from "../vendor/ward/ward-auth-react.js";
 import { AccountPage } from "./AccountPage";
 import { fetchBoard, fetchNeeds } from "./api";
 import { Board, orderLanes } from "./Board";
 import { DetailPanel } from "./DetailPanel";
+import { DonePage } from "./DonePage";
 import { needKeys, NeedsStrip } from "./NeedsStrip";
-import { navigate, pathOf, usePage } from "./route";
-import { clock } from "./time";
+import { usePage } from "./route";
+import { PageLink, TagFilter, TopBar } from "./TopBar";
 import { usePolling } from "./usePolling";
 
 /**
  * brief-board in the browser, behind the sign-in gate (`AuthGate.tsx`): the
- * board, or the account page. The board only reads; the owner asks an agent
- * to make any move (decisions.md).
+ * board, older Done, or the account page. Nothing here writes; the owner
+ * asks an agent to make any move (decisions.md). The tag filter is one
+ * choice for both the board and older Done, kept while the owner moves
+ * between them.
  */
 export function App() {
-  return usePage() === "account" ? <AccountPage /> : <BoardPage />;
+  const page = usePage();
+  const [tag, setTag] = useState("");
+  if (page === "account") return <AccountPage />;
+  if (page === "done") return <DonePage tag={tag} onTag={setTag} />;
+  return <BoardPage tag={tag} onTag={setTag} />;
 }
 
 type LaneTicket = LaneData["tickets"][number];
 
 /** One board, a lane per project, seven columns, and what needs the owner above them. */
-function BoardPage() {
+function BoardPage({ tag, onTag }: { tag: string; onTag: (tag: string) => void }) {
   const board = usePolling(fetchBoard);
   const needs = usePolling(fetchNeeds);
-  const [tag, setTag] = useState("");
   const [needKind, setNeedKind] = useState<NeedKind | null>(null);
   const [openKey, setOpenKey] = useState<string | null>(null);
   const [toggled, setToggled] = useState<ReadonlySet<string>>(new Set());
@@ -59,29 +64,13 @@ function BoardPage() {
 
   return (
     <div className="app">
-      <header className="top">
-        <h1 className="brand">brief-board</h1>
-        <label className="filter">
-          <span>Tag</span>
-          <select value={tag} onChange={(event) => setTag(event.target.value)} disabled={tags.length === 0}>
-            <option value="">All tags</option>
-            {tags.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </select>
-        </label>
+      <TopBar polled={board}>
+        <TagFilter tags={tags} value={tag} onChange={onTag} />
+        <PageLink page="done" className="nav-link">
+          Older Done
+        </PageLink>
         <span className={`blocked-count${blocked > 0 ? " has-blocked" : ""}`}>{blocked} blocked</span>
-        <span className="updated">{board.fetchedAt ? `Updated ${clock(board.fetchedAt)}` : "Loading…"}</span>
-        <AccountLink />
-      </header>
-
-      {board.failing && (
-        <div className="banner" role="status">
-          The board's API isn't answering.{board.fetchedAt ? ` Showing what it said at ${clock(board.fetchedAt)}.` : ""} Trying again every 10 seconds.
-        </div>
-      )}
+      </TopBar>
 
       <NeedsStrip needs={allNeeds} selected={needFilter ? needKind : null} onSelect={setNeedKind} />
 
@@ -101,24 +90,5 @@ function BoardPage() {
 
       {openKey && <DetailPanel key={openKey} ticketKey={openKey} refreshedAt={board.fetchedAt} onClose={close} />}
     </div>
-  );
-}
-
-/** The signed-in user's name in the header, leading to the account page. */
-function AccountLink() {
-  const session = useSession();
-  const name = session.status === "signed_in" ? session.user.username : "Account";
-  return (
-    <a
-      className="account-link"
-      href={pathOf("account")}
-      onClick={(event) => {
-        if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
-        event.preventDefault();
-        navigate("account");
-      }}
-    >
-      {name}
-    </a>
   );
 }

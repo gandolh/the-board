@@ -196,13 +196,16 @@ export type HealthResponse = z.infer<typeof healthResponseSchema>;
 
 // --- GET /api/board ------------------------------------------------------------
 
-/** How many days of Done the board shows by default. */
+/** How many days of Done the board shows by default; older Done is on its own page (`GET /api/done`). */
 export const DEFAULT_DONE_DAYS = 14;
+
+/** A Done window in days: the board's `doneDays`, and the older Done page's `olderThanDays`. */
+const doneDays = z.coerce.number().int().min(0).max(3650).default(DEFAULT_DONE_DAYS);
 
 export const boardQuerySchema = z.object({
   /** Only tickets carrying this tag. */
   tag: z.string().min(1).optional(),
-  doneDays: z.coerce.number().int().min(0).max(3650).default(DEFAULT_DONE_DAYS),
+  doneDays,
 });
 export type BoardQuery = z.infer<typeof boardQuerySchema>;
 
@@ -215,6 +218,28 @@ export type Lane = z.infer<typeof laneSchema>;
 
 export const boardResponseSchema = z.object({ lanes: z.array(laneSchema) });
 export type BoardResponse = z.infer<typeof boardResponseSchema>;
+
+// --- GET /api/done -------------------------------------------------------------
+
+/**
+ * Done tickets the board no longer shows. A ticket is on the board while
+ * `statusChangedAt` is at or after the cutoff `doneDays` back, and here once
+ * it is before the cutoff `olderThanDays` back: with the same number of days,
+ * every Done ticket is in exactly one of the two.
+ */
+export const doneQuerySchema = z.object({
+  /** Only tickets carrying this tag. */
+  tag: z.string().min(1).optional(),
+  olderThanDays: doneDays,
+});
+export type DoneQuery = z.infer<typeof doneQuerySchema>;
+
+/**
+ * Done, not hidden, older than the window: grouped by project
+ * (alphabetical, as the board's lanes), newest Done first in each.
+ */
+export const doneResponseSchema = z.object({ tickets: z.array(ticketSchema) });
+export type DoneResponse = z.infer<typeof doneResponseSchema>;
 
 // --- GET /api/tickets/:key -----------------------------------------------------
 

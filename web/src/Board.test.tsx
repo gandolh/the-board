@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { STATUSES, type Lane, type Run, type Ticket } from "@brief-board/shared";
-import { Board, cellTickets } from "./Board";
+import { Board, CELL_CARDS, cellTickets } from "./Board";
 import { Card } from "./Card";
 import { runEnding, runLine } from "./runs";
 
@@ -53,6 +53,24 @@ describe("the board", () => {
     expect(backlog).toContain("Walls meet");
     expect(backlog).not.toContain("p-01");
     expect(cell("todo", "in_progress")).toContain('<span class="card-key">p-01</span>');
+  });
+});
+
+describe("a long cell", () => {
+  const done = (n: number) => Array.from({ length: n }, (_, i) => ticket({ key: `p-${i + 1}`, number: i + 1, status: "done" }));
+  const html = (tickets: Ticket[]) =>
+    renderToStaticMarkup(<Board lanes={[{ project: "p", tickets }]} now={now} toggled={new Set()} onToggle={() => {}} onOpen={() => {}} />);
+
+  it("scrolls past five cards, and only that cell", () => {
+    expect(CELL_CARDS).toBe(5);
+    const long = html([...done(6), ticket({ key: "p-07", number: 7, status: "todo" })]);
+    expect(long).toContain('class="cell col-done cell-long"');
+    expect(long).toContain('class="cell col-todo"');
+    expect(long.match(/cell-long/g)).toHaveLength(1);
+  });
+
+  it("stays as tall as its cards at five or fewer", () => {
+    expect(html(done(5))).not.toContain("cell-long");
   });
 });
 

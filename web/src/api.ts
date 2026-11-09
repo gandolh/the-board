@@ -1,8 +1,10 @@
 import {
   boardResponseSchema,
+  doneResponseSchema,
   needsResponseSchema,
   ticketDetailResponseSchema,
   type BoardResponse,
+  type DoneResponse,
   type NeedsResponse,
   type TicketDetailResponse,
 } from "@brief-board/shared";
@@ -10,7 +12,7 @@ import { API_BASE } from "./base";
 
 /**
  * The board reads and never writes (decisions.md "The UI is read-only"): the
- * only requests in this app are these three GETs, and the server refuses a
+ * only requests in this app are these four GETs, and the server refuses a
  * signed-in browser anything else. Answers are parsed with the shared
  * contract, so a server that drifted shows as an error, not as a half-drawn
  * board.
@@ -36,7 +38,6 @@ export function onUnauthorized(listener: () => void): () => void {
   };
 }
 
-/** The API's own default keeps 14 days of Done, which is what the board shows. */
 async function get<T>(path: string, parse: (value: unknown) => T, signal?: AbortSignal): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, { method: "GET", headers: { accept: "application/json" }, signal });
   if (res.status === 401) {
@@ -47,8 +48,14 @@ async function get<T>(path: string, parse: (value: unknown) => T, signal?: Abort
   return parse(await res.json());
 }
 
+/** The API's own default keeps 14 days of Done, which is what the board shows. */
 export function fetchBoard(signal?: AbortSignal): Promise<BoardResponse> {
   return get("/api/board", (v) => boardResponseSchema.parse(v), signal);
+}
+
+/** Done older than the board's 14 days, by the API's same default: the older Done page. */
+export function fetchDone(signal?: AbortSignal): Promise<DoneResponse> {
+  return get("/api/done", (v) => doneResponseSchema.parse(v), signal);
 }
 
 /** What waits on the owner, for the strip above the lanes. */

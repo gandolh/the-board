@@ -23,6 +23,12 @@
   --ready_for_deploy: #6e5dc6;
   --done: #1f845a;
   --top-h: 56px;
+  /*
+   * A long cell's height: five Done cards (key, a title of a line or two, the
+   * run, the footer: 100 to 140 px each) and their gaps. On a wide screen
+   * the top of a sixth shows, so the cell reads as one that scrolls.
+   */
+  --cell-cap: 600px;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   font-size: 14px;
   line-height: 1.45;
@@ -127,6 +133,17 @@ button {
   background: color-mix(in srgb, var(--blocked) 15%, transparent);
   color: var(--blocked);
   font-weight: 600;
+}
+
+/* The link to the board's other page: older Done, or back to the board. */
+.nav-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.nav-link:hover {
+  text-decoration: underline;
 }
 
 .updated {
@@ -299,6 +316,20 @@ main {
   gap: 6px;
 }
 
+/*
+ * A cell past five cards (Board.tsx, CELL_CARDS) stops at about five cards'
+ * height and scrolls inside. Any other cell is as tall as its cards, with no
+ * scrollbar and no gutter. The scroll padding keeps a card tabbed to clear of
+ * the edge, focus ring included.
+ */
+.cell-long {
+  max-height: var(--cell-cap);
+  overflow-x: hidden;
+  overflow-y: auto;
+  scroll-padding-block: 6px;
+  scrollbar-width: thin;
+}
+
 /* On a wide screen the sticky headers name the columns; on a narrow one each lane does. */
 .cell-head {
   display: none;
@@ -322,6 +353,7 @@ main {
   box-shadow: var(--shadow);
   text-align: left;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .card:hover {
@@ -606,6 +638,129 @@ main {
 
   .cell-head {
     display: block;
+  }
+
+  /*
+   * A long cell keeps its column's name in view, flush with the cell's top,
+   * while its cards scroll under it. The padding and the negative margin
+   * cancel out, so at rest the cell looks like any other.
+   */
+  .cell-long .cell-head {
+    position: sticky;
+    top: -6px;
+    z-index: 1;
+    padding-bottom: 6px;
+    margin-bottom: -6px;
+    background: var(--surface-sunk);
+  }
+
+  .cell-long {
+    scroll-padding-top: 36px;
+  }
+}
+
+/* Older Done: a list per project, a row per ticket. */
+.older-done {
+  max-width: 1000px;
+}
+
+.page-title {
+  margin: 8px 0 4px;
+  font-size: 18px;
+}
+
+.page-intro {
+  margin: 0 0 8px;
+  color: var(--text-muted);
+}
+
+.done-group {
+  margin-top: 20px;
+}
+
+.done-project {
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+/* One grid for the group, so keys, titles and dates line up across rows. */
+.done-list {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) max-content;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-radius: 4px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.done-list li {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+}
+
+.done-list li + li {
+  border-top: 1px solid var(--line);
+}
+
+.done-row {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: baseline;
+  gap: 2px 16px;
+  padding: 8px 12px;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.done-list li:first-child .done-row {
+  border-radius: 4px 4px 0 0;
+}
+
+.done-list li:last-child .done-row {
+  border-radius: 0 0 4px 4px;
+}
+
+.done-row:hover {
+  background: color-mix(in srgb, var(--surface) 92%, var(--accent));
+}
+
+.done-key,
+.done-date {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.done-date {
+  justify-self: end;
+}
+
+.done-title {
+  overflow-wrap: anywhere;
+}
+
+/* A phone: the key and the date on one line, the title under them. */
+@media (max-width: 600px) {
+  .done-list {
+    grid-template-columns: minmax(0, 1fr) max-content;
+  }
+
+  .done-title {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .done-key {
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 

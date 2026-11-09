@@ -6,8 +6,14 @@ import { Card } from "./Card";
  * The board: the column headers once at the top, sticky, Backlog first, and a
  * lane per project tag under them. Lanes with open tickets come first, then the rest,
  * each group alphabetical. A lane with nothing open starts collapsed. In each
- * cell, blocked cards come after the others.
+ * cell, blocked cards come after the others. A cell holding more than
+ * `CELL_CARDS` cards stops at about that many cards' height and scrolls
+ * inside (`.cell-long` in styles.css); one holding that many or fewer is as
+ * tall as its cards.
  */
+
+/** How many cards a cell shows before it scrolls. */
+export const CELL_CARDS = 5;
 
 const isOpen = (ticket: Ticket) => ticket.status !== "done";
 
@@ -92,14 +98,17 @@ function Lane({
       </Collapsible.Trigger>
       <Collapsible.Panel className="lane-scroll">
         <div className="lane-cols">
-          {STATUSES.map((status) => (
-            <div key={status} className={`cell col-${status}`}>
-              <div className="cell-head">{STATUS_LABELS[status]}</div>
-              {cellTickets(lane.tickets, status).map((ticket) => (
-                <Card key={ticket.key} ticket={ticket} now={now} onOpen={onOpen} />
-              ))}
-            </div>
-          ))}
+          {STATUSES.map((status) => {
+            const cards = cellTickets(lane.tickets, status);
+            return (
+              <div key={status} className={`cell col-${status}${cards.length > CELL_CARDS ? " cell-long" : ""}`}>
+                <div className="cell-head">{STATUS_LABELS[status]}</div>
+                {cards.map((ticket) => (
+                  <Card key={ticket.key} ticket={ticket} now={now} onOpen={onOpen} />
+                ))}
+              </div>
+            );
+          })}
         </div>
       </Collapsible.Panel>
     </Collapsible.Root>
