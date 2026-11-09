@@ -113,3 +113,64 @@ them before the build, and if they don't, build these.
 - **Owner steps:** `node cli.ts brief-board deploy` and `node cli.ts
   brief-board server` from vps-deploy. The CLI doesn't change, so there's
   nothing to rebuild for it.
+
+## Outcome (2026-11-09)
+
+Built on main in `d061f22`, after the owner confirmed briefs 08-14 were
+deployed. The four owner decisions stood as written.
+
+- **Cells.** `Board.tsx` gives a cell holding more than `CELL_CARDS` (5)
+  cards the class `cell-long`; only that class caps the height
+  (`--cell-cap: 600px`) and scrolls (`overflow-y: auto`, a thin scrollbar).
+  A cell of five or fewer is untouched, so it can't gain a cap, a gutter or
+  a scrollbar, however tall its cards. `scroll-padding` keeps a tabbed-to
+  card and its focus ring clear of the edge. On narrow screens a long
+  cell's column name sticks to its top while the cards scroll under it.
+- **Route.** `GET /api/done` (`doneQuerySchema`: `tag`, `olderThanDays`
+  sharing `doneDays`' default and bounds; `doneResponseSchema`: a flat
+  `tickets` list). `Store.olderDone` takes Done, not hidden, with
+  `status_changed_at < cutoff`; the board keeps `>=` against the same
+  cutoff (one `doneCutoff` for both), so a ticket at the cutoff is on the
+  board. Ordered `project COLLATE NOCASE, project, status_changed_at DESC,
+  key`, as the lanes are.
+- **Page.** `"done"` in `Page`, `fetchDone`, and `DonePage.tsx`: polled
+  like the board, a group per project, a row per ticket (key, title, the
+  day it reached Done) that opens `DetailPanel`. The empty state reads
+  "Nothing older than 14 days yet."; with a tag and no match, it says no
+  older ticket carries that tag.
+
+**Calls made** (technical, the owner may veto):
+- 600px for "about five cards": Done cards measured 100 to 160px (a title
+  of one to three lines, the run line, the footer), so at 1280px wide a
+  long cell shows about four and a half cards, and on a wider screen five
+  and the top of a sixth.
+- The cap goes by card count (a class) rather than by height alone, so the
+  brief's "five or fewer looks the same" holds even for tall cards.
+- Rows show the date only (`dateStyle: "medium"`), with the full date and
+  time in the tooltip.
+- The tag choice is one state in `App`, kept while moving between the
+  board and Older Done; the select also lists the chosen tag when this
+  page's tickets don't carry it, so it can always be cleared. The page
+  filters in the browser, as the board does; the route's `tag` is there
+  for other clients.
+- The page's one-line intro: "Tickets that reached Done more than 14 days
+  ago, by project, newest first."
+
+**Outside the file list:** `web/src/TopBar.tsx` (new: the header, the tag
+filter, the page links and the API-down banner, shared by both pages,
+lifted out of `App.tsx`), and `day()` in `web/src/time.ts`.
+
+Commits: d061f22
+Checks run: `npm test` (283 tests, from 270: five route tests, two
+long-cell tests, two `pageOf` tests, four older Done list tests);
+`npm run typecheck`; `npm run lint`; `npm run build`; a browser walk on a
+throwaway local board (port 8816, a scratch database, stopped after) with
+one lane of 30 Done tickets, 12 older than 14 days: the Done cell scrolls
+and its neighbours don't, Tab scrolls a card into view inside the cell,
+the older tickets are only on Older Done, a row opens its panel, the tag
+filter narrows the page and carries back to the board, a reload on `/done`
+stays there, and at 390px neither page scrolls sideways.
+Checks skipped: none.
+Owner steps: from vps-deploy, `node cli.ts brief-board deploy` and then
+`node cli.ts brief-board server`. The CLI doesn't change, so there is
+nothing to rebuild locally.

@@ -1,6 +1,6 @@
 ---
-summary: How brief-board is put together, as built 2026-10-09, with the 2026-11-02 sub-path, token and sign-in, the 2026-11-03 todo keys, and the 2026-11-06 runs and their holds. npm workspaces with a Fastify + SQLite API, a read-only Vite + React board, and the brief-board CLI that agents use; how the CLI finds the board without any repo holding a path; keys, the CLI's exit codes, the server's error codes, how the board UI polls and lays out, build gotchas, and what each project's CLAUDE.md says. The owner starts the server by hand on 127.0.0.1:8806.
-updated: 2026-11-06
+summary: How brief-board is put together, as built 2026-10-09, with the 2026-11-02 sub-path, token and sign-in, the 2026-11-03 todo keys, and the 2026-11-06 runs and their holds; the board in the browser is board-ui.md. npm workspaces with a Fastify + SQLite API, a read-only Vite + React board, and the brief-board CLI that agents use; how the CLI finds the board without any repo holding a path; keys, the CLI's exit codes, the server's error codes, build gotchas, and what each project's CLAUDE.md says. The owner starts the server by hand on 127.0.0.1:8806.
+updated: 2026-11-09
 ---
 
 # Architecture
@@ -142,32 +142,9 @@ move. The rules per brief state: [sync.md](sync.md).
 
 ## Board UI
 
-`web/src/`; `api.ts` holds the only requests, three GETs (the board, a
-ticket, and since 2026-11-06 what needs the owner, for the strip above the
-lanes that narrows the board to one kind at a click), built from
-`API_BASE` in `base.ts` (`/brief-board-api`). Vite's `base` is
-`BRIEF_BOARD_BASE`, default `/brief-board/`, so assets load from
-`/brief-board/assets/`; in dev, Vite proxies `/brief-board-api` to
-127.0.0.1:8806 and strips the prefix as Caddy does. It polls every 10 s
-(`POLL_MS`), pauses while the tab is hidden, and keeps the last data behind a
-banner when the API is down. The tag filter works in the browser on the polled
-board; the Blocked count and the tab title ("(1 blocked) brief-board") stay
-board-wide. Below 1100 px each lane scrolls sideways on its own and shows its
-own column names, since one sticky header row can't stay aligned with all of
-them. Light and dark follow the system. Ticket markdown goes through
-`react-markdown` with `skipHtml`.
-
-Since 2026-10-23 the detail panel is a non-modal Base UI `Dialog` with
-`disablePointerDismissal`, so clicking another card switches the ticket
-instead of closing the panel. `App.tsx` keys it by ticket, so focus lands on
-Close and Escape returns it to the card that opened it. The panel is named by
-`aria-label="Ticket <key>"`, not `Dialog.Title`, so its name doesn't change
-when the detail loads. Lanes are `Collapsible`s.
-
-`scripts/seed-demo.ts` (plain `node`) fills a scratch board with three
-made-up projects. It refuses a board holding any other project. No one ticket
-can carry all six message roles, because a confirmation needs Blocked → Done,
-so the seed spreads them over two.
+`web/src/`, a read-only Vite + React board: the board, the Older Done page
+and the detail panel, how it polls and lays out. See
+[board-ui.md](board-ui.md).
 
 ## Build gotchas
 
@@ -201,4 +178,4 @@ from Vite at `http://localhost:5178/brief-board/` through its proxy. The
 database is a SQLite file in the gitignored `data/` directory. Nothing restarts
 the local server; a down board never stops agent work, see
 [decisions.md](decisions.md). The UI polls the API, and the Done column shows
-the last 14 days. Lanes with nothing open start collapsed.
+the last 14 days; older Done is on its own page. Lanes with nothing open start collapsed.

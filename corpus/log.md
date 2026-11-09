@@ -447,10 +447,28 @@ follow. 270 tests. Not deployed; it goes out with briefs 08-13.
 
 ## [2026-11-09] todo | Brief 15: a long cell scrolls and older Done gets a page
 
-[Brief 15](briefs/todo/15-a-long-cell-scrolls-and-older-done-gets-a-page.md),
+[Brief 15](briefs/done/15-a-long-cell-scrolls-and-older-done-gets-a-page.md),
 written at the owner's ask: the Done column grows too tall. The 14-day Done
 window already exists (`DEFAULT_DONE_DAYS`), but the board went live on
 2026-11-03, so all 108 Done cards were inside it (imbatranimOS 32). The brief
 caps every cell at about five cards with a scroll and adds an "Older Done" page
 behind `GET /api/done`. Its four calls are the writer's defaults; the owner
 can change them before the build. It waits for the deploy of briefs 08-14.
+
+## [2026-11-09] done | Brief 15, a long cell scrolls and older Done gets a page
+
+[Brief 15](briefs/done/15-a-long-cell-scrolls-and-older-done-gets-a-page.md),
+`d061f22`, built on main once the owner confirmed briefs 08-14 were
+deployed; the four owner decisions stood as written. A cell holding more
+than five cards gets `.cell-long`, which stops it at 600px (about five Done
+cards) and scrolls it inside; one of five or fewer is unchanged. `GET
+/api/done` (`tag`, `olderThanDays`) lists Done tickets past the board's
+cutoff (strictly before it, where the board keeps at-or-after), by project,
+newest first, and the Older Done page at `<base>done` shows them with the
+board's detail panel and tag filter, which carries between the two pages.
+The header moved to `web/src/TopBar.tsx`, shared by both pages. The Board
+UI section of [architecture.md](wiki/architecture.md) went to its own page,
+[board-ui.md](wiki/board-ui.md), past the 200-line cap.
+[status.md](wiki/status.md) follows and now records 08-14 as deployed.
+Found: `scripts/seed-demo.ts` sends no token and gets a 401 (in status.md,
+Open). 283 tests. Not deployed.
