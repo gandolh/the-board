@@ -52,6 +52,14 @@ import type { Store } from "./store.js";
  * Backlog, since a blocked brief's ticket sits there too. A project sent
  * without `todos`, by a CLI from before Backlog, keeps its todo tickets as
  * they are.
+ *
+ * Sprints (2026-11-10): sync reads and writes the active sprint's tickets
+ * only, and new tickets join it. A ticket in a closed sprint is Done and
+ * frozen, so sync never changes it and never brings it back: its brief in
+ * `done/` is a no-op, and its brief back in `todo/` or `blocked/` (or in
+ * `superseded/`) gets a warning and no change, not even to the title or
+ * path. A closed sprint's ticket missing from the payload is not warned
+ * about, and only the active sprint's todo tickets are removed.
  */
 
 const SYNC_AUTHOR = "sync";
@@ -72,9 +80,12 @@ export function runSync(store: Store, request: SyncRequest): SyncResponse {
       warnings: [],
     };
 
+    const active = store.activeSprint().number;
     for (const { project, briefs, todos } of request.projects) {
-      const tickets = store.projectTickets(project);
-      if (todos) syncTodos(store, project, todos, tickets.filter((ticket) => ticket.number === null), result.todos);
+      const all = store.projectTickets(project);
+      const tickets = all.filter((ticket) => ticket.sprint === active);
+      const frozen = new Map(all.filter((ticket) => ticket.sprint !== active).map((ticket) => [ticket.key, ticket]));
+      if (todos) syncTodos(store, project, todos, tickets.filter((ticket) => ticket.number === null), frozen, result);
       const existing = new Map(tickets.filter((ticket) => ticket.number !== null).map((ticket) => [ticket.number!, ticket]));
       const seen = new Set<number>();
 
@@ -85,6 +96,16 @@ export function runSync(store: Store, request: SyncRequest): SyncResponse {
         }
         seen.add(brief.number);
         const key = formatKey(project, brief.number);
+        const closed = frozen.get(key);
+        if (closed) {
+          if (brief.state === "todo" || brief.state === "blocked" || (brief.state === "superseded" && !closed.hidden)) {
+            result.warnings.push(
+              `${key} is ${STATUS_LABELS[closed.status]} in sprint ${closed.sprint}, which is closed, but its brief is in ${brief.state}/; nothing changed`,
+            );
+          }
+          result.unchanged++;
+          continue;
+        }
         const ticket = existing.get(brief.number);
         const blockedBy = brief.state === "blocked" ? brief.blockedBy?.trim() || BLOCKED_BY_NOT_GIVEN : null;
 
@@ -188,13 +209,31 @@ export function runSync(store: Store, request: SyncRequest): SyncResponse {
   })();
 }
 
-/** One project's todo tickets, made to match its open todos. */
-function syncTodos(store: Store, project: string, todos: SyncTodo[], tickets: Ticket[], counts: SyncResponse["todos"]): void {
+/**
+ * One project's todo tickets in the active sprint, made to match its open
+ * todos. A todo's ticket always sits in Backlog, so none should be in a closed
+ * sprint; one that is, is left alone with a warning rather than made twice.
+ */
+function syncTodos(
+  store: Store,
+  project: string,
+  todos: SyncTodo[],
+  tickets: Ticket[],
+  frozen: ReadonlyMap<string, Ticket>,
+  result: SyncResponse,
+): void {
+  const counts = result.todos;
   const existing = new Map(tickets.map((ticket) => [ticket.key, ticket]));
   const seen = new Set<string>();
   for (const todo of todos) {
     const key = formatTodoKey(project, todo.slug);
     seen.add(key);
+    const closed = frozen.get(key);
+    if (closed) {
+      result.warnings.push(`${key} is in sprint ${closed.sprint}, which is closed; nothing changed`);
+      counts.unchanged++;
+      continue;
+    }
     const ticket = existing.get(key);
     const blockedBy = todo.blockedBy === undefined || todo.blockedBy === null ? null : todo.blockedBy.trim() || BLOCKED_BY_NOT_GIVEN;
     if (!ticket) {
