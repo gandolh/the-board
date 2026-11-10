@@ -12,7 +12,8 @@ import Database from "better-sqlite3";
  * `(project, number)` is unique too: one ticket per brief. A todo's ticket
  * (`atrium:night-mode`) has no number and always sits in Backlog; since
  * 2026-11-07 a brief's ticket sits there too while its brief is in
- * `blocked/`, with `blocked_by` holding what it waits on.
+ * `blocked/`, with `blocked_by` holding what it waits on. Since 2026-11-10
+ * every ticket sits in one sprint (`tickets.sprint`, `sprints`).
  */
 export type Db = Database.Database;
 
@@ -159,6 +160,26 @@ export const MIGRATIONS: string[] = [
     SELECT key, project, number, title, summary, summary_source, brief_path, status, hidden, created_at, updated_at, status_changed_at, NULL FROM tickets;
   DROP TABLE tickets;
   ALTER TABLE tickets_new RENAME TO tickets;
+  `,
+  // 2026-11-10: sprints. Every ticket belongs to one; exactly one sprint is
+  // active (no end date), the rest are closed. Sprint 1 closes on the day this
+  // runs with every ticket that is Done then, and Sprint 2 starts that day with
+  // the rest; on a fresh board Sprint 1 is closed and empty, so the numbers
+  // match everywhere. The unique index is on a constant for the active row,
+  // since SQLite counts NULLs as distinct in a unique index. ADD COLUMN needs a
+  // default for NOT NULL and, with foreign keys on, a NULL one for REFERENCES;
+  // the keys are off while migrations run and checked before this commits.
+  `
+  CREATE TABLE sprints (
+    number INTEGER PRIMARY KEY,
+    started_on TEXT NOT NULL,
+    ended_on TEXT,
+    CHECK (ended_on IS NULL OR ended_on >= started_on)
+  );
+  CREATE UNIQUE INDEX sprints_one_active ON sprints ((ended_on IS NULL)) WHERE ended_on IS NULL;
+  ALTER TABLE tickets ADD COLUMN sprint INTEGER NOT NULL DEFAULT 2 REFERENCES sprints(number);
+  INSERT INTO sprints (number, started_on, ended_on) VALUES (1, date('now'), date('now')), (2, date('now'), NULL);
+  UPDATE tickets SET sprint = 1 WHERE status = 'done';
   `,
 ];
 
