@@ -3,14 +3,15 @@ import { appBase } from "./base";
 
 /**
  * The board's pages, by path under the base: the board itself, older Done
- * (`done`), the login page and the account page. Small enough that a router
+ * (`done`), the closed sprints (`sprints`), the login page and the account
+ * page. Small enough that a router
  * library would be the bigger part; the server answers every path under the
  * base with the board, so a reload lands on the same page.
  */
-export type Page = "board" | "done" | "login" | "account";
+export type Page = "board" | "done" | "sprints" | "login" | "account";
 
 /** The pages with a path of their own; anything else under the base is the board. */
-const NAMED: readonly Page[] = ["done", "login", "account"];
+const NAMED: readonly Page[] = ["done", "sprints", "login", "account"];
 
 const listeners = new Set<() => void>();
 

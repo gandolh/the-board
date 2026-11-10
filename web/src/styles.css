@@ -135,7 +135,13 @@ button {
   font-weight: 600;
 }
 
-/* The link to the board's other page: older Done, or back to the board. */
+/* The active sprint, next to the name. */
+.sprint-name {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The links to the board's other pages: older Done, the sprints, or back to the board. */
 .nav-link {
   color: var(--accent);
   text-decoration: none;
@@ -660,8 +666,51 @@ main {
 }
 
 /* Older Done: a list per project, a row per ticket. */
-.older-done {
+.older-done,
+.sprints {
   max-width: 1000px;
+}
+
+/* Sprints: a closed sprint per section, its heading opening its Done tickets. */
+.sprint {
+  margin-top: 12px;
+}
+
+.sprint-heading {
+  margin: 0;
+  font-size: 15px;
+}
+
+.sprint-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  width: 100%;
+  padding: 8px 4px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  font-weight: inherit;
+}
+
+.sprint-head[data-panel-open] .chevron {
+  transform: rotate(90deg);
+}
+
+.sprint-number {
+  font-weight: 650;
+}
+
+.sprint-dates {
+  color: var(--text-muted);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.sprint-panel .done-group:first-child {
+  margin-top: 4px;
 }
 
 .page-title {

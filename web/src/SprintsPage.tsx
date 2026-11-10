@@ -1,0 +1,151 @@
+import { Collapsible } from "@base-ui/react/collapsible";
+import { useCallback, useEffect, useState } from "react";
+import type { Sprint, Ticket } from "@brief-board/shared";
+import { fetchSprint, fetchSprints } from "./api";
+import { DetailPanel } from "./DetailPanel";
+import { DoneList } from "./DonePage";
+import { PageLink, TopBar } from "./TopBar";
+import { usePolling } from "./usePolling";
+
+/**
+ * The closed sprints, newest first, each a heading with its dates and Done
+ * count that opens to its Done tickets by project. Read only like every page:
+ * the list comes from `GET /api/sprints`, polled, and a sprint's tickets from
+ * `GET /api/sprints/:number` the first time it opens (a closed sprint never
+ * changes). The newest starts open. A row opens the board's detail panel.
+ * Starting a sprint is the CLI's, on the owner's ask; nothing here writes.
+ */
+export function SprintsPage() {
+  const sprints = usePolling(fetchSprints);
+  const [openKey, setOpenKey] = useState<string | null>(null);
+  const [toggled, setToggled] = useState<ReadonlySet<number>>(new Set());
+
+  useEffect(() => {
+    document.title = "Sprints · brief-board";
+  }, []);
+
+  const toggle = useCallback((number: number) => {
+    setToggled((current) => {
+      const next = new Set(current);
+      if (!next.delete(number)) next.add(number);
+      return next;
+    });
+  }, []);
+  const close = useCallback(() => setOpenKey(null), []);
+
+  return (
+    <div className="app">
+      <TopBar polled={sprints} sprint={sprints.data?.active}>
+        <PageLink page="board" className="nav-link">
+          Board
+        </PageLink>
+        <PageLink page="done" className="nav-link">
+          Older Done
+        </PageLink>
+      </TopBar>
+
+      <main className="sprints">
+        <h2 className="page-title">Sprints</h2>
+        <p className="page-intro">The closed sprints, newest first, each with the tickets that were Done when it closed.</p>
+        {sprints.data && <SprintList closed={sprints.data.closed} toggled={toggled} onToggle={toggle} onOpen={setOpenKey} />}
+      </main>
+
+      {openKey && <DetailPanel key={openKey} ticketKey={openKey} refreshedAt={sprints.fetchedAt} onClose={close} />}
+    </div>
+  );
+}
+
+/**
+ * The closed sprints, newest first whatever order they come in. The newest
+ * starts open; `toggled` holds the ones the owner flipped from how they started.
+ */
+export function SprintList({
+  closed,
+  toggled,
+  onToggle,
+  onOpen,
+}: {
+  closed: readonly Sprint[];
+  toggled: ReadonlySet<number>;
+  onToggle: (number: number) => void;
+  onOpen: (key: string) => void;
+}) {
+  if (closed.length === 0) return <p className="empty">No sprint has closed yet.</p>;
+  const newestFirst = [...closed].sort((a, b) => b.number - a.number);
+  return (
+    <>
+      {newestFirst.map((sprint, index) => {
+        const startsOpen = index === 0;
+        const open = toggled.has(sprint.number) ? !startsOpen : startsOpen;
+        return <SprintSection key={sprint.number} sprint={sprint} open={open} onToggle={onToggle} onOpen={onOpen} />;
+      })}
+    </>
+  );
+}
+
+/** "2026-10-09 to 2026-11-10": a closed sprint's days, as stored. */
+export function sprintDates(sprint: Pick<Sprint, "startedOn" | "endedOn">): string {
+  return `${sprint.startedOn} to ${sprint.endedOn ?? "now"}`;
+}
+
+/** One closed sprint: its heading, and once open, its tickets, fetched the first time. */
+function SprintSection({
+  sprint,
+  open,
+  onToggle,
+  onOpen,
+}: {
+  sprint: Sprint;
+  open: boolean;
+  onToggle: (number: number) => void;
+  onOpen: (key: string) => void;
+}) {
+  const [tickets, setTickets] = useState<Ticket[] | null>(null);
+  const [failed, setFailed] = useState(false);
+  const needed = open && tickets === null && sprint.doneCount > 0;
+
+  useEffect(() => {
+    if (!needed) return;
+    const controller = new AbortController();
+    fetchSprint(sprint.number, controller.signal).then(
+      (detail) => {
+        setTickets(detail.tickets);
+        setFailed(false);
+      },
+      (err: Error) => {
+        if (err.name !== "AbortError" && err.name !== "Unauthorized") setFailed(true);
+      },
+    );
+    return () => controller.abort();
+  }, [needed, sprint.number]);
+
+  return (
+    <Collapsible.Root open={open} onOpenChange={() => onToggle(sprint.number)} render={<section className="sprint" aria-label={`Sprint ${sprint.number}`} />}>
+      <h3 className="sprint-heading">
+        <Collapsible.Trigger className="sprint-head">
+          <svg className="chevron" viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <span className="sprint-number">Sprint {sprint.number}</span>
+          <span className="sprint-dates">{sprintDates(sprint)}</span>
+          <span className="count">{sprint.doneCount} Done</span>
+        </Collapsible.Trigger>
+      </h3>
+      <Collapsible.Panel className="sprint-panel">
+        {sprint.doneCount === 0 ? (
+          <SprintTickets tickets={[]} onOpen={onOpen} />
+        ) : tickets ? (
+          <SprintTickets tickets={tickets} onOpen={onOpen} />
+        ) : (
+          <p className="empty">{failed ? "The board's API didn't answer for this sprint. Close it and open it again to retry." : "Loading…"}</p>
+        )}
+      </Collapsible.Panel>
+    </Collapsible.Root>
+  );
+}
+
+/** A sprint's Done tickets by project, as the older Done page lists them; an empty sprint says so. */
+export function SprintTickets({ tickets, onOpen }: { tickets: readonly Ticket[]; onOpen: (key: string) => void }) {
+  if (tickets.length === 0) return <p className="empty">No Done tickets.</p>;
+  return <DoneList tickets={tickets} tag="" onOpen={onOpen} />;
+}

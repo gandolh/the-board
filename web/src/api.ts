@@ -2,17 +2,21 @@ import {
   boardResponseSchema,
   doneResponseSchema,
   needsResponseSchema,
+  sprintDetailResponseSchema,
+  sprintsResponseSchema,
   ticketDetailResponseSchema,
   type BoardResponse,
   type DoneResponse,
   type NeedsResponse,
+  type SprintDetailResponse,
+  type SprintsResponse,
   type TicketDetailResponse,
 } from "@brief-board/shared";
 import { API_BASE } from "./base";
 
 /**
  * The board reads and never writes (decisions.md "The UI is read-only"): the
- * only requests in this app are these four GETs, and the server refuses a
+ * only requests in this app are these GETs, and the server refuses a
  * signed-in browser anything else. Answers are parsed with the shared
  * contract, so a server that drifted shows as an error, not as a half-drawn
  * board.
@@ -61,6 +65,16 @@ export function fetchDone(signal?: AbortSignal): Promise<DoneResponse> {
 /** What waits on the owner, for the strip above the lanes. */
 export function fetchNeeds(signal?: AbortSignal): Promise<NeedsResponse> {
   return get("/api/needs", (v) => needsResponseSchema.parse(v), signal);
+}
+
+/** The active sprint and the closed ones, newest first, for the Sprints page. */
+export function fetchSprints(signal?: AbortSignal): Promise<SprintsResponse> {
+  return get("/api/sprints", (v) => sprintsResponseSchema.parse(v), signal);
+}
+
+/** One sprint and its tickets, when the Sprints page opens it. */
+export function fetchSprint(number: number, signal?: AbortSignal): Promise<SprintDetailResponse> {
+  return get(`/api/sprints/${number}`, (v) => sprintDetailResponseSchema.parse(v), signal);
 }
 
 export function fetchTicket(key: string, signal?: AbortSignal): Promise<TicketDetailResponse> {

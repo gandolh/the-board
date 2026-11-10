@@ -4,9 +4,11 @@ import { pageOf } from "./route";
 describe("pages by path", () => {
   const base = "/brief-board/";
 
-  it("maps done, login and account to their pages, with or without a trailing slash", () => {
+  it("maps done, sprints, login and account to their pages, with or without a trailing slash", () => {
     expect(pageOf("/brief-board/done", base)).toBe("done");
     expect(pageOf("/brief-board/done/", base)).toBe("done");
+    expect(pageOf("/brief-board/sprints", base)).toBe("sprints");
+    expect(pageOf("/brief-board/sprints/", base)).toBe("sprints");
     expect(pageOf("/brief-board/login", base)).toBe("login");
     expect(pageOf("/brief-board/account", base)).toBe("account");
   });

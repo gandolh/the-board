@@ -1,20 +1,31 @@
 import type { ReactNode } from "react";
+import type { Sprint } from "@brief-board/shared";
 import { useSession } from "../vendor/ward/ward-auth-react.js";
 import { navigate, pathOf, type Page } from "./route";
 import { clock } from "./time";
 import type { Polled } from "./usePolling";
 
 /**
- * The header the board and the older Done page share: the name, what the
- * page puts next to it (the tag filter, the link to the other page), when it
- * last heard from the API, and the account link. Under it, the banner while
- * the API isn't answering.
+ * The header the board's pages share: the name, the active sprint when the
+ * page knows it, what the page puts next to them (the tag filter, the links
+ * to the other pages), when it last heard from the API, and the account link.
+ * Under it, the banner while the API isn't answering.
  */
-export function TopBar({ polled, children }: { polled: Polled<unknown>; children: ReactNode }) {
+export function TopBar({
+  polled,
+  sprint,
+  children,
+}: {
+  polled: Polled<unknown>;
+  /** The active sprint, from the page's own poll; left out where the page has none. */
+  sprint?: Pick<Sprint, "number" | "startedOn"> | undefined;
+  children: ReactNode;
+}) {
   return (
     <>
       <header className="top">
         <h1 className="brand">brief-board</h1>
+        {sprint && <SprintName sprint={sprint} />}
         {children}
         <span className="updated">{polled.fetchedAt ? `Updated ${clock(polled.fetchedAt)}` : "Loading…"}</span>
         <AccountLink />
@@ -25,6 +36,15 @@ export function TopBar({ polled, children }: { polled: Polled<unknown>; children
         </div>
       )}
     </>
+  );
+}
+
+/** The active sprint next to the name: "Sprint 2 · since 2026-11-10", the day as stored (UTC). */
+export function SprintName({ sprint }: { sprint: Pick<Sprint, "number" | "startedOn"> }) {
+  return (
+    <span className="sprint-name">
+      Sprint {sprint.number} · since <time dateTime={sprint.startedOn}>{sprint.startedOn}</time>
+    </span>
   );
 }
 

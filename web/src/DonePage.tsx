@@ -32,6 +32,9 @@ export function DonePage({ tag, onTag }: { tag: string; onTag: (tag: string) => 
         <PageLink page="board" className="nav-link">
           Board
         </PageLink>
+        <PageLink page="sprints" className="nav-link">
+          Sprints
+        </PageLink>
       </TopBar>
 
       <main className="older-done">

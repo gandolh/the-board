@@ -7,12 +7,13 @@ import { DetailPanel } from "./DetailPanel";
 import { DonePage } from "./DonePage";
 import { needKeys, NeedsStrip } from "./NeedsStrip";
 import { usePage } from "./route";
+import { SprintsPage } from "./SprintsPage";
 import { PageLink, TagFilter, TopBar } from "./TopBar";
 import { usePolling } from "./usePolling";
 
 /**
  * brief-board in the browser, behind the sign-in gate (`AuthGate.tsx`): the
- * board, older Done, or the account page. Nothing here writes; the owner
+ * board, older Done, the closed sprints, or the account page. Nothing here writes; the owner
  * asks an agent to make any move (decisions.md). The tag filter is one
  * choice for both the board and older Done, kept while the owner moves
  * between them.
@@ -22,12 +23,13 @@ export function App() {
   const [tag, setTag] = useState("");
   if (page === "account") return <AccountPage />;
   if (page === "done") return <DonePage tag={tag} onTag={setTag} />;
+  if (page === "sprints") return <SprintsPage />;
   return <BoardPage tag={tag} onTag={setTag} />;
 }
 
 type LaneTicket = LaneData["tickets"][number];
 
-/** One board, a lane per project, seven columns, and what needs the owner above them. */
+/** One board, the active sprint's: a lane per project, seven columns, and what needs the owner above them. */
 function BoardPage({ tag, onTag }: { tag: string; onTag: (tag: string) => void }) {
   const board = usePolling(fetchBoard);
   const needs = usePolling(fetchNeeds);
@@ -64,10 +66,13 @@ function BoardPage({ tag, onTag }: { tag: string; onTag: (tag: string) => void }
 
   return (
     <div className="app">
-      <TopBar polled={board}>
+      <TopBar polled={board} sprint={board.data?.sprint}>
         <TagFilter tags={tags} value={tag} onChange={onTag} />
         <PageLink page="done" className="nav-link">
           Older Done
+        </PageLink>
+        <PageLink page="sprints" className="nav-link">
+          Sprints
         </PageLink>
         <span className={`blocked-count${blocked > 0 ? " has-blocked" : ""}`}>{blocked} blocked</span>
       </TopBar>
