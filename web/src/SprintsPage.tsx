@@ -147,5 +147,5 @@ function SprintSection({
 /** A sprint's Done tickets by project, as the older Done page lists them; an empty sprint says so. */
 export function SprintTickets({ tickets, onOpen }: { tickets: readonly Ticket[]; onOpen: (key: string) => void }) {
   if (tickets.length === 0) return <p className="empty">No Done tickets.</p>;
-  return <DoneList tickets={tickets} tag="" onOpen={onOpen} />;
+  return <DoneList tickets={tickets} tag="" onOpen={onOpen} projectHeading="h4" />;
 }

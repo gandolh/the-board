@@ -53,8 +53,20 @@ export function DonePage({ tag, onTag }: { tag: string; onTag: (tag: string) => 
  * group per project in the order they come (the API's: projects
  * alphabetical, newest Done first in each), a row per ticket with its key,
  * title and the day it reached Done. With nothing to list, it says why.
+ * `projectHeading` is the level of each project's heading: an `h4` where the
+ * list sits under a heading of its own, as a sprint's does.
  */
-export function DoneList({ tickets: all, tag, onOpen }: { tickets: readonly Ticket[]; tag: string; onOpen: (key: string) => void }) {
+export function DoneList({
+  tickets: all,
+  tag,
+  onOpen,
+  projectHeading: Heading = "h3",
+}: {
+  tickets: readonly Ticket[];
+  tag: string;
+  onOpen: (key: string) => void;
+  projectHeading?: "h3" | "h4";
+}) {
   const tickets = tag ? all.filter((ticket) => ticket.tags.includes(tag)) : all;
   if (tickets.length === 0) {
     return (
@@ -75,9 +87,9 @@ export function DoneList({ tickets: all, tag, onOpen }: { tickets: readonly Tick
     <>
       {[...groups].map(([project, inProject]) => (
         <section key={project} className="done-group" aria-label={`Project ${project}`}>
-          <h3 className="done-project">
+          <Heading className="done-project">
             {project} <span className="count">{inProject.length}</span>
-          </h3>
+          </Heading>
           <ul className="done-list">
             {inProject.map((ticket) => (
               <li key={ticket.key}>

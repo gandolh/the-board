@@ -76,6 +76,8 @@ describe("the Sprints page", () => {
       />,
     );
     expect([...html.matchAll(/aria-label="Project ([^"]+)"/g)].map((match) => match[1])).toEqual(["alpha", "beta"]);
+    // Under the sprint's own heading.
+    expect(html).toContain('<h4 class="done-project">alpha <span class="count">2</span></h4>');
     expect([...html.matchAll(/class="done-row" aria-label="([^"]+)"/g)].map((match) => match[1])).toEqual([
       "alpha-07: Seventh",
       "alpha-03: Third",
