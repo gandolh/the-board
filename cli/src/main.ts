@@ -8,6 +8,7 @@ import { needs } from "./commands/needs.js";
 import { answer, questions } from "./commands/questions.js";
 import { list, show } from "./commands/read.js";
 import { release, runs } from "./commands/runs.js";
+import { sprint } from "./commands/sprint.js";
 import { sync } from "./commands/sync.js";
 import { TokenRefused } from "./client.js";
 import type { Context } from "./context.js";
@@ -33,12 +34,15 @@ const USAGE = `brief-board: track corpus briefs on the board.
   drop <ticket> <kind> <value>        the open run no longer holds it
   answer <ticket> <n> -m <answer>     record the owner's answer to question n
   show <ticket>
-  list [--status <status>] [--all]
+  list [--status <status>] [--all] [--sprint <n>]
+                                       the active sprint's, or sprint n's with --sprint
   runs                                 every open run across projects, stalest first, with what each holds
   questions                            every open question across projects, oldest first
   needs                                everything waiting on the owner: questions, Blocked, stale runs, to test, to deploy
   blocked                              every brief and todo in a blocked/ folder, grouped by what it waits on
   sync                                 read every project's briefs into the board
+  sprint                               the active sprint: its number, start and ticket count
+  sprint start <n>                     close the active sprint and start sprint n (the owner's call only)
   guide                                the rules for using the board
 
 <ticket> is a key (atrium-83) or a brief number in this project (83).
@@ -64,6 +68,7 @@ const COMMANDS: Record<string, Command> = {
   needs,
   blocked,
   sync,
+  sprint,
   guide,
 };
 

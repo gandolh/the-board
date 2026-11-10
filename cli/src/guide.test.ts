@@ -92,9 +92,20 @@ describe("the guide", () => {
     expect(controller).toContain('-m "Tokens: <count>". Else leave it out.');
   });
 
+  it("says not to start a sprint unless the owner asks, what a start does, and that the sprint reads only read", () => {
+    const rules = guide.slice(guide.indexOf("## 9. Hard rules"), guide.indexOf("## 10."));
+    expect(rules).toContain("- Don't run `brief-board sync` unless the owner asks.\n- Don't run `brief-board sprint start` unless the owner asks.");
+    expect(rules).toContain(
+      "It closes the\n  active sprint and moves every ticket that is not Done into the next one,\n  and nothing undoes it.",
+    );
+    const board = guide.slice(guide.indexOf("## 1."), guide.indexOf("## 2."));
+    expect(board).toContain("A Done\nticket in a closed sprint is frozen: nothing writes to it.");
+    expect(board).toContain("`brief-board sprint`\nand `brief-board list --sprint <n>` only read.");
+  });
+
   it("stays short enough to read before every brief", () => {
     // 80 until runs, the section for a session that runs other agents, the report lines and holds;
-    // 115 until blocked/ folders.
-    expect(guide.split("\n").length).toBeLessThanOrEqual(125);
+    // 115 until blocked/ folders; 125 until sprints.
+    expect(guide.split("\n").length).toBeLessThanOrEqual(130);
   });
 });

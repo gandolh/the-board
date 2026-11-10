@@ -14,8 +14,12 @@ import {
   type ReleaseRequest,
   type ReleaseResponse,
   type RunsResponse,
+  type SprintDetailResponse,
+  type SprintsResponse,
   type StartRequest,
   type StartResponse,
+  type StartSprintRequest,
+  type StartSprintResponse,
   type SyncRequest,
   type SyncResponse,
   type TicketDetailResponse,
@@ -151,5 +155,17 @@ export class BoardClient {
 
   sync(body: SyncRequest): Promise<SyncResponse> {
     return this.call("POST", "/api/sync", body);
+  }
+
+  sprints(): Promise<SprintsResponse> {
+    return this.call("GET", "/api/sprints");
+  }
+
+  sprint(number: number): Promise<SprintDetailResponse> {
+    return this.call("GET", `/api/sprints/${number}`);
+  }
+
+  startSprint(body: StartSprintRequest): Promise<StartSprintResponse> {
+    return this.call("POST", "/api/sprints", body);
   }
 }

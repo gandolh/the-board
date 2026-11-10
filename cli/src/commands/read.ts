@@ -1,4 +1,5 @@
-import { statusSchema } from "@brief-board/shared";
+import { statusSchema, type Lane } from "@brief-board/shared";
+import { ApiRejected } from "../client.js";
 import { UsageError } from "../errors.js";
 import { ticketDetail, ticketLine } from "../format.js";
 import { statusArg, type Runtime } from "../runtime.js";
@@ -10,13 +11,22 @@ export async function show(rt: Runtime, args: string[]): Promise<void> {
   for (const line of ticketDetail(await rt.client().ticket(key))) rt.out(line);
 }
 
-/** `list [--status <s>] [--all]`: this project's tickets, or every project's. */
+const LIST_USAGE = "list [--status <s>] [--all] [--sprint <n>]";
+
+/**
+ * `list [--status <s>] [--all] [--sprint <n>]`: this project's tickets, or
+ * every project's. Without `--sprint` it is the board, which shows the active
+ * sprint; with it, every ticket in sprint n that is not hidden, a closed
+ * sprint's included. A sprint that does not exist is a usage mistake, exit 1.
+ */
 export async function list(rt: Runtime, args: string[]): Promise<void> {
-  const { values, positionals } = rt.parse(args, { status: { type: "string" }, all: { type: "boolean" } });
-  if (positionals.length > 0) throw new UsageError("list takes no arguments: list [--status <s>] [--all]");
+  const { values, positionals } = rt.parse(args, { status: { type: "string" }, all: { type: "boolean" }, sprint: { type: "string" } });
+  if (positionals.length > 0) throw new UsageError(`list takes no arguments: ${LIST_USAGE}`);
   const status = values.status === undefined ? undefined : statusArg(values.status);
+  if (values.sprint !== undefined && !/^\d+$/.test(values.sprint.trim())) throw new UsageError(`--sprint takes a sprint's number: ${LIST_USAGE}`);
+  const sprint = values.sprint === undefined ? undefined : Number.parseInt(values.sprint.trim(), 10);
   const project = values.all ? null : rt.project(values.project);
-  const { lanes } = await rt.client().board();
+  const lanes = sprint === undefined ? (await rt.client().board()).lanes : await sprintLanes(rt, sprint);
   let shown = 0;
   for (const lane of lanes) {
     if (project !== null && lane.project !== project) continue;
@@ -33,5 +43,26 @@ export async function list(rt: Runtime, args: string[]): Promise<void> {
       shown++;
     }
   }
-  if (shown === 0) rt.out(project ? `No tickets for ${project}${status ? ` in ${status}` : ""}.` : "No tickets.");
+  if (shown === 0) {
+    const inSprint = sprint === undefined ? "" : ` in sprint ${sprint}`;
+    rt.out(project ? `No tickets for ${project}${status ? ` in ${status}` : ""}${inSprint}.` : `No tickets${inSprint}.`);
+  }
+}
+
+/** Sprint `number`'s tickets as lanes, a project each in the order the board sends them. */
+async function sprintLanes(rt: Runtime, number: number): Promise<Lane[]> {
+  let tickets: Lane["tickets"];
+  try {
+    ({ tickets } = await rt.client().sprint(number));
+  } catch (err) {
+    if (err instanceof ApiRejected && err.status === 404) throw new UsageError(err.body.message);
+    throw err;
+  }
+  const lanes: Lane[] = [];
+  for (const ticket of tickets) {
+    const last = lanes.at(-1);
+    if (last?.project === ticket.project) last.tickets.push(ticket);
+    else lanes.push({ project: ticket.project, tickets: [ticket] });
+  }
+  return lanes;
 }

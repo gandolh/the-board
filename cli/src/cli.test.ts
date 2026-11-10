@@ -695,3 +695,70 @@ describe("blocked/ folders", () => {
     expect((await run(["blocked", "--project", "nobody-here"])).out).toBe("Nothing is blocked in nobody-here.");
   });
 });
+
+describe("sprints", () => {
+  // A board of its own, so closing a sprint leaves the other tests' board alone.
+  let sprintServer: Server;
+  let sprintUrl: string;
+  beforeAll(async () => {
+    sprintServer = await buildApp({ dbPath: ":memory:", token: TOKEN });
+    sprintUrl = await sprintServer.listen({ host: "127.0.0.1", port: 0 });
+  });
+  afterAll(async () => {
+    await sprintServer.close();
+  });
+  const on = (argv: string[]) => run(argv, { env: { BRIEF_BOARD_URL: sprintUrl, BRIEF_BOARD_TOKEN: TOKEN } });
+  const today = () => new Date().toISOString().slice(0, 10);
+
+  it("names the active sprint, starts the next on a fresh number only, and lists a closed one with --sprint", async () => {
+    const fresh = await on(["sprint"]);
+    expect(fresh.code).toBe(0);
+    // The migration dates Sprint 2 with SQLite's today, the same day as this test's unless it ran across midnight.
+    expect(fresh.out).toMatch(/^Sprint 2, since \d{4}-\d{2}-\d{2}, 0 tickets$/);
+    for (const [number, title] of [
+      ["7", "Plan a run"],
+      ["3", "Old"],
+    ]) {
+      expect((await on(["create", number!, "--title", title!, "--summary", ""])).code).toBe(0);
+    }
+    await on(["start", "3"]);
+    await on(["move", "3", "done"]);
+    expect((await on(["sprint"])).out).toMatch(/, 2 tickets$/);
+
+    const started = await on(["sprint", "start", "3"]);
+    expect(started).toMatchObject({ code: 0, out: "Sprint 3 started; 1 ticket moved, 1 stays in sprint 2." });
+    expect((await on(["sprint"])).out).toBe(`Sprint 3, since ${today()}, 1 ticket`);
+
+    const stale = await on(["sprint", "start", "3"]);
+    expect(stale.code).toBe(1);
+    expect(stale.err).toBe("brief-board: sprint 3 is the active one, so the next is 4, not 3; nothing changed");
+    for (const argv of [["sprint", "start"], ["sprint", "start", "four"], ["sprint", "stop"], ["sprint", "start", "4", "5"]]) {
+      expect((await on(argv)).code, argv.join(" ")).toBe(1);
+    }
+    expect((await on(["sprint"])).out).toMatch(/^Sprint 3, /);
+
+    // `list` is the active sprint; --sprint lists another, closed or not.
+    const active = (await on(["list"])).out;
+    expect(active).toContain("sports-app-07");
+    expect(active).not.toContain("sports-app-03");
+    const closed = await on(["list", "--sprint", "2"]);
+    expect(closed.code).toBe(0);
+    expect(closed.out).toMatch(/^sports-app-03 +Done +Old$/);
+    expect((await on(["list", "--sprint", "3", "--all"])).out).toMatch(/^sports-app-07 +To Do +Plan a run$/);
+    expect((await on(["list", "--sprint", "1"])).out).toBe("No tickets for sports-app in sprint 1.");
+    const missing = await on(["list", "--sprint", "9"]);
+    expect(missing.code).toBe(1);
+    expect(missing.err).toBe("brief-board: no sprint 9; the active sprint is 3");
+    expect((await on(["list", "--sprint", "two"])).code).toBe(1);
+
+    // A closed sprint's ticket is still shown by its key, and refuses a write.
+    expect((await on(["show", "3"])).out).toContain("Status:  Done");
+    const late = await on(["comment", "3", "-m", "late"]);
+    expect(late.code).toBe(2);
+    expect(late.err).toBe(`sports-app-03 is in sprint 2, which closed on ${today()}; a closed sprint's tickets are frozen and nothing writes to them`);
+  });
+
+  it("prints the rule in the guide", async () => {
+    expect((await on(["guide"])).out).toContain("Don't run `brief-board sprint start` unless the owner asks.");
+  });
+});

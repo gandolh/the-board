@@ -8,6 +8,9 @@ brief to done/, write the log entry, update the wiki.
 Backlog belongs to sync. It holds open todos' tickets, keyed <project>:<slug>,
 and blocked briefs' tickets: never start, move or comment on one. Promoting
 the todo, or moving the brief back to briefs/todo/, takes it off.
+Every ticket sits in a sprint, and the board shows the active one. A Done
+ticket in a closed sprint is frozen: nothing writes to it. `brief-board sprint`
+and `brief-board list --sprint <n>` only read.
 
 Run commands from inside the project's repo. A corpus whose folder name isn't
 its board name puts the name alone in corpus/board-name. <ticket> is a key, or
@@ -103,6 +106,9 @@ on. Moves made while it is down are lost; sync restores what the corpus knows.
 - Never write a path to brief-board into any repo. Repos name the command only.
 - Never put a secret in a message. Name a secret by its file and key.
 - Don't run `brief-board sync` unless the owner asks.
+- Don't run `brief-board sprint start` unless the owner asks. It closes the
+  active sprint and moves every ticket that is not Done into the next one,
+  and nothing undoes it.
 - Don't touch another project's tickets unless the owner asks.
 
 ## 10. The moves
