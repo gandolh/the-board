@@ -90,6 +90,25 @@ export const questionSchema = z.object({
 });
 export type Question = z.infer<typeof questionSchema>;
 
+/** A calendar day in UTC, `YYYY-MM-DD`, from the server's clock. */
+const calendarDay = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+
+/**
+ * A numbered stretch of work: 1, 2, 3... Exactly one sprint is active, with
+ * no end date, and the board shows its tickets. The others are closed: their
+ * Done tickets stay in them, frozen. Starting the next sprint closes the
+ * active one and moves every ticket that is not Done into the new one.
+ */
+export const sprintSchema = z.object({
+  number: z.number().int().positive(),
+  startedOn: calendarDay,
+  /** Null while it is the active sprint. */
+  endedOn: calendarDay.nullable(),
+  /** Its Done tickets, not counting hidden ones: what the Sprints page lists under it. */
+  doneCount: z.number().int().nonnegative(),
+});
+export type Sprint = z.infer<typeof sprintSchema>;
+
 /** The board's record of one brief. */
 export const ticketSchema = z.object({
   key: z.string(),
@@ -123,6 +142,11 @@ export const ticketSchema = z.object({
    * a ticket waits in Backlog.
    */
   blockedBy: z.string().nullable(),
+  /**
+   * The sprint it belongs to. New tickets join the active sprint; a ticket in
+   * a closed sprint is Done and frozen, and no write reaches it.
+   */
+  sprint: z.number().int().positive(),
 });
 export type Ticket = z.infer<typeof ticketSchema>;
 

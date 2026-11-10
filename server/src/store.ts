@@ -15,6 +15,7 @@ import {
   type Run,
   type RunEnding,
   type RunWithHolds,
+  type Sprint,
   type Status,
   type SummarySource,
   type Ticket,
@@ -31,7 +32,27 @@ import type { Db } from "./db.js";
  * out here on every read, from its last write and `staleMs`. A run's holds
  * belong to it: when it ends, what it still holds stays on it as leftovers,
  * and the next run starts with none.
+ *
+ * Every ticket sits in one sprint. The reads the board, the CLI and the owner
+ * work from (the board, older Done, needs, open runs, open questions) cover
+ * the active sprint only; a ticket by its key is found in any. A closed
+ * sprint's tickets are frozen: every write on one throws `SprintClosedError`,
+ * from one check (`writable`), which the API answers as 409 `sprint_closed`.
  */
+
+/** The active sprint's number, as SQL: the one sprint with no end date. */
+const ACTIVE_SPRINT = "(SELECT number FROM sprints WHERE ended_on IS NULL)";
+
+/** A write on a ticket in a closed sprint, which nothing may change. */
+export class SprintClosedError extends Error {
+  constructor(
+    readonly key: string,
+    readonly sprint: number,
+    readonly endedOn: string,
+  ) {
+    super(`${key} is in sprint ${sprint}, which closed on ${endedOn}; a closed sprint's tickets are frozen and nothing writes to them`);
+  }
+}
 
 /** How long a run may go without a write on its ticket before it reads as stale. */
 export const DEFAULT_STALE_HOURS = 4;
@@ -50,6 +71,14 @@ interface TicketRow {
   updated_at: string;
   status_changed_at: string;
   blocked_by: string | null;
+  sprint: number;
+}
+
+interface SprintRow {
+  number: number;
+  started_on: string;
+  ended_on: string | null;
+  done_count: number;
 }
 
 interface CommentRow {
@@ -138,7 +167,94 @@ export class Store {
         this.db.prepare("SELECT COUNT(*) AS n FROM questions WHERE ticket_key = ? AND answered_at IS NULL").get(row.key) as { n: number }
       ).n,
       blockedBy: row.blocked_by,
+      sprint: row.sprint,
     };
+  }
+
+  /**
+   * Refuse a write on a ticket in a closed sprint. Every write method calls
+   * it first; a key with no ticket passes, for the caller to answer.
+   */
+  private writable(key: string): void {
+    const row = this.db
+      .prepare("SELECT t.sprint, s.ended_on FROM tickets t JOIN sprints s ON s.number = t.sprint WHERE t.key = ?")
+      .get(key) as { sprint: number; ended_on: string | null } | undefined;
+    if (row && row.ended_on !== null) throw new SprintClosedError(key, row.sprint, row.ended_on);
+  }
+
+  /** Today, as a calendar day in UTC from the store's clock: a sprint's dates. */
+  today(): string {
+    return this.now().slice(0, 10);
+  }
+
+  private toSprint(row: SprintRow): Sprint {
+    return { number: row.number, startedOn: row.started_on, endedOn: row.ended_on, doneCount: row.done_count };
+  }
+
+  /** Sprints with their Done count (hidden tickets aside), matching `where`. */
+  private sprintRows(where: string, params: unknown[] = []): SprintRow[] {
+    return this.db
+      .prepare(
+        `SELECT s.number, s.started_on, s.ended_on,
+                (SELECT COUNT(*) FROM tickets t WHERE t.sprint = s.number AND t.status = 'done' AND t.hidden = 0) AS done_count
+         FROM sprints s WHERE ${where} ORDER BY s.number DESC`,
+      )
+      .all(...params) as SprintRow[];
+  }
+
+  /** The active sprint. The migration makes one and the schema allows no second. */
+  activeSprint(): Sprint {
+    return this.toSprint(this.sprintRows("s.ended_on IS NULL")[0]!);
+  }
+
+  /** Every sprint, the newest first. */
+  sprints(): Sprint[] {
+    return this.sprintRows("1").map((row) => this.toSprint(row));
+  }
+
+  /** Sprint `number`, or null when there is none. */
+  sprint(number: number): Sprint | null {
+    const row = this.sprintRows("s.number = ?", [number])[0];
+    return row ? this.toSprint(row) : null;
+  }
+
+  /**
+   * A sprint's tickets, not hidden, by project as the board orders its lanes
+   * and the newest status change first in each: for a closed sprint, its Done
+   * tickets newest Done first, as the older Done page orders them.
+   */
+  sprintTickets(number: number): Ticket[] {
+    const rows = this.db
+      .prepare(
+        `SELECT * FROM tickets t WHERE t.sprint = ? AND t.hidden = 0
+         ORDER BY t.project COLLATE NOCASE, t.project, t.status_changed_at DESC, t.key`,
+      )
+      .all(number) as TicketRow[];
+    return rows.map((row) => this.toTicket(row));
+  }
+
+  /**
+   * Close the active sprint on `today` and start the next, `expected`, which
+   * must be the active number plus one, so a repeated request starts one
+   * sprint, not two. Every ticket that is not Done moves to the new sprint,
+   * hidden ones too, with its runs, questions, comments and history, which
+   * hang off the ticket; the Done ones stay, frozen. A ticket's sprint is a
+   * column, not an event: no history row, and `updated_at` stays. `moved`
+   * counts what moved and is not hidden.
+   */
+  startSprint(
+    expected: number,
+    today: string,
+  ): { ok: true; sprint: Sprint; closed: Sprint; moved: number } | { ok: false; active: Sprint } {
+    return this.db.transaction(() => {
+      const active = this.activeSprint();
+      if (expected !== active.number + 1) return { ok: false as const, active };
+      this.db.prepare("UPDATE sprints SET ended_on = ? WHERE number = ?").run(today, active.number);
+      this.db.prepare("INSERT INTO sprints (number, started_on) VALUES (?, ?)").run(expected, today);
+      this.db.prepare("UPDATE tickets SET sprint = ? WHERE sprint = ? AND status <> 'done'").run(expected, active.number);
+      const moved = this.db.prepare("SELECT COUNT(*) FROM tickets WHERE sprint = ? AND hidden = 0").pluck().get(expected) as number;
+      return { ok: true as const, sprint: this.sprint(expected)!, closed: this.sprint(active.number)!, moved };
+    })();
   }
 
   private toQuestion(row: QuestionRow): Question {
@@ -160,12 +276,12 @@ export class Store {
     );
   }
 
-  /** Every open question across projects, or one project's, oldest first. */
+  /** Every open question in the active sprint, across projects or in one project, oldest first. */
   openQuestions(project?: string): OpenQuestionEntry[] {
     const rows = this.db
       .prepare(
         `SELECT q.*, t.project, t.title, t.status FROM questions q JOIN tickets t ON t.key = q.ticket_key
-         WHERE q.answered_at IS NULL AND (@project IS NULL OR t.project = @project)
+         WHERE q.answered_at IS NULL AND t.sprint = ${ACTIVE_SPRINT} AND (@project IS NULL OR t.project = @project)
          ORDER BY q.asked_at, q.id`,
       )
       .all({ project: project ?? null }) as (QuestionRow & { project: string; title: string; status: Status })[];
@@ -175,9 +291,10 @@ export class Store {
   /**
    * What waits on the owner, grouped by kind in the order the owner reads it
    * (open questions, Blocked, stale runs, Ready for test, Ready for deploy),
-   * oldest first in each. Questions and stale runs count wherever their
-   * ticket is, as `questions` and `runs` list them; the three columns count
-   * only tickets on the board, not those hidden by a superseded brief.
+   * oldest first in each, in the active sprint. Questions and stale runs
+   * count wherever their ticket is, as `questions` and `runs` list them; the
+   * three columns count only tickets on the board, not those hidden by a
+   * superseded brief.
    */
   needs(project?: string): Need[] {
     const inProject = (candidate: string) => project === undefined || candidate === project;
@@ -206,7 +323,8 @@ export class Store {
     const rows = this.db
       .prepare(
         `SELECT * FROM tickets
-         WHERE hidden = 0 AND status IN ('blocked', 'ready_for_test', 'ready_for_deploy') AND (@project IS NULL OR project = @project)
+         WHERE hidden = 0 AND sprint = ${ACTIVE_SPRINT} AND status IN ('blocked', 'ready_for_test', 'ready_for_deploy')
+           AND (@project IS NULL OR project = @project)
          ORDER BY status_changed_at, key`,
       )
       .all({ project: project ?? null }) as TicketRow[];
@@ -238,6 +356,7 @@ export class Store {
   /** Ask questions on the ticket, numbered on from its last. */
   ask(key: string, texts: readonly string[] | undefined, author: string): Question[] {
     if (!texts?.length) return [];
+    this.writable(key);
     const at = this.now();
     const last = (this.db.prepare("SELECT MAX(number) AS n FROM questions WHERE ticket_key = ?").get(key) as { n: number | null }).n ?? 0;
     const insert = this.db.prepare("INSERT INTO questions (ticket_key, number, text, author, asked_at) VALUES (?, ?, ?, ?, ?)");
@@ -260,6 +379,7 @@ export class Store {
     author: string,
   ): { ok: true; ticket: Ticket; question: Question; comment: Comment } | { ok: false; open: number[] } {
     return this.db.transaction(() => {
+      this.writable(key);
       const at = this.now();
       const updated = this.db
         .prepare("UPDATE questions SET answer = ?, answered_by = ?, answered_at = ? WHERE ticket_key = ? AND number = ? AND answered_at IS NULL")
@@ -333,7 +453,7 @@ export class Store {
   }
 
   /**
-   * Every open run across projects, stalest (the oldest last write) first,
+   * Every open run in the active sprint, stalest (the oldest last write) first,
    * with what each holds. With `holding`, only the runs that hold that kind
    * and value.
    */
@@ -341,7 +461,7 @@ export class Store {
     const rows = this.db
       .prepare(
         `SELECT r.*, t.project, t.title FROM runs r JOIN tickets t ON t.key = r.ticket_key
-         WHERE r.ended_at IS NULL
+         WHERE r.ended_at IS NULL AND t.sprint = ${ACTIVE_SPRINT}
            AND (@kind IS NULL OR EXISTS (SELECT 1 FROM holds h WHERE h.run_id = r.id AND h.kind = @kind AND h.value = @value))
          ORDER BY r.last_heard_at, r.id`,
       )
@@ -357,6 +477,7 @@ export class Store {
    */
   hold(key: string, kind: HoldKind, value: string): { held: boolean; run: RunWithHolds; clashes: OpenRunEntry[] } | null {
     return this.db.transaction(() => {
+      this.writable(key);
       const open = this.openRun(key);
       if (!open) return null;
       const clashes = this.openRuns({ kind, value }).filter((entry) => entry.run.id !== open.id);
@@ -379,6 +500,7 @@ export class Store {
     value: string,
   ): { ok: true; run: RunWithHolds } | { ok: false; reason: "no_open_run" } | { ok: false; reason: "not_held"; holds: Hold[] } {
     return this.db.transaction(() => {
+      this.writable(key);
       const open = this.openRun(key);
       if (!open) return { ok: false as const, reason: "no_open_run" as const };
       const deleted = this.db.prepare("DELETE FROM holds WHERE run_id = ? AND kind = ? AND value = ?").run(open.id, kind, value);
@@ -390,6 +512,7 @@ export class Store {
 
   /** Open a run. The caller has made sure none is open: the schema allows one per ticket. */
   openNewRun(key: string, author: string, message: string | null): void {
+    this.writable(key);
     const at = this.now();
     this.db
       .prepare("INSERT INTO runs (ticket_key, author, message, started_at, last_heard_at) VALUES (?, ?, ?, ?, ?)")
@@ -398,16 +521,19 @@ export class Store {
 
   /** A write on the ticket: its open run, if any, was heard from now. */
   touchRun(key: string): void {
+    this.writable(key);
     this.db.prepare("UPDATE runs SET last_heard_at = ? WHERE ticket_key = ? AND ended_at IS NULL").run(this.now(), key);
   }
 
   /** The open run passes to `author`, as a new session resumes the work. */
   passRun(key: string, author: string): void {
+    this.writable(key);
     this.db.prepare("UPDATE runs SET author = ?, last_heard_at = ? WHERE ticket_key = ? AND ended_at IS NULL").run(author, this.now(), key);
   }
 
   /** End the open run, if any. A `moved` run keeps the column its ticket went to. */
   endRun(key: string, how: RunEnding, to: Status | null = null): void {
+    this.writable(key);
     this.db
       .prepare("UPDATE runs SET ended_at = ?, ended = ?, ended_status = ? WHERE ticket_key = ? AND ended_at IS NULL")
       .run(this.now(), how, to, key);
@@ -418,7 +544,11 @@ export class Store {
     return row ? this.toTicket(row) : null;
   }
 
-  /** A project's tickets: its todos' (no number) first by key, then its briefs' by number. */
+  /**
+   * A project's tickets in every sprint, each carrying its sprint: its todos'
+   * (no number) first by key, then its briefs' by number. Sync acts on the
+   * active sprint's only, and needs the rest to leave them be.
+   */
   projectTickets(project: string): Ticket[] {
     return (this.db.prepare("SELECT * FROM tickets WHERE project = ? ORDER BY number, key").all(project) as TicketRow[]).map((row) =>
       this.toTicket(row),
@@ -427,6 +557,7 @@ export class Store {
 
   /** Replace a ticket's labels. The project is its project tag, never a label. */
   setTags(key: string, project: string, tags: readonly string[]): void {
+    this.writable(key);
     const labels = [...new Set(tags.map((tag) => tag.trim()).filter((tag) => tag && tag !== project))];
     this.db.prepare("DELETE FROM ticket_tags WHERE ticket_key = ?").run(key);
     const insert = this.db.prepare("INSERT INTO ticket_tags (ticket_key, tag) VALUES (?, ?)");
@@ -434,9 +565,10 @@ export class Store {
   }
 
   /**
-   * A new ticket: a brief's in To Do, a todo's (no number) in Backlog, and
-   * a blocked brief's in Backlog too, since it waits on its condition. The
-   * schema holds that a ticket with no number is in Backlog.
+   * A new ticket, in the active sprint: a brief's in To Do, a todo's (no
+   * number) in Backlog, and a blocked brief's in Backlog too, since it waits
+   * on its condition. The schema holds that a ticket with no number is in
+   * Backlog.
    */
   insertTicket(fields: {
     key: string;
@@ -455,8 +587,8 @@ export class Store {
     const status: Status = fields.number === null || blockedBy !== null ? "backlog" : "todo";
     this.db
       .prepare(
-        `INSERT INTO tickets (key, project, number, title, summary, summary_source, brief_path, status, hidden, created_at, updated_at, status_changed_at, blocked_by)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)`,
+        `INSERT INTO tickets (key, project, number, title, summary, summary_source, brief_path, status, hidden, created_at, updated_at, status_changed_at, blocked_by, sprint)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ${ACTIVE_SPRINT})`,
       )
       .run(fields.key, fields.project, fields.number, fields.title, fields.summary, fields.summarySource, fields.briefPath, status, at, at, at, blockedBy);
     this.addHistory(fields.key, null, status, fields.author, fields.via);
@@ -464,6 +596,7 @@ export class Store {
 
   /** Remove a ticket with its labels, comments and history. Only sync does, for a todo that is gone. */
   deleteTicket(key: string): void {
+    this.writable(key);
     this.db.prepare("DELETE FROM tickets WHERE key = ?").run(key);
   }
 
@@ -472,6 +605,7 @@ export class Store {
     key: string,
     fields: Partial<{ title: string; summary: string; summarySource: SummarySource; briefPath: string; hidden: boolean; blockedBy: string | null }>,
   ): void {
+    this.writable(key);
     const columns: [string, string | number | null | undefined][] = [
       ["title", fields.title],
       ["summary", fields.summary],
@@ -489,6 +623,7 @@ export class Store {
 
   /** Change the status and record it. The caller has already decided it is allowed. */
   setStatus(key: string, from: Status, to: Status, author: string, via: "move" | "sync"): void {
+    this.writable(key);
     const at = this.now();
     this.db.prepare("UPDATE tickets SET status = ?, status_changed_at = ?, updated_at = ? WHERE key = ?").run(to, at, at, key);
     this.addHistory(key, from, to, author, via);
@@ -504,6 +639,7 @@ export class Store {
     key: string,
     fields: { author: string; body: string; role: MessageRole | null; move: { from: Status; to: Status } | null },
   ): Comment {
+    this.writable(key);
     const createdAt = this.now();
     const result = this.db
       .prepare("INSERT INTO comments (ticket_key, author, body, role, move_from, move_to, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
@@ -550,6 +686,7 @@ export class Store {
     return this.db.transaction(() => {
       const ticket = this.getTicket(key);
       if (!ticket) return null;
+      this.writable(key);
       const check = checkMove(ticket.status, to, message);
       if (!check.ok) return { ok: false as const, check };
       const body = message?.trim();
@@ -587,6 +724,7 @@ export class Store {
     return this.db.transaction(() => {
       const ticket = this.getTicket(key);
       if (!ticket) return null;
+      this.writable(key);
       if (ticket.status !== "in_progress") {
         const moved = this.move(key, "in_progress", message, author, questions);
         if (!moved?.ok) return moved;
@@ -619,6 +757,7 @@ export class Store {
    */
   release(key: string, message: string, author: string): { ticket: Ticket; run: RunWithHolds; comment: Comment } | null {
     return this.db.transaction(() => {
+      this.writable(key);
       const open = this.openRun(key);
       if (!open) return null;
       this.endRun(key, "released");
@@ -633,16 +772,17 @@ export class Store {
   }
 
   /**
-   * The board: one lane per project with anything visible, alphabetically.
-   * Hidden tickets never show; Done ones only for `doneDays` after they got
-   * there. With `tag`, only tickets carrying that label.
+   * The board: the active sprint, one lane per project with anything
+   * visible, alphabetically. Hidden tickets never show; Done ones only for
+   * `doneDays` after they got there. With `tag`, only tickets carrying that
+   * label.
    */
   board(doneDays: number, tag?: string): Lane[] {
     const cutoff = this.doneCutoff(doneDays);
     const rows = this.db
       .prepare(
         `SELECT * FROM tickets t
-         WHERE t.hidden = 0
+         WHERE t.hidden = 0 AND t.sprint = ${ACTIVE_SPRINT}
            AND (t.status <> 'done' OR t.status_changed_at >= @cutoff)
            AND (@tag IS NULL OR EXISTS (SELECT 1 FROM ticket_tags g WHERE g.ticket_key = t.key AND g.tag = @tag))
          ORDER BY t.project COLLATE NOCASE, t.project, t.number, t.key`,
@@ -658,8 +798,8 @@ export class Store {
   }
 
   /**
-   * The older Done page: Done tickets, not hidden, that got there before the
-   * cutoff `olderThanDays` back. The board keeps those at or after the same
+   * The older Done page: the active sprint's Done tickets, not hidden, that
+   * got there before the cutoff `olderThanDays` back. The board keeps those at or after the same
    * cutoff, so with the same days a ticket is on one of the two, never both.
    * By project as the board orders its lanes, newest Done first in each.
    * With `tag`, only tickets carrying that label.
@@ -668,7 +808,7 @@ export class Store {
     const rows = this.db
       .prepare(
         `SELECT * FROM tickets t
-         WHERE t.hidden = 0
+         WHERE t.hidden = 0 AND t.sprint = ${ACTIVE_SPRINT}
            AND t.status = 'done'
            AND t.status_changed_at < @cutoff
            AND (@tag IS NULL OR EXISTS (SELECT 1 FROM ticket_tags g WHERE g.ticket_key = t.key AND g.tag = @tag))

@@ -24,6 +24,7 @@ const ticket = (fields: Partial<Ticket>): Ticket => ({
   run: null,
   openQuestions: 0,
   blockedBy: null,
+  sprint: 2,
   ...fields,
 });
 

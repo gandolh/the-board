@@ -33,6 +33,7 @@ describe("the API contract", () => {
       run: null,
       openQuestions: 0,
       blockedBy: null,
+      sprint: 2,
     };
     expect(ticketSchema.parse(ticket)).toEqual(ticket);
   });
@@ -97,6 +98,7 @@ describe("the API contract", () => {
       run: null,
       openQuestions: 0,
       blockedBy: null,
+      sprint: 2,
     });
     expect(ticket.number).toBeNull();
   });
