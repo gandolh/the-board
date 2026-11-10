@@ -494,3 +494,24 @@ folders by `Store`'s call graph, wires the 16 existing response schemas
 through the zod provider, and fixes a second zod copy the provider resolves
 (4.6.5 beside 4.5.4); no response schema has a transform. No bump brief.
 `.planned-roots` gained `.claude`.
+
+## [2026-11-10] revise | Briefs 16-20 follow the owner's grilling
+
+The owner's answers and the technical calls of 2026-11-10 are folded into the
+briefs. 16: `house-style` is vendored (a copy with a version header and a
+`house-style:sync` script), so no git dependency and no Dockerfile change;
+Prettier width 120 instead of 150, at the measured cost of 1,088 lines (11.6%)
+in 43 files; `!` is a warning in tests (30 errors in source, 35 warnings in
+tests). 17: the needs strip becomes a `RadioGroup` (Q41/Q57: a filter), so
+clicking the chosen count no longer clears it and "Show all" does; no
+jsdom, since the wrappers hold no logic (Q60); parity is "close enough"
+(Q19). 18: token names follow the family (`surface`, `ink`, `accent`, `line`,
+`danger`; `--blocked` and `--danger` become one token); a Light / Dark /
+System switch, light on a first visit, dark tokens under `data-theme`, kept on
+the device (Q18); the 14 px root moves onto `body` (Q44); the six font sizes
+become a named scale (Q62). 19: the store stays whole in `server/src/db/store.ts`
+(Q54), so features are route groups with no cross-feature imports; the
+accounts decorator goes (Q56); the entry rename changes the Dockerfile's `CMD`
+and needs no vps-deploy edit (Q1); the error handler keeps the flat body
+(Q43). New brief 20, a redesign with Hallmark on the estate board (Q39). No
+measurement changed.

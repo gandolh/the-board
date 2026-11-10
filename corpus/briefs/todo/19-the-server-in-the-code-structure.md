@@ -5,15 +5,12 @@
 - In brief-board: brief 16, for the gate, `no-process-env` (from `eslint-plugin-n`, a warning until this brief) and `.claude/rules/server.md`.
 - In the owner's skills library:
   - brief 03, *A code-structure skill for the Fastify + React apps*: rules 1-11, the `server-skeleton.md` reference, `zod-type-provider.md`, `migrating-a-server.md`, `check-structure.mjs`, and the dependency-cruiser and knip presets;
-  - brief 16, *The Fastify servers adopt the code structure*: the-board's row (flat, `store.ts` 685 lines, "split `store.ts` by feature") and the method;
+  - brief 16, *The Fastify servers adopt the code structure*: the-board's row (flat, `store.ts` 685 lines, "split `store.ts` by feature", which the owner declined: Q54 keeps it whole) and the method;
   - brief 15, *Enforce the base-ui and code-structure skills in every repo*: `check-structure` runs `--warn-only` until this brief is done.
 - The owner's grilling of 2026-11-10:
-  - Q1 (how vps-deploy starts the service);
-  - Q23 (`server/src/features/`);
-  - Q24 (plugin options, explicit registration);
-  - Q25 (response schemas everywhere);
-  - Q27 (the test runner);
-  - the new questions in decisions 2, 4 and 7.
+  - Q1 (how services start: the Dockerfile's `CMD`);
+  - Q23 (`server/src/features/`), Q24 (plugin options, explicit registration), Q25 (response schemas everywhere), Q27 (the test runner);
+  - Q43 (the error handler), Q53 (streams exempt), Q54 (the store), Q55 (where a schema lives), Q56 (one error class, no decorator seam).
 
 **Order:** after 16. It touches no file that 17 or 18 touch except `package-lock.json`, so it may run before them, but never at the same time as either.
 
@@ -29,7 +26,7 @@ The owner asked on 2026-11-09 for one researched code structure, enforced in eve
 What is missing:
 
 - the `server.ts` name, and two stray readers of the environment;
-- feature folders: `app.ts` is 539 lines with all 16 routes in it, `store.ts` is 685 and `app.test.ts` 1,336;
+- feature folders: `app.ts` is 539 lines with all 16 routes in it, and `app.test.ts` is 1,336 (`store.ts`, 685 lines, stays whole in `db/`);
 - route schemas wired in: today 13 handler calls of a local `parse()` plus `keyOf()` do the validation by hand, and nothing validates or filters a reply;
 - `fastify-plugin` on the cross-cutting parts, `close-with-grace`, timeouts and `trustProxy`.
 
@@ -60,23 +57,23 @@ So no transform-free output shape is needed. A test keeps it that way (step 5): 
 | `config.ts`, `config.test.ts` | 153, 53 | the same | Gains `loadEnvFile()` (from `index.ts:21-26` and `seed.ts:28-33`), `resolveDbPath()` (`index.ts:36`, `seed.ts:68-69`) and `loadSeedConfig()` (`seed.ts:61-62`). `loadConfig(env)` gets `env = process.env` as its default. `config.ts` imports `DEFAULT_STALE_HOURS` from `store.ts` (line 3): it moves to `config.ts`, which is where the setting lives. |
 | `accounts.ts` | 29 | `server/src/plugins/auth/accounts.ts` | `openAccounts`, `seedUser`, `USER_ROLE`. `seed.ts` and one test import it. The guard goes to `server/src/plugins/auth/index.ts` beside it. |
 | `db.ts`, `db.test.ts` | 198, 116 | the same | Opens the database and runs the `user_version` migrations; no feature owns it. |
-| `store.ts` | 685 | `server/src/features/{runs,tickets,questions,board}/store.ts` and `server/src/features/tickets/service.ts` | See the table below. `Store` is a class with three parameter properties (`store.ts:104, 106, 108`); each feature gets a `createXStore(…)` factory returning a documented interface, the house shape, so brief 16's fix to those three lines is short-lived. |
-| `sync.ts` | 233 | `server/src/features/sync/service.ts`, plus `routes.ts` | `runSync(store, request)`; its calls become the ticket, run and question stores'. |
+| `store.ts` | 685 | `server/src/db/store.ts` | **Decision 2.** The `Store` class stays whole, as the data layer beside `db.ts`. Its three parameter properties (`store.ts:104, 106, 108`) are brief 16's fix and stay fixed. Rule 11's 400-line warning stays on this file (Q54). |
+| `sync.ts` | 233 | `server/src/features/sync/service.ts`, plus `routes.ts` | `runSync(store, request)`; it keeps calling the one `Store`. |
 | `seed.ts` | 82 | the same, at the `src/` root | A CLI: the container runs `node server/dist/seed.js` (`docs/owner-setup.md:136`). Its environment reads move to `config.ts`. |
 | (new) | | `server/src/testing/buildTestApp.ts` | Skill name; there is no helper today (six tests call `buildApp` inline: `app.test.ts:39, 495, 1168, 1218, 1232, 1255`). |
 
-**The features, from `Store`'s call graph** (each method's `this.` calls, measured with the TypeScript parser on 2026-11-10). Every line range is in `server/src/store.ts`:
+**The features are route groups over the one `Store`** (each method's `this.` calls, measured with the TypeScript parser on 2026-11-10, say which store methods a feature's routes use). Line ranges are in `server/src/store.ts`:
 
-| Feature | Store methods (lines) | Routes | Imports |
+| Feature | Store methods its routes use (lines) | Routes | Imports |
 |---|---|---|---|
-| `runs` | runs, holds and the run lifecycle: `toRun` … `endRun` (283-414, about 130 lines) | `GET /api/runs`, `POST …/hold`, `POST …/drop` | nothing but the clock |
-| `tickets` | `tags`, `toTicket`, `getTicket` … `history` (115-142, 416-533); the service: `move`, `start`, `release` (540-633) | `GET` and `PUT /api/tickets/:key`, `POST …/moves`, `…/start`, `…/release`, `…/comments` | `runs` (`toTicket` calls `latestRun`, `store.ts:121-142`), `questions` (`move`, `start` and the comment route call `ask`) |
-| `questions` | `toQuestion`, `questions`, `openQuestions`, `ask`, `answer` (144-173, 239-281) | `GET /api/questions`, `POST …/questions/:number/answer` | `tickets` (`answer` calls `getTicket` and `addComment`), `runs` (`touchRun`) |
-| `board` | `needs`, `board`, `olderDone`, `doneCutoff` (182-236, 640-684) | `GET /api/board`, `/api/done`, `/api/needs` | `tickets`, `questions`, `runs` |
-| `sync` | `runSync` (`sync.ts`) | `POST /api/sync` | `tickets`, `runs` |
+| `runs` | runs, holds and the run lifecycle: `toRun` … `endRun` (283-414, about 130 lines) | `GET /api/runs`, `POST …/hold`, `POST …/drop` | `server/src/db/store.ts` |
+| `tickets` | `tags`, `toTicket`, `getTicket` … `history` (115-142, 416-533); `move`, `start`, `release` (540-633) | `GET` and `PUT /api/tickets/:key`, `POST …/moves`, `…/start`, `…/release`, `…/comments` | `server/src/db/store.ts` |
+| `questions` | `toQuestion`, `questions`, `openQuestions`, `ask`, `answer` (144-173, 239-281) | `GET /api/questions`, `POST …/questions/:number/answer` | `server/src/db/store.ts` |
+| `board` | `needs`, `board`, `olderDone`, `doneCutoff` (182-236, 640-684) | `GET /api/board`, `/api/done`, `/api/needs` | `server/src/db/store.ts` |
+| `sync` | `runSync` (`sync.ts`, which becomes the feature's `service.ts`) | `POST /api/sync` | `server/src/db/store.ts` |
 | `health` | | `GET /api/health` | |
 
-`tickets` and `questions` import each other's stores, and `tickets` and `runs` do (the routes of `runs` check the ticket's status). Each only through the other's `index.ts`, which exports the store factory and types, never the routes, so there is no module cycle and dependency-cruiser's `no-circular` passes. If step 4's cruiser run finds one, the usual fix is the one Almanac's `removeCalendar` took: pass the structural function the callee needs (`{ getTicket(key): Ticket | null }`) instead of importing the type.
+Because the store stays whole (Q54), no feature imports another: each imports `server/src/db/store.ts` and `shared/`, so there is no cross-feature import and no module cycle for dependency-cruiser's `no-circular` to find. A feature's `index.ts` exports its plugin, which `app.ts` registers.
 
 ### Every reader of the environment
 
@@ -152,7 +149,7 @@ The 404 handler stays in `app.ts`.
 - the root `package.json:19`: `start`;
 - `server/package.json`: `main` (line 7), `dev` (`tsx watch src/index.ts`, line 10), `start` (line 11).
 
-`server/package.json` has no `exports`, and nothing imports `@brief-board/server`. vps-deploy builds this image with its `brief-board` stack, so the `CMD` is the likely start command, but its stack may also name the file. That is Q1; vps-deploy wasn't readable here. See decision 5.
+`server/package.json` has no `exports`, and nothing imports `@brief-board/server`. The container starts that file path, so the `CMD` is the one place that names it (Q1; decision 5).
 
 ### What the tests do now
 
@@ -179,14 +176,14 @@ The 404 handler stays in `app.ts`.
 
 ## Owner decisions (defaults this brief builds)
 
-1. **`server/src/features/<name>/`** (Q23). Default: yes, as in the table above.
-2. **Where the features' lines fall.** The split above follows `Store`'s call graph, but `tickets`↔`questions` and `tickets`↔`runs` import each other's stores. Default: keep the five by the table, mutual imports through `index.ts` only. The alternative is folding `runs` into `tickets`, which makes one store of about 460 lines, over rule 11's 400. *New question for the grilling.*
+1. **`server/src/features/<name>/`** (Q23, Q24, Q25, decided 2026-11-10, technical calls). Yes, as in the tables above, with typed plugin options and a response schema on every route. Streams and binary routes would be exempt (Q53); this server has none.
+2. **The store stays whole** (Q54, decided 2026-11-10, technical call). `Store` stays one class in `server/src/db/store.ts`, with the tickets, runs, questions and board methods together. The features are route groups over it, so the mutual `tickets`, `questions` and `runs` imports a split would have needed never arise. Folding or carving the store is not in this brief.
 3. **zod 4.6.7 and one copy.** Default: bump `shared` and `server` to 4.6.7, pinned, and add the root `overrides` entry. It is the only way found to avoid the provider resolving a second copy, and it closes the open audit high. The Dockerfile's comment about the two copies is rewritten in the same commit. If the owner declines the bump, the provider's copy must be pinned equal to `shared`'s, by another route.
-4. **The error body.** The code-structure skill's rule 8 names `{ error, message, issues? }`, and brief-board sends `{ code, message, allowed? }`, which its CLI and its board both parse. Default: keep brief-board's shape; the rule's substance (one handler, no 5xx detail, a validation code) holds. *New question for the grilling*: does the skill prescribe a shape or only the handler? (Almanac's brief asks the same, with a third shape.)
-5. **The entry file** (Q1). Default: rename to `server.ts`, and change the Dockerfile, the scripts and `main` in the same commit. If vps-deploy's brief-board stack names `dist/index.js`, change it there in the same session as an owner step (the exact edit handed over), or keep `index.ts` and record the exception in `scripts/conventions.json`.
-6. **The test runner** (Q27). Default: vitest stays, and `inject()` tests stay (the tests already use them).
-7. **The accounts decorator.** `app.decorate("accounts", …)` and its `declare module "fastify"` (`app.ts:121-125, 198`) exist for one test (`app.test.ts:1268`). The skill allows decorators only for request-scoped values. Default: leave it, since nothing else reads it, and note it in the outcome. *New question for the grilling*: replace it by returning the accounts from a test-only helper?
-8. **The test helper's name.** Default: `server/src/testing/buildTestApp.ts`, the skill's name, since there is no helper to rename. It builds and closes the app per test with the fixed token and clock the current tests use.
+4. **The error handler** (Q43, decided 2026-11-10, technical call). One handler, keeping brief-board's flat body `{ code, message, allowed? }`, which its CLI and its board both parse. It passes Fastify's own 4xx through and never echoes a thrown message to the client. One error class stays (Q56).
+5. **The entry file and the deploy** (Q1, fact). Services run in a container built from `infrastructure/Dockerfile`, which starts a file path. Rename to `server.ts`, and change the Dockerfile's `CMD`, the scripts and `main` in the same commit. The repo owns that file, and the build runs `npm ci` and `tsc -b` only, so there is no vps-deploy edit and the deploy is left alone.
+6. **The test runner** (Q27, decided 2026-11-10, technical call). vitest stays, and `inject()` tests stay (the tests already use them).
+7. **The accounts decorator goes** (Q56, decided 2026-11-10, technical call). `app.decorate("accounts", …)` and its `declare module "fastify"` (`app.ts:121-125, 198`) exist for one test (`app.test.ts:1268`), and decorators are not a test seam. `buildApp` takes its accounts through its options, and `buildTestApp` returns them to the test. The guard reads them from the plugin's options.
+8. **The test helper's name.** `server/src/testing/buildTestApp.ts`, the skill's name, since there is no helper to rename. It builds and closes the app per test with the fixed token and clock the current tests use.
 9. **Timeouts and proxy.** Defaults:
    - `connectionTimeout: 10_000`;
    - `requestTimeout: 30_000`; the longest route is `POST /api/sync`, one transaction over every project;
@@ -203,7 +200,7 @@ The 404 handler stays in `app.ts`.
 - `infrastructure/Dockerfile`: the `CMD` line and the zod comment.
 - `.dependency-cruiser.cjs` (new, from the skill's preset).
 - `eslint.config.js`: `no-process-env` (from `eslint-plugin-n`), from warning to error.
-- `scripts/conventions.json`, for any exception from decisions 5 or 7.
+- `scripts/conventions.json`, for the roots (`server/src`, `shared/src`) and any exception the checker needs.
 - `.claude/rules/server.md`: the structure lines.
 - `docs/architecture.md:16`: it names `server/src/app.ts`, `store.ts` and `sync.ts`.
 - `docs/owner-setup.md:136` only if the seed's path changes (it doesn't).
@@ -220,7 +217,7 @@ The 404 handler stays in `app.ts`.
 - `web/` and `cli/`. A response schema that drops a field they read is a finding: fix the schema, not the client. `cli/src/cli.test.ts` imports `server/src/app.ts` by URL: that path and `buildApp`'s call shape stay.
 - `shared/` schemas and their behaviour.
 - `server/vendor/`: generated.
-- The deploy beyond the `CMD` line. vps-deploy edits are handed to the owner.
+- The deploy beyond the Dockerfile's `CMD` line and the zod comment. There is no vps-deploy edit (decision 5).
 - Behaviour: status codes, error codes and messages, and every route's JSON apart from fields the comparison shows were leaks.
 
 ## What to do
@@ -233,15 +230,15 @@ Follow `migrating-a-server.md`. One commit per step; after each, `npm run check`
    - Save the JSON of every route above, with the CLI's token (a `curl` loop is enough), with fixed query parameters and the server's clock fixed through a scratch copy of the database. Save the error replies of the cases the tests name (a bad key, a bad body, a missing ticket, a sync-owned ticket).
 2. **zod, and the packages.** Set zod 4.6.7 in `shared` and `server`, add the root override, and rewrite the Dockerfile's comment. Add the five packages, pinned. Check `npm ls zod` shows one copy, `docker build -f infrastructure/Dockerfile .` passes, and the image still answers its health check.
 3. **`config.ts` and the split.** The three new helpers in `config.ts`. `seed.ts` uses them. `index.ts` becomes `server.ts`, with the entry-file changes (decision 5), `close-with-grace`, the timeouts and `trustProxy`. `no-process-env` now finds nothing; make it an error.
-4. **The error plugin, the auth plugin and the test helper.** `server/src/plugins/errors.ts`, `server/src/plugins/auth/index.ts` (wrapped in `fastify-plugin`, so `wardAuth` stays a root hook) and `server/src/testing/buildTestApp.ts`, with `app.test.ts` moved onto the helper. Every test passes unchanged.
-5. **Feature folders.** `git mv` and split, file by file per the tables, so history follows: `runs`, then `tickets`' store, `questions`, `board`, `sync`, `health`, one commit each. Add the `index.ts` files, and `.dependency-cruiser.cjs`; check that a deliberate import of `server/src/features/runs/store.js` from `server/src/features/board/` fails it. Move each `describe` with its feature.
+4. **The error plugin, the auth plugin and the test helper.** `server/src/plugins/errors.ts`, `server/src/plugins/auth/index.ts` (wrapped in `fastify-plugin`, so `wardAuth` stays a root hook) and `server/src/testing/buildTestApp.ts`, with `app.test.ts` moved onto the helper. The accounts decorator goes here (decision 7): the one test that read it takes the accounts from the helper. Every test passes unchanged.
+5. **Feature folders.** `git mv` and split, file by file per the tables, so history follows: move `store.ts` to `server/src/db/store.ts` first, then `runs`, `tickets`, `questions`, `board`, `sync`, `health`, one commit each. Add the `index.ts` files, and `.dependency-cruiser.cjs`; check that a deliberate import of `server/src/features/runs/routes.js` from `server/src/features/board/` fails it. Move each `describe` with its feature.
 6. **The type provider and the schemas, one feature per commit:** health, board, runs, questions, tickets, sync. Each commit:
    - declares params, querystring, body and response from the table;
    - removes that feature's `parse()` and `keyOf()` calls;
    - types the plugin as `FastifyPluginAsyncZod<FeatureContext>`;
    - adds the new tests that apply.
 
-   `FeatureContext` is new here (brief-board has none): the database handle, the clock, and the stores a feature needs, built leaf first in `app.ts`: `runs`, `tickets`, `questions`, then the rest.
+   `FeatureContext` is new here (brief-board has none): the `Store`, the clock and the config a feature needs, built once in `app.ts`.
 7. **After.** Save the same JSON again and diff it against step 1's. A field that disappeared is a leak (keep it dropped and list it) or a missing schema field (add it). Put the diff's summary in the `log.md` entry. Also run the CLI against the new server (`brief-board list`, `show`, `needs`, a `start` and a `move`) and the board in a browser.
 8. **Strict.** Drop `check-structure`'s `--warn-only` and make dependency-cruiser part of `check:conventions`.
 9. **Corpus.**
@@ -257,11 +254,11 @@ Follow `migrating-a-server.md`. One commit per step; after each, `npm run check`
 - [ ] `npm ls zod` shows one copy, and `npm audit --omit=dev` no longer lists zod.
 - [ ] The response-schema encode test, the stripped-field test, the serialization-500 test and the health test pass, along with every existing test, with no assertion changed apart from imports.
 - [ ] The before and after JSON comparison is in `log.md`, with every dropped field named.
-- [ ] `npm run build` writes `server/dist/server.js`. `docker build -f infrastructure/Dockerfile .` succeeds, and the container answers its health check. The vps-deploy step, if any, is handed to the owner as exact commands.
-- [ ] dependency-cruiser fails on a deliberate cross-feature import and passes clean.
+- [ ] `npm run build` writes `server/dist/server.js`. `docker build -f infrastructure/Dockerfile .` succeeds, and the container answers its health check.
+- [ ] dependency-cruiser fails on a deliberate cross-feature import and passes clean. `grep -rn "decorate(" server/src` prints nothing, and `server/src/db/store.ts` holds the whole `Store`.
 - [ ] `npm run check` passes, and `bash corpus/lint.sh` ends clean.
 
 ## Interplay
 
-- Brief 16's three-line fix to `Store`'s parameter properties is replaced here by the factories.
+- Brief 16's fix to `Store`'s three parameter properties stays: the store is not rewritten here (decision 2).
 - The skills library should hear about three findings before the other servers run its brief 16: the second zod copy the provider resolves when a dev tool hoists another version, the flat error body, and that `check-structure`'s table row for brief-board counted two environment readers where there are four reads in two files.
