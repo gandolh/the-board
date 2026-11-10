@@ -472,3 +472,25 @@ UI section of [architecture.md](wiki/architecture.md) went to its own page,
 [status.md](wiki/status.md) follows and now records 08-14 as deployed.
 Found: `scripts/seed-demo.ts` sends no token and gets a 401 (in status.md,
 Open). 283 tests. Not deployed.
+
+## [2026-11-10] todo | Briefs 16-19: house style, Base UI conventions, Tailwind, server structure
+
+The owner's calls of 2026-11-09 for every web app (Base UI 1.9.0 everywhere,
+whole apps on Tailwind v4, the researched conventions enforced in each repo)
+are filed as four briefs, in run order. 16 adopts the house style and the
+quality harness: brief-board's lines run wide, so Prettier at 130 changes 681
+lines in 35 files (its least churn is 150: 176 lines in 20 files, and the
+estate width is open); `erasableSyntaxOnly` finds 9 parameter properties,
+`verbatimModuleSyntax` none; 65 non-null `!` are over brief 27's bar of about
+20; `npm test` fails on a fresh clone for want of a `pretest` (8 of 15 files
+cannot load `shared/dist`); there is no root `CLAUDE.md`. 17 audits Base UI
+against rules 1-13: two imports outside a `ui/` folder, a panel with no
+`Dialog.Title`, and one hand-built widget (the needs strip). 18 moves the 909
+line stylesheet (20 token names, dark by `prefers-color-scheme`) to Tailwind;
+five class names are built from data and need whole-string `Record`s, and
+`max-[1100px]:` is not the stylesheet's inclusive `max-width: 1100px`. 19
+splits `app.ts` (539 lines, all 16 routes) and `store.ts` (685) into feature
+folders by `Store`'s call graph, wires the 16 existing response schemas
+through the zod provider, and fixes a second zod copy the provider resolves
+(4.6.5 beside 4.5.4); no response schema has a transform. No bump brief.
+`.planned-roots` gained `.claude`.
