@@ -1,6 +1,6 @@
 ---
-summary: The board's vocabulary. Ticket vs brief vs todo, project, lane, project tag and tag, sync, the guide, a run and a stale run, a hold and a leftover, a question, the statuses (Backlog, To Do, In Progress, Blocked, Ready for test, Ready for deploy, Done) and Blocked by, the condition a file in a blocked/ folder waits on, and the messages a move can carry (conclusion, block reason, confirmation, test notes, deploy steps), each with the words they replace.
-updated: 2026-11-07
+summary: The board's vocabulary. Ticket vs brief vs todo, project, lane, project tag and tag, sync, the guide, a run and a stale run, a hold and a leftover, a question, a sprint and an active or closed one (2026-11-10), the statuses (Backlog, To Do, In Progress, Blocked, Ready for test, Ready for deploy, Done) and Blocked by, the condition a file in a blocked/ folder waits on, and the messages a move can carry (conclusion, block reason, confirmation, test notes, deploy steps), each with the words they replace.
+updated: 2026-11-10
 ---
 
 # Glossary
@@ -78,6 +78,23 @@ Something only the owner can decide, asked on a ticket with `--question`
 and numbered per ticket. It stays open, counted in the card's badge in any
 column, until someone records the owner's answer with `brief-board answer`.
 _Avoid_: blocker, decision for you, open point
+
+**Sprint**:
+A numbered stretch of work on the board (1, 2, 3...), with a start date and,
+once closed, an end date. Every ticket belongs to exactly one; the board
+shows the active sprint's.
+_Avoid_: iteration, cycle, milestone, release
+
+**Active** (of a sprint):
+The one sprint with no end date. New tickets join it, sync writes only its
+tickets, and `brief-board sprint start` closes it and moves every ticket that
+is not Done into the next.
+_Avoid_: current, open (for a sprint)
+
+**Closed** (of a sprint):
+A sprint that has ended: it keeps the tickets that were Done when it closed,
+frozen, and no write reaches them. Listed on the Sprints page.
+_Avoid_: archived, finished, past; Done (that is a status)
 
 **Stale** (of a run):
 An open run with no write on its ticket for longer than the board's

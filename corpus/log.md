@@ -515,3 +515,21 @@ accounts decorator goes (Q56); the entry rename changes the Dockerfile's `CMD`
 and needs no vps-deploy edit (Q1); the error handler keeps the flat body
 (Q43). New brief 20, a redesign with Hallmark on the estate board (Q39). No
 measurement changed.
+
+## [2026-11-10] done | Brief 21, sprints
+
+[Brief 21](briefs/done/21-sprints.md), built on main in seven commits
+(`5b6919d` to `ab7d1ae`), before brief 19 as the brief says; the owner's
+decisions 1-14 stood as written. Migration 7 adds a `sprints` table and
+`tickets.sprint`: Sprint 1 closes on the migration day with every ticket
+Done then, hidden ones too, and Sprint 2 starts with the rest; a fresh board
+gets the same two, Sprint 1 empty. The board, older Done, needs, runs and
+questions read the active sprint; a closed sprint's ticket is frozen, every
+write on it 409 `sprint_closed`. `brief-board sprint`, `sprint start <N>`
+(the owner's call, like sync, in the guide) and `list --sprint <n>`; sync
+writes only the active sprint's tickets. The header names the active sprint
+and a Sprints page lists the closed ones. A decisions entry records the
+calls; [decisions.md](wiki/decisions.md) is now at the 200-line cap, so the
+next entry needs a split. Walked on a synthetic version-6 scratch board.
+311 tests. Not deployed: the migration runs on the live database at the
+first start after the owner's deploy, so the SQLite file is backed up first.

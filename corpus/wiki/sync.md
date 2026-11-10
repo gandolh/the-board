@@ -1,6 +1,6 @@
 ---
-summary: How `brief-board sync` turns every project's corpus/briefs/ and open corpus/todos/ into tickets, as built 2026-10-09 with todos and Backlog 2026-11-03. What the CLI reads (projects to depth three and their board-name, titles, summaries, the heading shapes it strips, which todos are open), what the server does per brief state (create, refresh, close, hide, warn; since 2026-11-06 it leaves an In Progress ticket whose run is fresh and closes one whose run is stale; since 2026-11-07 a brief or todo in a blocked/ folder waits in Backlog with its condition, and a brief back in todo/ leaves it) and per todo (create, refresh, remove), what the dry run compares, why the report folds closes and hides into "updated", and why briefs restarting at 01 in 2026-11 needed no fix (closed 2026-11-03).
-updated: 2026-11-07
+summary: How `brief-board sync` turns every project's corpus/briefs/ and open corpus/todos/ into tickets, as built 2026-10-09 with todos and Backlog 2026-11-03. What the CLI reads (projects to depth three and their board-name, titles, summaries, the heading shapes it strips, which todos are open), what the server does per brief state (create, refresh, close, hide, warn; since 2026-11-06 it leaves an In Progress ticket whose run is fresh and closes one whose run is stale; since 2026-11-07 a brief or todo in a blocked/ folder waits in Backlog with its condition, and a brief back in todo/ leaves it; since 2026-11-10 it writes the active sprint's tickets only and never a closed sprint's) and per todo (create, refresh, remove), what the dry run compares, why the report folds closes and hides into "updated", and why briefs restarting at 01 in 2026-11 needed no fix (closed 2026-11-03).
+updated: 2026-11-10
 ---
 
 # Sync
@@ -90,6 +90,21 @@ the payload. Sync is the one writer that skips the move table.
 | `blocked/` | Ready for test, Ready for deploy, Done | refreshes condition, title and path, with a warning |
 | `todo/` | Backlog | the brief is back from `blocked/`: moves it to To Do and clears the condition, with the comment "Unblocked by sync: the brief is back in todo/." |
 | missing | exists | nothing, with a warning |
+
+**Sprints** (2026-11-10). Sync reads every ticket of a project but acts on
+the active sprint's only, and new tickets join it. A ticket in a closed
+sprint is Done and frozen, so the table above stops at it:
+
+| Brief in | Ticket in a closed sprint | Sync does |
+|---|---|---|
+| `done/` | Done | nothing, counted unchanged, even with a new title or path |
+| `todo/`, `blocked/` | Done | nothing, with a warning naming the sprint (no title, path or condition refresh) |
+| `superseded/` | Done, not hidden | nothing, with the same warning instead of a hide |
+| missing | any | nothing, and no warning: closed sprints are history |
+
+Only the active sprint's todo tickets are removed; a todo key found in a
+closed sprint (none should be: a todo's ticket sits in Backlog, which a sprint
+start moves) is left with a warning rather than inserted twice.
 
 A brief's condition follows its folder: set while it is in `blocked/`,
 cleared anywhere else. The Backlog guard already refuses an agent's start,

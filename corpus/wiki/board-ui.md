@@ -1,6 +1,6 @@
 ---
-summary: How the read-only board in the browser is built, as of 2026-11-09. Its four GETs and where the API is, polling every 10 s and the banner when the API is down, the tag filter (in the browser, carried between pages), lanes that scroll sideways below 1100 px, cells past five cards that stop at 600px and scroll (2026-11-09), the Older Done page for Done past the board's 14 days and how a ticket is on exactly one of the two (2026-11-09), the shared header, the non-modal Base UI detail panel, and the demo seed script.
-updated: 2026-11-09
+summary: How the read-only board in the browser is built, as of 2026-11-10. Its GETs and where the API is, polling every 10 s and the banner when the API is down, the tag filter (in the browser, carried between pages), lanes that scroll sideways below 1100 px, cells past five cards that stop at 600px and scroll (2026-11-09), the Older Done page for Done past the board's 14 days and how a ticket is on exactly one of the two (2026-11-09), the shared header and the active sprint in it, the Sprints page of closed sprints (2026-11-10), the non-modal Base UI detail panel, and the demo seed script.
+updated: 2026-11-10
 ---
 
 # Board UI
@@ -8,10 +8,10 @@ updated: 2026-11-09
 Code: `web/src/`. Read-only, see [decisions.md](decisions.md), "The UI is
 read-only". How the rest fits together: [architecture.md](architecture.md).
 
-`web/src/`; `api.ts` holds the only requests, four GETs (the board, a
+`web/src/`; `api.ts` holds the only requests, all GETs (the board, a
 ticket, since 2026-11-06 what needs the owner, for the strip above the
-lanes that narrows the board to one kind at a click, and since 2026-11-09
-older Done), built from
+lanes that narrows the board to one kind at a click, since 2026-11-09
+older Done, and since 2026-11-10 the sprints and one sprint), built from
 `API_BASE` in `base.ts` (`/brief-board-api`). Vite's `base` is
 `BRIEF_BOARD_BASE`, default `/brief-board/`, so assets load from
 `/brief-board/assets/`; in dev, Vite proxies `/brief-board-api` to
@@ -35,6 +35,19 @@ The board keeps a ticket while `status_changed_at` is at or after the cutoff
 and the page takes it once it is before, so a ticket is on exactly one. The
 header (`TopBar.tsx`) is shared by both pages, links one to the other next
 to the tag filter, and the tag choice carries between them.
+
+Since 2026-11-10 the board and older Done show the active sprint's tickets
+only. The header names it next to the brand, "Sprint 2 · since 2026-11-10"
+(`SprintName`, the day as stored, UTC), from the board's own response, so it
+needs no second call. The Sprints page (`SprintsPage.tsx`, `<base>sprints`,
+linked from both headers) lists the closed sprints from `GET /api/sprints`,
+newest first: each is a heading, "Sprint 1 2026-11-10 to 2026-11-10 4 Done",
+that opens (a `Collapsible`, like a lane) to its Done tickets by project,
+older Done's list with `h4` project headings, fetched once from
+`GET /api/sprints/:number`, since a closed sprint never changes. The newest
+starts open; an empty one says "No Done tickets."; a row opens the detail
+panel. Nothing on it writes: starting a sprint is the CLI's
+([decisions.md](decisions.md), "Sprints").
 
 Since 2026-10-23 the detail panel is a non-modal Base UI `Dialog` with
 `disablePointerDismissal`, so clicking another card switches the ticket

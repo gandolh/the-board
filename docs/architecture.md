@@ -14,7 +14,7 @@ flowchart LR
 
 - **shared** holds the status names, the move table and the zod schemas. The other three import it, so a rule exists in one place.
 - **server** (`server/src/app.ts`, `store.ts`, `sync.ts`) listens on 127.0.0.1:8806, stores tickets in SQLite, rejects moves the table does not allow, and requires a message where the table says one is needed. It also serves the built board.
-- **web** is a Vite + React board. It never writes. It polls the API; Backlog is the first column, the Done column shows the last 14 days, and lanes with nothing open start collapsed. A cell holding more than five cards stops at about five cards' height and scrolls inside. Done tickets older than 14 days are on their own page, Older Done (`/brief-board/done`), by project, newest first.
+- **web** is a Vite + React board. It never writes. It polls the API and shows the active sprint, named in the header ("Sprint 2 · since 2026-11-10"); Backlog is the first column, the Done column shows the last 14 days, and lanes with nothing open start collapsed. A cell holding more than five cards stops at about five cards' height and scrolls inside. Done tickets older than 14 days are on their own page, Older Done (`/brief-board/done`), by project, newest first, and closed sprints with their Done tickets on the Sprints page (`/brief-board/sprints`).
 - **cli** (`cli/src/`) is the only client agents use. It finds the board from `BRIEF_BOARD_URL`, the repo's `.env`, `~/.config/brief-board/env` or the default, and takes the project name from the nearest corpus's `corpus/board-name`, else the git root directory.
 
 ## A ticket's life
@@ -25,6 +25,8 @@ flowchart LR
 4. It ends with `move <n> done`, or `ready_for_test` / `ready_for_deploy` with a note when the owner has a step left, or `blocked` with a reason. Any move out of In Progress ends the run. Questions for the owner ride on a move, comment or start as `--question`; the card counts the open ones in a badge until `brief-board answer` records the owner's answer, and `brief-board questions` lists them across projects.
 5. Everything waiting on the owner (open questions, Blocked tickets, stale runs, Ready for test, Ready for deploy) is gathered by `brief-board needs` and the strip above the lanes, which narrows the board to one kind at a click.
 6. The brief file moving to `done/` stays the record; sync makes the board agree with it, except that it leaves an In Progress ticket whose run is still fresh for that run's end move.
+
+Every ticket belongs to a sprint. `brief-board sprint` names the active one and `brief-board list --sprint <n>` lists any. When the owner asks, an agent runs `brief-board sprint start <n>`: the active sprint closes with its Done tickets, frozen from then on, and every other ticket moves to sprint n with its runs, questions and comments. Sync only ever writes the active sprint's tickets.
 
 Before a brief there may be a todo. Each open todo in `corpus/todos/` has a ticket in Backlog, keyed `<project>:<slug>`, which only sync makes, keeps and removes: no agent moves or comments on it. Promoting the todo deletes its file, so the next sync takes that ticket off and files the brief's in To Do.
 

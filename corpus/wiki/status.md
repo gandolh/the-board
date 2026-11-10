@@ -1,6 +1,6 @@
 ---
-summary: Snapshot as of 2026-11-03, per area. Live on the VPS since 2026-11-03; first sync 2026-11-03 (23 projects, 30 tickets in To Do). The board, CLI, sync and guide built 2026-10-09 and rolled out to every project's CLAUDE.md but vps-deploy's; Base UI under the panel and lanes 2026-10-23. Down since 2026-10-13; briefs 01-05 (2026-11-02) built it for the VPS behind sign-in (sync in group folders, the sub-path, the CLI's token, sign-in, the container and the vps-deploy stack), not deployed, with the owner's steps, which vps-deploy's npm run setup:brief-board runs (2026-11-03); ward-auth 0.7.0 with its rename route off (2026-11-03); the numbering question after the estate restarted brief numbering, closed 2026-11-03; Backlog for open todos (brief 06) and nested corpora naming themselves (brief 07, churchix and scoala-ramna-theme) built 2026-11-03, not deployed; brief 08 (runs: a run on each ticket kept fresh by its writes, release, brief-board runs, sync waiting for a fresh run, the guide's end-move order and its section for a session that runs other agents) built 2026-11-06, not deployed; brief 09 (questions for the owner on the ticket, a badge, brief-board answer and questions, the report lines in the guide) built 2026-11-06, not deployed; brief 10 (each run's duration, worked out from its times, one shared formatter) built 2026-11-06, not deployed; brief 11 (one derived list of what needs the owner: brief-board needs and a strip above the lanes) built 2026-11-06, not deployed; brief 12 (a run lists what it holds: brief-board hold and drop, the leftovers printed when a run ends, holds in show and runs) built 2026-11-06, not deployed; brief 13 (@fastify/static 10.1.10, the glob advisory gone) built 2026-11-07, not deployed; brief 14 (blocked/ folders: a blocked brief's or todo's ticket waits in Backlog with its condition, brief-board blocked, a badge) built 2026-11-07; briefs 08-14 deployed (the owner confirmed 2026-11-09); brief 15 (a cell past five cards scrolls inside, GET /api/done and an Older Done page for Done past 14 days) built 2026-11-09, not deployed; npm audit's new zod (high) and fast-uri findings open; scripts/seed-demo.ts sends no token; the estate's conventions (house style, Base UI rules, Tailwind, the server structure) filed as briefs 16-19 on 2026-11-10, none built.
-updated: 2026-11-09
+summary: Snapshot as of 2026-11-03, per area. Live on the VPS since 2026-11-03; first sync 2026-11-03 (23 projects, 30 tickets in To Do). The board, CLI, sync and guide built 2026-10-09 and rolled out to every project's CLAUDE.md but vps-deploy's; Base UI under the panel and lanes 2026-10-23. Down since 2026-10-13; briefs 01-05 (2026-11-02) built it for the VPS behind sign-in (sync in group folders, the sub-path, the CLI's token, sign-in, the container and the vps-deploy stack), not deployed, with the owner's steps, which vps-deploy's npm run setup:brief-board runs (2026-11-03); ward-auth 0.7.0 with its rename route off (2026-11-03); the numbering question after the estate restarted brief numbering, closed 2026-11-03; Backlog for open todos (brief 06) and nested corpora naming themselves (brief 07, churchix and scoala-ramna-theme) built 2026-11-03, not deployed; brief 08 (runs: a run on each ticket kept fresh by its writes, release, brief-board runs, sync waiting for a fresh run, the guide's end-move order and its section for a session that runs other agents) built 2026-11-06, not deployed; brief 09 (questions for the owner on the ticket, a badge, brief-board answer and questions, the report lines in the guide) built 2026-11-06, not deployed; brief 10 (each run's duration, worked out from its times, one shared formatter) built 2026-11-06, not deployed; brief 11 (one derived list of what needs the owner: brief-board needs and a strip above the lanes) built 2026-11-06, not deployed; brief 12 (a run lists what it holds: brief-board hold and drop, the leftovers printed when a run ends, holds in show and runs) built 2026-11-06, not deployed; brief 13 (@fastify/static 10.1.10, the glob advisory gone) built 2026-11-07, not deployed; brief 14 (blocked/ folders: a blocked brief's or todo's ticket waits in Backlog with its condition, brief-board blocked, a badge) built 2026-11-07; briefs 08-14 deployed (the owner confirmed 2026-11-09); brief 15 (a cell past five cards scrolls inside, GET /api/done and an Older Done page for Done past 14 days) built 2026-11-09, not deployed; npm audit's new zod (high) and fast-uri findings open; scripts/seed-demo.ts sends no token; the estate's conventions (house style, Base UI rules, Tailwind, the server structure) filed as briefs 16-19 on 2026-11-10, none built; brief 21 (sprints: every ticket in one, Sprint 1 closed with the Done tickets and Sprint 2 active by migration 7, brief-board sprint and sprint start, list --sprint, a frozen closed sprint, the header's sprint and a Sprints page) built 2026-11-10, not deployed, the migration waiting for the owner's deploy.
+updated: 2026-11-10
 ---
 
 # Status
@@ -28,7 +28,11 @@ from 2026-10-13. Brief numbering restarted at 01 on 2026-11-02 (see
   12 a run's holds, kept on the run when it ends as its leftovers.
   Deployed with briefs 08-14 (confirmed 2026-11-09). Since brief 15,
   `GET /api/done`: Done tickets older than `olderThanDays` (default 14), the
-  ones the board no longer shows; not deployed.
+  ones the board no longer shows; not deployed. Since brief 21
+  (2026-11-10, not deployed) sprints: migration 7 puts every ticket in one
+  (Sprint 1 closed with the Done tickets, Sprint 2 active), the reads cover
+  the active sprint, `GET`/`POST /api/sprints` and `GET /api/sprints/:number`,
+  and a write on a closed sprint's ticket is 409 `sprint_closed`.
 - **CLI** (2026-10-09; token 2026-11-02; runs 2026-11-06). Every agent
   command, the address and token lookups, resume, exit 3 when the board is
   down or refuses the token, and `guide`. Since 2026-11-06 `start` opens or
@@ -39,7 +43,8 @@ from 2026-10-13. Brief numbering restarted at 01 on 2026-11-02 (see
   11, `needs`; since brief 12, `hold` and `drop`, the leftovers printed by
   the end move and `release`, and holds in `show` and `runs`; since brief
   14, `blocked`, grouped by condition, and `Blocked by:` in `show` and
-  `list`.
+  `list`; since brief 21, `sprint`, `sprint start <N>` (only on the owner's
+  ask, the guide says) and `list --sprint <n>`, which need the new server.
 - **Sync** (2026-10-09; group folders 2026-11-02; todos and depth three
   2026-11-03). Reads every project's briefs and open todos, up to three
   folders deep, named by `corpus/board-name` where a corpus has one, and
@@ -49,7 +54,8 @@ from 2026-10-13. Brief numbering restarted at 01 on 2026-11-02 (see
   Since 2026-11-07 (brief 14) it reads `corpus/briefs/blocked/` and
   `corpus/todos/blocked/`: their tickets wait in Backlog with their condition, off
   the needs list, and a brief back in `todo/` goes to To Do. Deployed
-  (confirmed 2026-11-09).
+  (confirmed 2026-11-09). Since brief 21 it writes the active sprint's
+  tickets only and never a closed sprint's ([sync.md](sync.md)).
 - **Sign-in** (2026-11-02; ward-auth 0.7.0 2026-11-03). The vendored
   ward-auth as the one guard, its rename route off: a local
   account or Sign in with Ward, read-only browser sessions, the CLI's token
@@ -74,17 +80,37 @@ from 2026-10-13. Brief numbering restarted at 01 on 2026-11-02 (see
   condition in full. Since brief 15 (2026-11-09, not deployed) a cell past
   five cards stops at about five cards' height and scrolls inside, and an
   Older Done page, linked from the header, lists Done tickets older than 14
-  days by project ([board-ui.md](board-ui.md)). README images
-  retaken 2026-10-31 (they show six columns).
+  days by project ([board-ui.md](board-ui.md)). Since brief 21 (not
+  deployed) the board is the active sprint's, the header names it
+  ("Sprint 2 · since 2026-11-10"), and a Sprints page lists the closed ones
+  with their Done tickets. README images retaken 2026-10-31 (they show six
+  columns).
 - **Rollout** (2026-10-09). Thirteen repos carry the brief-board section in
   their CLAUDE.md. vps-deploy was skipped because its `corpus/CLAUDE.md` had
   uncommitted work, and on 2026-11-02 it still has no section.
 
-283 tests (2026-11-09, after brief 15); typecheck, lint and the web build clean.
+311 tests (2026-11-10, after brief 21); typecheck, lint and the build clean.
 
 ## Next (owner)
 
-1. Deploy brief 15 (long cells scroll, Older Done): from vps-deploy,
+1. Deploy brief 21 (sprints), which ships brief 15 with it. Its migration
+   rewrites every ticket's row on the live database at the first start, so:
+   re-run `brief-board questions` (an open question on a Done ticket is
+   frozen in Sprint 1; none on 2026-11-10); from vps-deploy,
+   `node cli.ts brief-board deploy` (build and upload, nothing restarts);
+   back up the SQLite file before the `server` phase, which restarts the
+   process and runs the migration: on the box
+   `docker stop $(docker ps -qf name=brief-board-api)` and
+   `sudo cp -a /srv/brief-board-api/data /srv/brief-board-api/data.before-sprints`,
+   or the deploy's usual backup; then `node cli.ts brief-board server`.
+   The local CLI was rebuilt from main during the build (2026-11-10): its
+   old commands work against the old server, and `sprint` and
+   `list --sprint` answer "no route" until the deploy; rebuild it
+   (`npm run build` here) if main moved on. After the deploy, check
+   `brief-board sprint` says "Sprint 2, since <the deploy day>" and
+   `brief-board list --sprint 1 --all` lists the Done tickets. Starting
+   Sprint 3 is the owner's call: ask an agent for `brief-board sprint start 3`.
+2. Deploy brief 15 (long cells scroll, Older Done): from vps-deploy,
    `node cli.ts brief-board deploy` and then `node cli.ts brief-board server`.
    No migration, and the CLI doesn't change. Then the imbatranimOS lane's
    Done cell scrolls, and Older Done says "Nothing older than 14 days yet."
@@ -93,13 +119,13 @@ from 2026-10-13. Brief numbering restarted at 01 on 2026-11-02 (see
    build. Still unconfirmed from the 08-14 deploy: a `--question` on a test
    ticket shows its badge on the live board (`brief-board needs` listing the
    Ready for deploy tickets was seen working on 2026-11-09).
-2. Backlog (brief 06) and nested corpora (brief 07) are deployed: the owner
+3. Backlog (brief 06) and nested corpora (brief 07) are deployed: the owner
    deployed the board on 2026-11-04 and synced it since (last on 2026-11-05).
-3. For local development only: add brief-board to Ward's local seed
+4. For local development only: add brief-board to Ward's local seed
    (`wzd_auth`, `infrastructure/local/seed.mjs`):
    `{ slug: "brief-board", name: "brief-board", repo: "brief-board", envFiles: [".env"], dev: "http://localhost:5178/brief-board/", api: "/brief-board-api" }`
    in `APPS`, and its row in that folder's README table.
-4. Optional: the X-Forwarded-For check in `docs/owner-setup.md` step 5.
+5. Optional: the X-Forwarded-For check in `docs/owner-setup.md` step 5.
 
 ## Open
 
@@ -125,6 +151,8 @@ brief.
 
 ## Open briefs
 
+[21, sprints](../briefs/done/21-sprints.md) is built (2026-11-10), not
+deployed; it ran before 19, whose move map gains a `sprints` feature.
 Filed 2026-11-10 from the owner's calls of 2026-11-09, in run order, none built:
 [16, the house style and the quality harness](../briefs/todo/16-the-house-style-and-the-quality-harness.md),
 [17, Base UI by the conventions](../briefs/todo/17-base-ui-by-the-conventions.md),

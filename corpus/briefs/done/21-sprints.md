@@ -122,3 +122,122 @@ One commit per step; after each, `npm run check` passes.
 - **Brief 16 (the harness).** No conflict. The new tests join the existing runs.
 - **Deploying.** The server change and its migration go live only when the owner deploys brief-board (vps-deploy), and the migration runs on the live database at the first start. Back up the SQLite file first (the deploy's usual backup, or a copy), because the migration changes every ticket's row. The CLI is rebuilt from main only **after** that deploy: `brief-board sprint` and `list --sprint` need the new server, and the old CLI against the new server still works (it ignores the new fields). No agent builds the CLI or deploys.
 - **The first sprint start on the live board** is the owner's call: after the deploy, the owner asks an agent to run `brief-board sprint start 3` (the migration already made Sprint 2 active).
+
+## Outcome (2026-11-10)
+
+Built on main, one commit per step, before brief 19. The owner's decisions
+1-14 stood as written. Not deployed: the server change and migration 7 go
+live only with the owner's deploy, and the migration rewrites every ticket's
+row on the live database at the first start, so the SQLite file is backed up
+first. No `brief-board` command ran against the live board but this
+ticket's own start, hold, drop and moves, and reads (`show`, `list`,
+`questions`).
+
+- **Schema** (`5b6919d`). `sprints (number, started_on, ended_on)` with
+  `ended_on >= started_on`, and a unique partial index on the constant
+  `(ended_on IS NULL)`: an index on `ended_on` itself would let two active
+  rows in, since SQLite counts NULLs as distinct (checked). `tickets.sprint`
+  is added `NOT NULL DEFAULT 2 REFERENCES sprints(number)` with foreign keys
+  off, as `migrate` runs; both sprints are dated `date('now')`; Done tickets,
+  hidden ones too, go to Sprint 1. The test builds a version-6 board with all
+  seven statuses, a todo's and a blocked brief's ticket in Backlog, a Done
+  ticket with tags, comments, history, an ended run with a leftover hold and
+  an answered question, an open run with a hold and an open question, and a
+  hidden Done ticket; it checks the sprints, every ticket's sprint, every
+  other column and every child row, the index, the CHECK, the foreign key,
+  and that a second open changes nothing; a fresh `:memory:` board gets a
+  closed, empty Sprint 1 and an active Sprint 2.
+- **Store** (`d1fa731`). `activeSprint`, `sprints`, `sprint`,
+  `sprintTickets`, `startSprint(expected, today)`; `ACTIVE_SPRINT` in the
+  reads; `insertTicket` files into the active sprint; one private
+  `writable` check first in every write method throws `SprintClosedError`.
+- **Sync** (`5767ece`). See [wiki/sync.md](../../wiki/sync.md), "Sprints".
+- **API** (`fd13e56`). `GET /api/sprints`, `GET /api/sprints/:number`,
+  `POST /api/sprints`, `sprint` on the ticket and on the board response,
+  response schemas in `shared`, and the error handler's 409 `sprint_closed`.
+- **CLI** (`a525933`). `sprint`, `sprint start <N>`, `list --sprint <n>`, the
+  guide's rule beside the sync one and a line in section 1.
+- **Web** (`b15adc3`, `ab7d1ae`). `SprintName` in the header, the Sprints
+  page, the route; the walk moved a sprint's project headings to `h4`.
+
+**Read a certain way:**
+- "`npm run check`" does not exist yet (brief 16 adds it): each step ran
+  `npm run typecheck`, `npm run lint` and the tests. The controller lifted
+  the `cli/dist` freeze mid-run, so `npm run typecheck` (`tsc -b`) rebuilt
+  `shared/dist`, `server/dist` and `cli/dist`: the global CLI has the new
+  commands before the deploy. Its client never parses with zod, so the old
+  commands work against the old server (checked with `show` and `list` on
+  the live board); `sprint` and `list --sprint` get "no route" until then.
+- "`projectTickets` gets the sprint": every ticket carries its sprint and
+  sync splits them. Filtering in the query would hide a closed sprint's
+  ticket from sync, which would then insert a second ticket for its brief
+  back in `todo/` and fail on the key.
+- "Files you OWN" names "the one session exception" in `app.ts`; decision 8
+  says there is none, and none was built.
+- `POST /api/sprints` answers `{ sprint, closed, moved }`, not `{ sprint }`
+  alone, so `sprint start` prints its line from one call.
+- Hidden tickets: decision 13 is membership. `doneCount`, a sprint's ticket
+  list, the `sprint` line's count and `moved` leave hidden tickets out, as
+  older Done does; a sprint start still moves them.
+- Sprint 1 starts on the migration day too (step 1's `date('now')` for both),
+  so its heading reads "2026-11-10 to 2026-11-10".
+- Sync on a closed sprint's ticket: a superseded brief warns instead of
+  hiding it; a brief missing from the payload is not warned about; a todo key
+  in a closed sprint (none should be) warns and is not inserted again.
+- Exit codes: a stale N and an unknown sprint exit 1 with the board's
+  message, as the brief says; a write on a frozen ticket exits 2, a refusal.
+  A malformed sprint number in the URL is 400 `invalid_request`.
+- The Sprints page opens the newest closed sprint at first and fetches each
+  sprint's tickets once, since a closed sprint never changes.
+- An open question on a Done ticket goes to Sprint 1 with it and leaves
+  `needs` and `questions`, frozen, never to be answered. The live board had
+  no open questions on 2026-11-10.
+
+**Outside the file list:** `server/src/store.test.ts` and
+`server/src/sync.test.ts` (new), `web/src/App.tsx` (the route and the
+header's sprint), `web/src/DonePage.tsx` (the Sprints link, and `DoneList`'s
+heading level), `shared/src/api.test.ts` and the web test fixtures (`sprint`
+on a ticket).
+
+**The walk** (step 7), on a synthetic version-6 board in the scratchpad
+(never a copy of the live one), served by the built server on port 18821 and
+stopped after: the first start migrated it to version 7, and the same select
+as `sqlite3 <db> "select number, started_on, ended_on from sprints"` (through
+better-sqlite3, read-only; `sqlite3` is not installed) printed `1|2026-11-10|2026-11-10`
+and `2|2026-11-10|`. `brief-board list --all`, with the scratch URL, token and
+`HOME`, showed only the scratch projects; `sprint` said "Sprint 2, since
+2026-11-10, 7 tickets"; `list --sprint 1 --all` the four Done tickets (the
+hidden one left out). After one more ticket went Done, `sprint start 3`
+printed "Sprint 3 started; 6 tickets moved, 1 stays in sprint 2."; a second
+`sprint start 3` exited 1 with "sprint 3 is the active one, so the next is
+4, not 3; nothing changed"; `list --all` showed only sprint 3's tickets, the
+open run and its hold still on the In Progress one; `list --sprint 9` exited
+1; a comment and an answer on frozen tickets exited 2 with `sprint_closed`'s
+message. A sync with a scratch projects dir filed a new brief in sprint 3,
+left a closed sprint's Done ticket with its old title and path (one brief
+in `done/`, one back in `todo/`, which warned), and changed neither row's
+`updated_at`. A signed-in session's `POST /api/sprints` got 401
+`read_only_session`, its `GET` 200. In the browser the header read "Sprint 3
+· since 2026-11-10" beside Older Done and Sprints links, the board held only
+sprint 3's tickets, and the Sprints page listed Sprint 2 (open, one Done)
+above Sprint 1, which opened to its four Done tickets by project.
+
+Commits: 5b6919d d1fa731 5767ece fd13e56 a525933 b15adc3 ab7d1ae
+Checks run: `npm run typecheck`, `npm run lint`, `npm test` (311 tests, from
+283: migration 2, store 5, sync 6, routes 6, CLI 2, guide 1, Sprints page 6),
+`npm run build`; the walk above.
+Checks skipped: `npm run check` (no such script before brief 16); the
+`sqlite3` CLI (not installed; the same select through better-sqlite3); the
+Sprints page at phone width.
+Owner steps: re-run `brief-board questions` first (an open question on a
+Done ticket is frozen in Sprint 1; there were none on 2026-11-10). From
+vps-deploy, `node cli.ts brief-board deploy` (build and upload; nothing
+restarts). Then back up the SQLite file before the `server` phase, which
+restarts the process and runs the migration: on the box,
+`docker stop $(docker ps -qf name=brief-board-api)` and
+`sudo cp -a /srv/brief-board-api/data /srv/brief-board-api/data.before-sprints`
+(the `-wal` and `-shm` files go with it), or the deploy's usual backup. Then
+`node cli.ts brief-board server`, which starts it again on the new code and
+ships brief 15 too. Then `brief-board sprint` should print "Sprint 2, since
+<the deploy day>". The first sprint start is the owner's call: ask an agent
+for `brief-board sprint start 3`.

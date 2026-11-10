@@ -1,6 +1,6 @@
 ---
-summary: How brief-board is put together, as built 2026-10-09, with the 2026-11-02 sub-path, token and sign-in, the 2026-11-03 todo keys, and the 2026-11-06 runs and their holds; the board in the browser is board-ui.md. npm workspaces with a Fastify + SQLite API, a read-only Vite + React board, and the brief-board CLI that agents use; how the CLI finds the board without any repo holding a path; keys, the CLI's exit codes, the server's error codes, build gotchas, and what each project's CLAUDE.md says. The owner starts the server by hand on 127.0.0.1:8806.
-updated: 2026-11-09
+summary: How brief-board is put together, as built 2026-10-09, with the 2026-11-02 sub-path, token and sign-in, the 2026-11-03 todo keys, the 2026-11-06 runs and their holds, and the 2026-11-10 sprints (every ticket in one, the routes, the frozen closed sprint); the board in the browser is board-ui.md. npm workspaces with a Fastify + SQLite API, a read-only Vite + React board, and the brief-board CLI that agents use; how the CLI finds the board without any repo holding a path; keys, the CLI's exit codes, the server's error codes, build gotchas, and what each project's CLAUDE.md says. The owner starts the server by hand on 127.0.0.1:8806.
+updated: 2026-11-10
 ---
 
 # Architecture
@@ -72,7 +72,7 @@ colon raw or as `%3A`.
 ## CLI
 
 `create`, `start`, `move`, `comment`, `release`, `hold`, `drop`, `answer`,
-`show`, `list`, `runs`, `questions`, `needs`, `sync` and `guide`. The project is `--project`, else
+`show`, `list`, `runs`, `questions`, `needs`, `blocked`, `sync`, `sprint` and `guide`. The project is `--project`, else
 the `corpus/board-name` of the nearest `corpus/` from the working directory
 up to the git root (2026-11-03, for a nested corpus such as churchix), else
 the git root's directory name; `create` looks for the brief in that same
@@ -94,9 +94,11 @@ corpus. The author is `--author`, else `BRIEF_BOARD_AUTHOR`, else `agent`.
   or the local check refused (with the allowed moves and their messages), 3
   the board is unreachable, printed as one line. A 4xx that isn't the
   contract's JSON (another service on the port) counts as unreachable.
-- `guide` prints `cli/src/guide.md` with the move table filled in from
-  `shared` at print time; a test holds it under 115 lines (80 until runs,
-  the controller's section, the report lines and holds came in on 2026-11-06).
+- Sprints (2026-11-10): `sprint` prints the active one; `sprint start <N>`
+  starts the next on the owner's ask (a stale N exits 1); `list --sprint
+  <n>` lists any sprint, and `list` stays on the board, the active one.
+- `guide` prints `cli/src/guide.md`, read from `src/` at run time, with the
+  move table filled in from `shared`; a test holds it under 130 lines.
 
 ## Server
 
@@ -107,7 +109,7 @@ deduplicated, and never include the project. A `PUT` that creates answers
 201. Error codes: `invalid_request`, `invalid_key`, `not_found`,
 `move_not_allowed`, `message_required`, `sync_owned` (a write on a todo's
 ticket, 2026-11-03), `no_open_run`, `question_not_open` and `not_held` (2026-11-06),
-`internal`, and `unauthorized` (a 401 from the sign-in guard,
+`sprint_changed` and `sprint_closed` (409s, 2026-11-10), `internal`, and `unauthorized` (a 401 from the sign-in guard,
 [sign-in.md](sign-in.md)). Migrations run with foreign keys off, because
 rebuilding `tickets` (copy, drop, rename, as SQLite changes a CHECK) would
 otherwise cascade the drop into every comment and history row; each checks
@@ -123,6 +125,17 @@ answer is not a status change and leaves no history row; the record and a
 comment carry it. A ticket carries its latest run and its count of open
 questions; sync never touches questions. Holds are rows keyed by run: those
 left when it ends stay on it as leftovers, and the board's tickets omit them.
+
+Sprints (2026-11-10, migration 7): a `sprints` table whose unique partial
+index lets one row at most go without an end date (it indexes a constant:
+SQLite counts NULLs as distinct), and `tickets.sprint`, a foreign key to it.
+The migration closes Sprint 1 on its day with every ticket Done then and
+starts Sprint 2 with the rest. `Store.startSprint` ends the active sprint and
+moves every ticket that is not Done; what hangs off a ticket goes with it, and
+no history row records it. The reads cover the active sprint
+(`ACTIVE_SPRINT`); a key is found in any. One check, `writable`, in every
+write method throws `SprintClosedError`, answered 409 `sprint_closed`. The
+routes and the calls: [decisions.md](decisions.md), "Sprints".
 
 Paths (since 2026-11-02, for the sub-path on the VPS): the API is `/api/*`.
 The browser reaches it at `/brief-board-api/api/*`; Caddy strips that prefix
@@ -177,5 +190,6 @@ needs `PUBLIC_ORIGIN=http://127.0.0.1:8806`. `npm run dev` serves the board
 from Vite at `http://localhost:5178/brief-board/` through its proxy. The
 database is a SQLite file in the gitignored `data/` directory. Nothing restarts
 the local server; a down board never stops agent work, see
-[decisions.md](decisions.md). The UI polls the API, and the Done column shows
-the last 14 days; older Done is on its own page. Lanes with nothing open start collapsed.
+[decisions.md](decisions.md). The UI polls the API and shows the active
+sprint; the Done column shows its last 14 days, its older Done is on its own
+page, and closed sprints are on the Sprints page. Lanes with nothing open start collapsed.

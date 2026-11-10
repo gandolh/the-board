@@ -1,6 +1,6 @@
 ---
-summary: Locked calls for brief-board, each with date, rejected alternative and reason. One ticket per brief keyed <project>-<NN> with no hand-made tickets (revisited 2026-11-03: open todos get sync-owned tickets in a Backlog column; 2026-11-07: so do briefs in blocked/); Blocked only by agreement with the owner, apart from a blocked/ folder's Blocked by; which moves are allowed and which need a message; six columns with Ready for test and Ready for deploy as the owner's; the corpus wins over the board (revisited 2026-11-06: sync waits for a fresh run); one CLI on PATH that other repos name without a path; a read-only UI; one project tag per ticket decides its lane; sync only by hand; a down board never stops work (revisited 2026-11-02: the container now runs always, agents still carry on without it); Base UI for the UI's widgets; the CLI authenticates with one shared token, and the board sits on the VPS behind sign-in (2026-11-02); a corpus nested deeper names itself, as churchix and scoala-ramna-theme do (2026-11-03). Read before proposing to change any of these.
-updated: 2026-11-07
+summary: Locked calls for brief-board, each with date, rejected alternative and reason. One ticket per brief keyed <project>-<NN> with no hand-made tickets (revisited 2026-11-03: open todos get sync-owned tickets in a Backlog column; 2026-11-07: so do briefs in blocked/); Blocked only by agreement with the owner, apart from a blocked/ folder's Blocked by; which moves are allowed and which need a message; six columns with Ready for test and Ready for deploy as the owner's; the corpus wins over the board (revisited 2026-11-06: sync waits for a fresh run); one CLI on PATH that other repos name without a path; a read-only UI; one project tag per ticket decides its lane; sync only by hand; a down board never stops work (revisited 2026-11-02: the container now runs always, agents still carry on without it); Base UI for the UI's widgets; the CLI authenticates with one shared token, and the board sits on the VPS behind sign-in (2026-11-02); a corpus nested deeper names itself, as churchix and scoala-ramna-theme do (2026-11-03); sprints, one active, the CLI starting the next on the owner's ask (2026-11-10). Read before proposing to change any of these.
+updated: 2026-11-10
 ---
 
 # Decisions
@@ -193,3 +193,12 @@ inside the presentation-sites repo) is `churchix`, not `presentation-sites`,
 so its tickets never share keys with that repo's; the scoala-ramna theme (a
 repo in a folder named `theme`) is `scoala-ramna-theme`. Rejected: leaving
 both off the board, which keeps their briefs invisible there.
+
+## Sprints, and only the CLI starts one
+_2026-11-10_, the owner's call, as Jira and Linear work. Every ticket is in one
+numbered sprint; the board shows the one active sprint, and a closed sprint's
+Done tickets are frozen (409 `sprint_closed`). `brief-board sprint start <N>`, a
+token write run only on the owner's ask like sync, closes it and moves the rest
+into N, the active number plus one (else 409 `sprint_changed`); the UI only
+reads. Rejected: auto-archiving Done after N days (work moves by age, not by a
+call); a sprint per project (no board-wide number); a column, no table (no dates).
