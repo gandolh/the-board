@@ -240,7 +240,11 @@ export const laneSchema = z.object({
 });
 export type Lane = z.infer<typeof laneSchema>;
 
-export const boardResponseSchema = z.object({ lanes: z.array(laneSchema) });
+export const boardResponseSchema = z.object({
+  /** The active sprint, which the board shows, for its header: "Sprint 2 · since 2026-11-10". */
+  sprint: sprintSchema.pick({ number: true, startedOn: true }),
+  lanes: z.array(laneSchema),
+});
 export type BoardResponse = z.infer<typeof boardResponseSchema>;
 
 // --- GET /api/done -------------------------------------------------------------
@@ -264,6 +268,57 @@ export type DoneQuery = z.infer<typeof doneQuerySchema>;
  */
 export const doneResponseSchema = z.object({ tickets: z.array(ticketSchema) });
 export type DoneResponse = z.infer<typeof doneResponseSchema>;
+
+// --- GET /api/sprints ------------------------------------------------------------
+
+/** The code of a write on a ticket in a closed sprint: its tickets are frozen. */
+export const SPRINT_CLOSED = "sprint_closed";
+
+/** The code of a sprint start whose number is not the active one plus one: someone started it already. */
+export const SPRINT_CHANGED = "sprint_changed";
+
+export const sprintsResponseSchema = z.object({
+  active: sprintSchema,
+  /** The closed sprints, newest first. */
+  closed: z.array(sprintSchema),
+});
+export type SprintsResponse = z.infer<typeof sprintsResponseSchema>;
+
+// --- GET /api/sprints/:number ----------------------------------------------------
+
+export const sprintParamsSchema = z.object({ number: z.coerce.number().int().positive() });
+
+export const sprintDetailResponseSchema = z.object({
+  sprint: sprintSchema,
+  /**
+   * Its tickets, not hidden: by project (alphabetical, as the board's lanes),
+   * the newest status change first in each, so a closed sprint's Done
+   * tickets come newest Done first, as on the older Done page.
+   */
+  tickets: z.array(ticketSchema),
+});
+export type SprintDetailResponse = z.infer<typeof sprintDetailResponseSchema>;
+
+// --- POST /api/sprints -----------------------------------------------------------
+
+/**
+ * Start the next sprint: the CLI's, with its token, on the owner's ask. It
+ * closes the active sprint and moves every ticket that is not Done into the
+ * new one. `number` must be the active number plus one, else 409
+ * `sprint_changed`, so a repeated request starts one sprint, not two.
+ */
+export const startSprintRequestSchema = z.object({ number: z.number().int().positive() });
+export type StartSprintRequest = z.infer<typeof startSprintRequestSchema>;
+
+export const startSprintResponseSchema = z.object({
+  /** The new, active sprint. */
+  sprint: sprintSchema,
+  /** The sprint it closed, with the Done tickets that stay in it. */
+  closed: sprintSchema,
+  /** How many tickets moved to the new sprint, not counting hidden ones. */
+  moved: z.number().int().nonnegative(),
+});
+export type StartSprintResponse = z.infer<typeof startSprintResponseSchema>;
 
 // --- GET /api/tickets/:key -----------------------------------------------------
 

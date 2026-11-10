@@ -17,7 +17,11 @@ import {
   questionParamsSchema,
   questionsQuerySchema,
   releaseRequestSchema,
+  SPRINT_CHANGED,
+  SPRINT_CLOSED,
+  sprintParamsSchema,
   startRequestSchema,
+  startSprintRequestSchema,
   STATUS_LABELS,
   SYNC_OWNED,
   syncRequestSchema,
@@ -38,7 +42,10 @@ import {
   type QuestionsResponse,
   type ReleaseResponse,
   type RunsResponse,
+  type SprintDetailResponse,
+  type SprintsResponse,
   type StartResponse,
+  type StartSprintResponse,
   type Status,
   type SyncResponse,
   type TicketDetailResponse,
@@ -49,7 +56,7 @@ import { createWardClient, wardAuth, type Accounts, type WardClientOptions } fro
 import { openAccounts, USER_ROLE } from "./accounts.js";
 import { AUTH_ROUTE_PREFIX } from "./config.js";
 import { openDatabase } from "./db.js";
-import { DEFAULT_STALE_HOURS, Store } from "./store.js";
+import { DEFAULT_STALE_HOURS, SprintClosedError, Store } from "./store.js";
 import { runSync } from "./sync.js";
 
 /**
@@ -72,6 +79,11 @@ import { runSync } from "./sync.js";
  * - the library's rename route (`POST /auth/username`) is off: it sits outside
  *   `/api`, so the read-only rule would not cover it, and the board offers no rename;
  * - the board's own files are open, so the login page can load.
+ *
+ * Starting a sprint (`POST /api/sprints`) is a token write like the others,
+ * so a session gets `read_only_session` for it too. A write on a ticket in a
+ * closed sprint is 409 `sprint_closed`, whichever route it comes through:
+ * the store refuses it and the error handler answers.
  */
 
 /** The API prefix as the browser sees it, unless `BRIEF_BOARD_API_PREFIX` moves it (web/src/base.ts). */
@@ -181,8 +193,10 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
   const app = Fastify({ logger: options.logger ?? false, rewriteUrl: (request) => stripApiPrefix(request.url ?? "/", apiPrefix) });
   app.addHook("onClose", async () => db.close());
 
-  // Fastify's own 4xx (bad JSON, wrong content type) in the contract's shape.
+  // Fastify's own 4xx (bad JSON, wrong content type) in the contract's shape,
+  // and the store's refusal of a write on a closed sprint's ticket.
   app.setErrorHandler((error: Error & { statusCode?: number; code?: string }, request, reply) => {
+    if (error instanceof SprintClosedError) return fail(reply, 409, { code: SPRINT_CLOSED, message: error.message });
     const status = error.statusCode ?? 500;
     if (status >= 500) {
       request.log.error({ err: error }, "unhandled error");
@@ -263,7 +277,8 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
   app.get("/api/board", async (request, reply) => {
     const query = parse(boardQuerySchema, request.query, reply);
     if (!query) return reply;
-    const body: BoardResponse = { lanes: store.board(query.doneDays, query.tag) };
+    const { number, startedOn } = store.activeSprint();
+    const body: BoardResponse = { sprint: { number, startedOn }, lanes: store.board(query.doneDays, query.tag) };
     return body;
   });
 
@@ -291,6 +306,43 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     if (!query) return reply;
     const body: QuestionsResponse = { questions: store.openQuestions(query.project) };
     return body;
+  });
+
+  app.get("/api/sprints", async () => {
+    const body: SprintsResponse = {
+      active: store.activeSprint(),
+      closed: store.sprints().filter((sprint) => sprint.endedOn !== null),
+    };
+    return body;
+  });
+
+  app.get("/api/sprints/:number", async (request, reply) => {
+    const params = sprintParamsSchema.safeParse(request.params);
+    if (!params.success) return fail(reply, 400, { code: "invalid_request", message: "a sprint is a number: /api/sprints/<number>" });
+    const sprint = store.sprint(params.data.number);
+    if (!sprint) {
+      return fail(reply, 404, {
+        code: "not_found",
+        message: `no sprint ${params.data.number}; the active sprint is ${store.activeSprint().number}`,
+      });
+    }
+    const body: SprintDetailResponse = { sprint, tickets: store.sprintTickets(sprint.number) };
+    return body;
+  });
+
+  app.post("/api/sprints", async (request, reply) => {
+    const fields = parse(startSprintRequestSchema, request.body, reply);
+    if (!fields) return reply;
+    const result = store.startSprint(fields.number, store.today());
+    if (!result.ok) {
+      const { number } = result.active;
+      return fail(reply, 409, {
+        code: SPRINT_CHANGED,
+        message: `sprint ${number} is the active one, so the next is ${number + 1}, not ${fields.number}; nothing changed`,
+      });
+    }
+    const body: StartSprintResponse = { sprint: result.sprint, closed: result.closed, moved: result.moved };
+    return reply.status(201).send(body);
   });
 
   /** The key from the URL, canonical, or a 400. */
