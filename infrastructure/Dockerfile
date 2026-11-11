@@ -82,9 +82,10 @@ LABEL org.opencontainers.image.title="brief-board" \
 # wget, for the healthcheck below, ships in node:alpine's busybox.
 WORKDIR /app
 COPY --from=proddeps /app/node_modules ./node_modules
-# The root zod in the lockfile is a dev tool's (4.6.5, for eslint), so shared's
-# and the server's own zod (4.5.4) sit nested in each workspace. The mkdir above
-# makes these copies safe when a later lockfile hoists them.
+# The root package.json pins one zod (the `overrides` entry), so shared, the
+# server and the type provider all resolve the same copy, at the root. The
+# nested folders below stay empty: the mkdir above keeps these copies safe, and
+# a later lockfile that nests a package under a workspace still lands.
 COPY --from=proddeps /app/shared/node_modules ./shared/node_modules
 COPY --from=proddeps /app/server/node_modules ./server/node_modules
 COPY package.json ./
