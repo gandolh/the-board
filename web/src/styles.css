@@ -29,7 +29,12 @@
    * the top of a sixth shows, so the cell reads as one that scrolls.
    */
   --cell-cap: 600px;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
   font-size: 14px;
   line-height: 1.45;
   color: var(--text);
@@ -179,6 +184,11 @@ button {
   box-shadow: var(--shadow);
 }
 
+/* The radio group adds no box: its radios lay out in the strip's own row, as before. */
+.needs-group {
+  display: contents;
+}
+
 .needs-label {
   margin-right: 4px;
   font-weight: 650;
@@ -204,19 +214,29 @@ button {
 }
 
 .needs-kind:hover,
-.needs-kind[aria-pressed="true"] {
+.needs-kind[data-checked] {
   background: color-mix(in srgb, var(--need) 15%, transparent);
 }
 
-.needs-kind[aria-pressed="true"] {
+.needs-kind[data-checked] {
   box-shadow: inset 0 0 0 1px var(--need);
 }
 
-.needs-question { --need: var(--accent); }
-.needs-blocked { --need: var(--blocked); }
-.needs-stale_run { --need: var(--warn); }
-.needs-ready_for_test { --need: var(--ready_for_test); }
-.needs-ready_for_deploy { --need: var(--ready_for_deploy); }
+.needs-question {
+  --need: var(--accent);
+}
+.needs-blocked {
+  --need: var(--blocked);
+}
+.needs-stale_run {
+  --need: var(--warn);
+}
+.needs-ready_for_test {
+  --need: var(--ready_for_test);
+}
+.needs-ready_for_deploy {
+  --need: var(--ready_for_deploy);
+}
 
 .needs-clear {
   margin-left: auto;
@@ -268,13 +288,27 @@ main {
   font-variant-numeric: tabular-nums;
 }
 
-.col-backlog { --col: var(--backlog); }
-.col-todo { --col: var(--todo); }
-.col-in_progress { --col: var(--in_progress); }
-.col-blocked { --col: var(--blocked); }
-.col-ready_for_test { --col: var(--ready_for_test); }
-.col-ready_for_deploy { --col: var(--ready_for_deploy); }
-.col-done { --col: var(--done); }
+.col-backlog {
+  --col: var(--backlog);
+}
+.col-todo {
+  --col: var(--todo);
+}
+.col-in_progress {
+  --col: var(--in_progress);
+}
+.col-blocked {
+  --col: var(--blocked);
+}
+.col-ready_for_test {
+  --col: var(--ready_for_test);
+}
+.col-ready_for_deploy {
+  --col: var(--ready_for_deploy);
+}
+.col-done {
+  --col: var(--done);
+}
 
 .lane {
   margin-top: 8px;
@@ -534,13 +568,27 @@ main {
   background: color-mix(in srgb, var(--status) 14%, transparent);
 }
 
-.status-backlog { --status: var(--backlog); }
-.status-todo { --status: var(--todo); }
-.status-in_progress { --status: var(--in_progress); }
-.status-blocked { --status: var(--blocked); }
-.status-ready_for_test { --status: var(--ready_for_test); }
-.status-ready_for_deploy { --status: var(--ready_for_deploy); }
-.status-done { --status: var(--done); }
+.status-backlog {
+  --status: var(--backlog);
+}
+.status-todo {
+  --status: var(--todo);
+}
+.status-in_progress {
+  --status: var(--in_progress);
+}
+.status-blocked {
+  --status: var(--blocked);
+}
+.status-ready_for_test {
+  --status: var(--ready_for_test);
+}
+.status-ready_for_deploy {
+  --status: var(--ready_for_deploy);
+}
+.status-done {
+  --status: var(--done);
+}
 
 .markdown {
   overflow-wrap: anywhere;
@@ -594,8 +642,12 @@ main {
   background: color-mix(in srgb, var(--role) 14%, transparent);
 }
 
-.question-open { --role: var(--accent); }
-.question-answered { --role: var(--done); }
+.question-open {
+  --role: var(--accent);
+}
+.question-answered {
+  --role: var(--done);
+}
 
 .answer {
   margin-top: 6px;
@@ -603,12 +655,24 @@ main {
   border-left: 2px solid var(--line);
 }
 
-.role-block_reason { --role: var(--blocked); }
-.role-test_notes { --role: var(--ready_for_test); }
-.role-deploy_steps { --role: var(--ready_for_deploy); }
-.role-confirmation { --role: var(--in_progress); }
-.role-conclusion { --role: var(--done); }
-.role-comment { --role: var(--todo); }
+.role-block_reason {
+  --role: var(--blocked);
+}
+.role-test_notes {
+  --role: var(--ready_for_test);
+}
+.role-deploy_steps {
+  --role: var(--ready_for_deploy);
+}
+.role-confirmation {
+  --role: var(--in_progress);
+}
+.role-conclusion {
+  --role: var(--done);
+}
+.role-comment {
+  --role: var(--todo);
+}
 
 .history li {
   padding: 4px 0;
