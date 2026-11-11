@@ -263,3 +263,20 @@ Follow `migrating-a-server.md`. One commit per step; after each, `npm run check`
 
 - Brief 16's fix to `Store`'s three parameter properties stays: the store is not rewritten here (decision 2).
 - The skills library should hear about three findings before the other servers run its brief 16: the second zod copy the provider resolves when a dev tool hoists another version, the flat error body, and that `check-structure`'s table row for brief-board counted two environment readers where there are four reads in two files.
+
+**Outcome (2026-11-11).** Built in six commits (`58ff576` to `d75b7a8`), not deployed.
+
+- `check-structure` before: 41 errors and 3 warnings (rule 1: 1, rule 3: 4, rule 6: 36, rule 11: 3). After, strict:
+  0 errors, 2 warnings (rule 11 on `server/src/db/store.ts` and `shared/src/api.ts`), and 1 finding accepted in
+  `scripts/conventions.json` (`GET /`, the redirect). `npm audit --omit=dev` no longer lists zod; `npm ls zod` shows one copy.
+- The server had 19 routes, not 16: brief 21 added `sprints` (three routes, a `sprints` feature of its own).
+  `SprintClosedError` is answered by the errors plugin (409 `sprint_closed`).
+- Refusals are an `ApiError` thrown from a handler (`server/src/lib/api-error.ts`), sent by the errors plugin; the three
+  bad-params messages are a route's `config: { badParams }`. That kept the shared 4xx helpers out of the features.
+- `buildApp` gained an optional `db` (an open database), which `buildTestApp` uses to give the test its accounts: that
+  replaces the `accounts` decorator. `server/src/db.ts` stayed at the root of `src/`.
+- Steps 5 and 6 (feature folders, then schemas) went in one commit: each feature was written once, with its schemas.
+- Capture of 100 replies before and after: 94 identical, 4 differ in key order only (`moveResponseSchema` encodes
+  `endedRun` before `questions`), 2 differ in text: a missing body says "received null", not "received undefined".
+  No field was dropped. The CLI reads replies by field name and shows the error's `message` for a 400, so none changes.
+- Not run: `docker build` and the container's health check (no docker here), and the Caddy `keepalive` check in vps-deploy.

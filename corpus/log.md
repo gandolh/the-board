@@ -567,3 +567,17 @@ page, light on a first visit, kept on the device. `check-base-ui` runs strict an
 decision "Base UI for the UI's widgets, styled by our own CSS" is revisited in `wiki/decisions-engineering.md`: Tailwind
 is in, shadcn stays out. No visible change at 1280 and 390 px or at the breakpoints' edges, light and dark, except the
 account page's new theme row. Not deployed.
+
+## [2026-11-11] done | Brief 19, the server in the house code structure
+
+[Brief 19](briefs/done/19-the-server-in-the-code-structure.md): `server/src/` is now `server.ts` (the entry, with
+close-with-grace, timeouts and `trustProxy`; the container's `CMD` runs `server/dist/server.js`), `app.ts`, `config.ts`
+(the one reader of the environment), `plugins/errors.ts` and `plugins/auth/`, `features/` (health, board, runs,
+questions, sprints, tickets, sync) and `db/store.ts`, kept whole. Every one of the 19 routes declares its schemas from
+`shared/` through the zod type provider, so the 13 hand `parse()` calls and `keyOf()` are gone. zod is 4.6.7 with one
+copy (root `overrides`), which closes the audit's zod finding. `app.test.ts` was split by feature onto
+`buildTestApp`, and the accounts decorator is gone. `check-structure` runs strict (41 errors before, 0 after, one
+accepted: the `/` redirect). Before and after: 100 replies captured through the real app, 94 identical, 4 with the
+same JSON in another key order (`moves`: `endedRun` before `questions`) and 2 with "received null" for "received
+undefined" in a missing body's message; no dropped field. Not deployed; docker was not run.
+
