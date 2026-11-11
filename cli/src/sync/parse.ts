@@ -20,7 +20,7 @@ export function briefTitle(markdown: string, slug: string): string {
 /** `night-mode-for-the-map` → "Night mode for the map". */
 export function slugWords(slug: string): string {
   const words = slug.replace(/[-_]+/g, " ").trim();
-  return words ? words[0]!.toUpperCase() + words.slice(1) : slug;
+  return words ? words.charAt(0).toUpperCase() + words.slice(1) : slug;
 }
 
 /** Markdown links and images become their text: relative links mean nothing on the board. */
@@ -31,10 +31,10 @@ export function unlink(text: string): string {
 /** The first paragraph of the lines from `start`: skip blank lines, stop at the next blank line or heading. */
 function paragraphAt(lines: string[], start: number, skip: (line: string) => boolean = () => false): string | null {
   let i = start;
-  while (i < lines.length && (lines[i]!.trim() === "" || skip(lines[i]!))) i++;
+  while (i < lines.length && (lines[i]?.trim() === "" || skip(lines[i] ?? ""))) i++;
   const paragraph: string[] = [];
   for (; i < lines.length; i++) {
-    const line = lines[i]!;
+    const line = lines[i] ?? "";
     if (line.trim() === "" || /^#{1,6}\s/.test(line)) break;
     paragraph.push(line.trim());
   }
@@ -89,7 +89,7 @@ export function frontmatter(markdown: string): { fields: Map<string, string>; bo
   if (end === -1) return { fields, body: markdown };
   for (const line of lines.slice(1, end)) {
     const match = /^([A-Za-z_][\w-]*)\s*:\s*(.*?)\s*$/.exec(line);
-    if (match) fields.set(match[1]!.toLowerCase(), match[2]!.replace(/^(['"])(.*)\1$/, "$2"));
+    if (match) fields.set((match[1] ?? "").toLowerCase(), (match[2] ?? "").replace(/^(['"])(.*)\1$/, "$2"));
   }
   return { fields, body: lines.slice(end + 1).join("\n") };
 }
@@ -163,7 +163,7 @@ export function blockedBy(markdown: string): string | null {
     .slice(0, 5);
   for (const line of near) {
     const match = /^blocked[ -]by\s*\**\s*:\s*\**\s*(.*)$/i.exec(line.trim().replace(/^\*+\s*/, ""));
-    if (match) return cleanCondition(match[1]!.replace(/\*+$/, ""));
+    if (match) return cleanCondition((match[1] ?? "").replace(/\*+$/, ""));
   }
   return null;
 }

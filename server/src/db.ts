@@ -205,9 +205,10 @@ function migrate(db: Db): void {
   if (current >= MIGRATIONS.length) return;
   db.pragma("foreign_keys = OFF");
   try {
-    for (let version = current; version < MIGRATIONS.length; version++) {
+    for (const [offset, migration] of MIGRATIONS.slice(current).entries()) {
+      const version = current + offset;
       db.transaction(() => {
-        db.exec(MIGRATIONS[version]!);
+        db.exec(migration);
         const broken = db.pragma("foreign_key_check") as unknown[];
         if (broken.length > 0) throw new Error(`migration ${version + 1} left ${broken.length} broken foreign key(s)`);
         db.pragma(`user_version = ${version + 1}`);

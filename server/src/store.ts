@@ -215,7 +215,9 @@ export class Store {
 
   /** The active sprint. The migration makes one and the schema allows no second. */
   activeSprint(): Sprint {
-    return this.toSprint(this.sprintRows("s.ended_on IS NULL")[0]!);
+    const row = this.sprintRows("s.ended_on IS NULL")[0];
+    if (!row) throw new Error("the board has no active sprint");
+    return this.toSprint(row);
   }
 
   /** Every sprint, the newest first. */
@@ -224,6 +226,13 @@ export class Store {
   }
 
   /** Sprint `number`, or null when there is none. */
+  /** A sprint known to exist, such as one this transaction just made. */
+  private requireSprint(number: number): Sprint {
+    const sprint = this.sprint(number);
+    if (!sprint) throw new Error(`sprint ${number} is missing`);
+    return sprint;
+  }
+
   sprint(number: number): Sprint | null {
     const row = this.sprintRows("s.number = ?", [number])[0];
     return row ? this.toSprint(row) : null;
@@ -269,7 +278,12 @@ export class Store {
         .prepare("SELECT COUNT(*) FROM tickets WHERE sprint = ? AND hidden = 0")
         .pluck()
         .get(expected) as number;
-      return { ok: true as const, sprint: this.sprint(expected)!, closed: this.sprint(active.number)!, moved };
+      return {
+        ok: true as const,
+        sprint: this.requireSprint(expected),
+        closed: this.requireSprint(active.number),
+        moved,
+      };
     })();
   }
 
@@ -423,14 +437,15 @@ export class Store {
         return { ok: false as const, open: open.map((question) => question.number) };
       }
       this.touchRun(key);
-      const question = this.questions(key).find((candidate) => candidate.number === number)!;
+      const question = this.questions(key).find((candidate) => candidate.number === number);
+      if (!question) throw new Error(`question ${number} on ${key} is missing`);
       const comment = this.addComment(key, {
         author,
         body: `Answered question ${number}: ${question.text}\n\n${question.answer}`,
         role: null,
         move: null,
       });
-      return { ok: true as const, ticket: this.getTicket(key)!, question, comment };
+      return { ok: true as const, ticket: this.requireTicket(key), question, comment };
     })();
   }
 
@@ -594,6 +609,13 @@ export class Store {
     this.db
       .prepare("UPDATE runs SET ended_at = ?, ended = ?, ended_status = ? WHERE ticket_key = ? AND ended_at IS NULL")
       .run(this.now(), how, to, key);
+  }
+
+  /** A ticket known to exist, such as one this transaction just wrote. */
+  requireTicket(key: string): Ticket {
+    const ticket = this.getTicket(key);
+    if (!ticket) throw new Error(`ticket ${key} is missing`);
+    return ticket;
   }
 
   getTicket(key: string): Ticket | null {
@@ -789,7 +811,7 @@ export class Store {
       const asked = this.ask(key, questions, author);
       return {
         ok: true as const,
-        ticket: this.getTicket(key)!,
+        ticket: this.requireTicket(key),
         comment,
         questions: asked,
         endedRun: open && this.runById(open.id),
@@ -850,7 +872,14 @@ export class Store {
       }
       const comment = this.addComment(key, { author, body, role: null, move: null });
       const asked = this.ask(key, questions, author);
-      return { ok: true as const, ticket: this.getTicket(key)!, resumed: true, comment, passedFrom, questions: asked };
+      return {
+        ok: true as const,
+        ticket: this.requireTicket(key),
+        resumed: true,
+        comment,
+        passedFrom,
+        questions: asked,
+      };
     })();
   }
 
@@ -876,7 +905,7 @@ export class Store {
         role: null,
         move: null,
       });
-      return { ticket: this.getTicket(key)!, run: this.runById(open.id), comment };
+      return { ticket: this.requireTicket(key), run: this.runById(open.id), comment };
     })();
   }
 

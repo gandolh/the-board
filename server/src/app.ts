@@ -143,7 +143,7 @@ function isUnder(path: string, prefix: string): boolean {
 }
 
 function pathOf(url: string): string {
-  return url.split("?")[0]!;
+  return url.split("?")[0] ?? "";
 }
 
 function digest(value: string): Buffer {
@@ -156,8 +156,9 @@ function digest(value: string): Buffer {
  */
 export function bearerMatches(header: string | undefined, expected: Buffer): boolean {
   const match = /^Bearer\s+(\S+)\s*$/i.exec(header ?? "");
-  if (!match) return false;
-  return timingSafeEqual(digest(match[1]!), expected);
+  const token = match?.[1];
+  if (token === undefined) return false;
+  return timingSafeEqual(digest(token), expected);
 }
 
 /** The only API route with no session or token: vps-deploy's health check calls it bare. */
@@ -364,7 +365,7 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
 
   /** A move the table refuses, with the moves the ticket may make. */
   const refused = (reply: FastifyReply, key: string, target: Status, check: Extract<MoveCheck, { ok: false }>) => {
-    const from = STATUS_LABELS[store.getTicket(key)!.status];
+    const from = STATUS_LABELS[store.requireTicket(key).status];
     const to = STATUS_LABELS[target];
     const rule = check.allowed.find((candidate) => candidate.to === target);
     return fail(reply, 400, {
@@ -444,7 +445,7 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
       store.touchRun(key);
       return !existing;
     })();
-    const body: UpsertTicketResponse = { created, ticket: store.getTicket(key)! };
+    const body: UpsertTicketResponse = { created, ticket: store.requireTicket(key) };
     return reply.status(created ? 201 : 200).send(body);
   });
 

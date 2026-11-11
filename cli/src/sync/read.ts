@@ -130,8 +130,8 @@ export function readProject(root: string, project: string, warn: Warn = quiet): 
       if (!match || !statSync(join(dir, name)).isFile()) continue;
       const markdown = readFileSync(join(dir, name), "utf8");
       briefs.push({
-        number: Number.parseInt(match[1]!, 10),
-        title: briefTitle(markdown, match[2]!),
+        number: Number.parseInt(match[1] ?? "", 10),
+        title: briefTitle(markdown, match[2] ?? ""),
         summary: briefSummary(markdown),
         briefPath: `corpus/briefs/${state}/${name}`,
         state,

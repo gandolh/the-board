@@ -16,12 +16,12 @@ import type { Runtime } from "../runtime.js";
 function holdArgs(rt: Runtime, verb: "hold" | "drop", args: string[]): { key: string; kind: HoldKind; value: string } {
   const { values, positionals } = rt.parse(args, {});
   const usage = `${verb} <ticket> ${HOLD_KINDS.join("|")} <value>`;
-  if (positionals.length !== 3) throw new UsageError(usage);
-  const key = rt.ticketKey(positionals[0], values.project);
-  const kind = holdKindSchema.safeParse(positionals[1]!.trim().toLowerCase());
-  if (!kind.success)
-    throw new UsageError(`"${positionals[1]}" is not a kind to ${verb}. One of: ${HOLD_KINDS.join(", ")}`);
-  const value = positionals[2]!.trim();
+  const [ticket, kindArg, valueArg] = positionals;
+  if (positionals.length !== 3 || kindArg === undefined || valueArg === undefined) throw new UsageError(usage);
+  const key = rt.ticketKey(ticket, values.project);
+  const kind = holdKindSchema.safeParse(kindArg.trim().toLowerCase());
+  if (!kind.success) throw new UsageError(`"${kindArg}" is not a kind to ${verb}. One of: ${HOLD_KINDS.join(", ")}`);
+  const value = valueArg.trim();
   if (!value) throw new UsageError(usage);
   return { key, kind: kind.data, value };
 }

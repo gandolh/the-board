@@ -216,7 +216,7 @@ export function DetailPanel({
                           {earlier.author}: {runEnding(earlier)}, {runDurationText(earlier, refreshedAt ?? new Date())}
                         </span>
                         <span className="muted">
-                          , {when(earlier.startedAt)} to {when(earlier.endedAt!)}
+                          , {when(earlier.startedAt)} to {earlier.endedAt === null ? "" : when(earlier.endedAt)}
                         </span>
                       </li>
                     ))}

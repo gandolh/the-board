@@ -167,7 +167,7 @@ export function ticketDetail(
       lines.push(
         question.answeredAt === null
           ? "    open"
-          : `    answered by ${question.answeredBy} [${question.answeredAt}]: ${question.answer!.replace(/\n/g, "\n    ")}`,
+          : `    answered by ${question.answeredBy} [${question.answeredAt}]: ${(question.answer ?? "").replace(/\n/g, "\n    ")}`,
       );
     }
     lines.push("");

@@ -17,9 +17,10 @@ function openOnes(numbers: number[]): string {
 export async function answer(rt: Runtime, args: string[]): Promise<void> {
   const { values, positionals } = rt.parse(args, { message: { type: "string", short: "m" } });
   const usage = 'answer <ticket> <number> -m "<the owner\'s answer>"';
-  if (positionals.length !== 2 || !/^\d+$/.test(positionals[1]!)) throw new UsageError(usage);
-  const key = rt.ticketKey(positionals[0], values.project);
-  const number = Number.parseInt(positionals[1]!, 10);
+  const [ticket, numberArg] = positionals;
+  if (positionals.length !== 2 || numberArg === undefined || !/^\d+$/.test(numberArg)) throw new UsageError(usage);
+  const key = rt.ticketKey(ticket, values.project);
+  const number = Number.parseInt(numberArg, 10);
   if (!values.message?.trim()) throw new UsageError(`answer needs -m: ${usage}`);
   const client = rt.client();
   const { questions = [] } = await client.ticket(key);

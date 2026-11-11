@@ -13,7 +13,7 @@ const HEADINGS: Record<NeedKind, string> = {
 
 /** The first line of a reason, cut to fit one line of the list. */
 function firstLine(text: string): string {
-  const line = text.trim().split("\n")[0]!.trim();
+  const line = text.trim().split("\n")[0]?.trim() ?? "";
   return line.length > 100 ? `${line.slice(0, 99)}…` : line;
 }
 

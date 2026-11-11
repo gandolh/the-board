@@ -42,7 +42,7 @@ function readVarFrom(file: string, name: "BRIEF_BOARD_URL" | "BRIEF_BOARD_TOKEN"
   for (const line of readFileSync(file, "utf8").split(/\r?\n/)) {
     const match = pattern.exec(line);
     if (!match) continue;
-    const value = match[1]!.replace(/^(['"])(.*)\1$/, "$2").trim();
+    const value = (match[1] ?? "").replace(/^(['"])(.*)\1$/, "$2").trim();
     if (value) return value;
   }
   return undefined;

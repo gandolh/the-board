@@ -95,7 +95,7 @@ export function runSync(store: Store, request: SyncRequest): SyncResponse {
           result,
         );
       const existing = new Map(
-        tickets.filter((ticket) => ticket.number !== null).map((ticket) => [ticket.number!, ticket]),
+        tickets.flatMap((ticket) => (ticket.number === null ? [] : [[ticket.number, ticket] as const])),
       );
       const seen = new Set<number>();
 

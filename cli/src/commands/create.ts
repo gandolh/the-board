@@ -17,7 +17,7 @@ export function findBrief(root: string, number: number): string | null {
     }
     const match = names.find((name) => {
       const m = /^(\d+)-.+\.md$/.exec(name);
-      return m !== null && Number.parseInt(m[1]!, 10) === number;
+      return m !== null && Number.parseInt(m[1] ?? "", 10) === number;
     });
     if (match) return `corpus/briefs/${dir}/${match}`;
   }

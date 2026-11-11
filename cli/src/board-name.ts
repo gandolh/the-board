@@ -20,7 +20,7 @@ export const BOARD_NAME_FILE = join("corpus", "board-name");
 export function readBoardName(dir: string): string | null {
   const file = join(dir, BOARD_NAME_FILE);
   if (!existsSync(file)) return null;
-  const name = readFileSync(file, "utf8").split(/\r?\n/)[0]!.trim();
+  const name = readFileSync(file, "utf8").split(/\r?\n/)[0]?.trim() ?? "";
   if (parseKey(formatKey(name, 1))?.project !== name) {
     throw new UsageError(
       `${file}: "${name}" is not a project name; use letters, digits, dots, dashes and underscores, ending in a letter, digit, dot or underscore`,
