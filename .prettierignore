@@ -1,0 +1,17 @@
+# Markdown stays out of Prettier (decided 2026-11-10): the CLI prints guide.md to every agent, and
+# done briefs are immutable.
+*.md
+
+# The old stylesheet goes when the Tailwind migration deletes it.
+web/src/styles.css
+
+# Generated or vendored copies.
+server/vendor/
+web/vendor/
+vendor/house-style/
+
+# Lockfile, build output, local data.
+package-lock.json
+dist/
+data/
+coverage/
