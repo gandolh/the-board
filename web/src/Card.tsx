@@ -1,4 +1,6 @@
 import { openRun, parseTodoKey, type Ticket } from "@brief-board/shared";
+import { cn } from "./lib/cn";
+import { TAG } from "./looks";
 import { endedRunLine, runLine } from "./runs";
 import { since, when } from "./time";
 
@@ -22,22 +24,32 @@ export function Card({ ticket, now, onOpen }: { ticket: Ticket; now: Date; onOpe
   return (
     <button
       type="button"
-      className="card"
+      className="flex w-full shrink-0 cursor-pointer flex-col gap-1 rounded-box bg-surface px-2.5 py-2 text-left shadow-card hover:bg-surface-hover"
       onClick={() => onOpen(ticket.key)}
       aria-label={`${ticket.key}: ${ticket.title}`}
     >
-      <span className="card-key">{todo ? todo.slug : ticket.key}</span>
-      <span className="card-title">{ticket.title}</span>
-      {run && <span className={`card-run${run.stale ? " card-run-stale" : ""}`}>{run.text}</span>}
-      <span className="card-foot">
+      <span className="text-meta text-ink-muted tabular-nums">{todo ? todo.slug : ticket.key}</span>
+      <span className="wrap-anywhere">{ticket.title}</span>
+      {run && (
+        <span
+          data-stale={run.stale || undefined}
+          className={cn("text-meta wrap-anywhere", run.stale ? "text-warn" : "text-ink-muted")}
+        >
+          {run.text}
+        </span>
+      )}
+      <span className="flex flex-wrap items-center gap-1">
         {ticket.blockedBy !== null && <BlockedBadge condition={ticket.blockedBy} />}
         {ticket.openQuestions > 0 && <QuestionBadge count={ticket.openQuestions} />}
         {ticket.tags.map((tag) => (
-          <span key={tag} className="tag">
+          <span key={tag} className={TAG}>
             {tag}
           </span>
         ))}
-        <span className="card-age" title={`In this column since ${when(ticket.statusChangedAt)}`}>
+        <span
+          className="ml-auto text-meta text-ink-muted tabular-nums"
+          title={`In this column since ${when(ticket.statusChangedAt)}`}
+        >
           {since(ticket.statusChangedAt, now)}
         </span>
       </span>
@@ -49,7 +61,10 @@ export function Card({ ticket, now, onOpen }: { ticket: Ticket; now: Date; onOpe
 function BlockedBadge({ condition }: { condition: string }) {
   const text = `Blocked by: ${condition}`;
   return (
-    <span className="badge-blocked" title={text}>
+    <span
+      className="max-w-full overflow-hidden rounded-chip bg-backlog px-1.5 text-meta font-strong text-ellipsis whitespace-nowrap text-surface"
+      title={text}
+    >
       {text}
     </span>
   );
@@ -59,7 +74,7 @@ function BlockedBadge({ condition }: { condition: string }) {
 function QuestionBadge({ count }: { count: number }) {
   const text = `${count} ${count === 1 ? "question" : "questions"}`;
   return (
-    <span className="badge-questions" title={`${text} for the owner`}>
+    <span className="rounded-chip bg-accent px-1.5 text-meta font-strong text-surface" title={`${text} for the owner`}>
       {text}
     </span>
   );

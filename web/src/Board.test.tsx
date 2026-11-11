@@ -49,19 +49,19 @@ describe("the board", () => {
   );
 
   it("puts Backlog first among the columns", () => {
-    const heads = [...html.matchAll(/class="col-head col-([a-z_]+)"/g)].map((match) => match[1]);
+    const heads = [...html.matchAll(/data-column="([a-z_]+)"/g)].map((match) => match[1]);
     expect(heads).toEqual([...STATUSES]);
     expect(heads[0]).toBe("backlog");
   });
 
   it("files a todo's card in Backlog, showing its slug, and the brief's in To Do", () => {
     const cell = (status: string, next: string) =>
-      new RegExp(`class="cell col-${status}">(.*?)</div><div class="cell col-${next}"`, "s").exec(html)?.[1] ?? "";
+      new RegExp(`data-cell="${status}"[^>]*>(.*?)data-cell="${next}"`, "s").exec(html)?.[1] ?? "";
     const backlog = cell("backlog", "todo");
-    expect(backlog).toContain('<span class="card-key">walls-step-2</span>');
+    expect(backlog).toMatch(/>walls-step-2<\/span>/);
     expect(backlog).toContain("Walls meet");
     expect(backlog).not.toContain("p-01");
-    expect(cell("todo", "in_progress")).toContain('<span class="card-key">p-01</span>');
+    expect(cell("todo", "in_progress")).toMatch(/>p-01<\/span>/);
   });
 });
 
@@ -76,13 +76,13 @@ describe("a long cell", () => {
   it("scrolls past five cards, and only that cell", () => {
     expect(CELL_CARDS).toBe(5);
     const long = html([...done(6), ticket({ key: "p-07", number: 7, status: "todo" })]);
-    expect(long).toContain('class="cell col-done cell-long"');
-    expect(long).toContain('class="cell col-todo"');
-    expect(long.match(/cell-long/g)).toHaveLength(1);
+    expect(long).toMatch(/data-cell="done" data-long="true"/);
+    expect(long).toMatch(/data-cell="todo"(?! data-long)/);
+    expect(long.match(/data-long/g)).toHaveLength(1);
   });
 
   it("stays as tall as its cards at five or fewer", () => {
-    expect(html(done(5))).not.toContain("cell-long");
+    expect(html(done(5))).not.toContain("data-long");
   });
 });
 
@@ -104,20 +104,19 @@ describe("a card's run", () => {
     renderToStaticMarkup(<Card ticket={ticket({ status: "in_progress", ...fields })} now={now} onOpen={() => {}} />);
 
   it("shows who runs an In Progress ticket, how long it has been running, and when the board last heard", () => {
-    expect(card({ run: run({}) })).toContain('<span class="card-run">ana · running 2h · heard 20m ago</span>');
+    expect(card({ run: run({}) })).toMatch(/>ana · running 2h · heard 20m ago<\/span>/);
+    expect(card({ run: run({}) })).not.toContain("data-stale");
   });
 
   it("shows a stale run in the warning tone, at least start to last heard", () => {
-    expect(card({ run: run({ stale: true, startedAt: minutesAgo(490), lastHeardAt: minutesAgo(300) }) })).toContain(
-      '<span class="card-run card-run-stale">ana · stale run, heard 5h ago · ran ≥ 3h 10m</span>',
+    expect(card({ run: run({ stale: true, startedAt: minutesAgo(490), lastHeardAt: minutesAgo(300) }) })).toMatch(
+      /data-stale="true"[^>]*>ana · stale run, heard 5h ago · ran ≥ 3h 10m<\/span>/,
     );
   });
 
   it("says an In Progress ticket has no run, including after its run ended", () => {
-    expect(card({})).toContain('<span class="card-run">no run</span>');
-    expect(card({ run: run({ endedAt: minutesAgo(5), ended: "released" }) })).toContain(
-      '<span class="card-run">no run</span>',
-    );
+    expect(card({})).toMatch(/>no run<\/span>/);
+    expect(card({ run: run({ endedAt: minutesAgo(5), ended: "released" }) })).toMatch(/>no run<\/span>/);
   });
 
   it("shows how long the last run took outside In Progress, and nothing where none ran", () => {
@@ -126,11 +125,11 @@ describe("a card's run", () => {
         status: "ready_for_deploy",
         run: run({ endedAt: minutesAgo(40), ended: "moved", endedTo: "ready_for_deploy" }),
       }),
-    ).toContain('<span class="card-run">ana · took 1h 20m</span>');
+    ).toMatch(/>ana · took 1h 20m<\/span>/);
     expect(
       card({ status: "done", run: run({ lastHeardAt: minutesAgo(50), endedAt: minutesAgo(5), ended: "stale" }) }),
-    ).toContain('<span class="card-run">ana · took ≥ 1h 10m</span>');
-    expect(card({ status: "todo" })).not.toContain("card-run");
+    ).toMatch(/>ana · took ≥ 1h 10m<\/span>/);
+    expect(card({ status: "todo" })).not.toMatch(/took|running|no run/);
   });
 
   it("words a run started this minute, and each way a run ends", () => {
@@ -150,15 +149,13 @@ describe("a card's questions", () => {
 
   it("counts open questions in a badge, in every column, Done included", () => {
     for (const status of STATUSES) {
-      expect(card({ status, openQuestions: 2 })).toContain(
-        '<span class="badge-questions" title="2 questions for the owner">2 questions</span>',
-      );
+      expect(card({ status, openQuestions: 2 })).toContain('title="2 questions for the owner">2 questions</span>');
     }
     expect(card({ status: "done", openQuestions: 1 })).toContain(">1 question</span>");
   });
 
   it("shows no badge when none are open", () => {
-    expect(card({ openQuestions: 0 })).not.toContain("badge-questions");
+    expect(card({ openQuestions: 0 })).not.toContain("for the owner");
   });
 });
 
@@ -168,10 +165,8 @@ describe("a blocked card", () => {
 
   it("says what it waits on in a badge, with the whole condition in its title", () => {
     const html = card({ key: "p-14", number: 14, status: "backlog", blockedBy: "a stronger machine" });
-    expect(html).toContain(
-      '<span class="badge-blocked" title="Blocked by: a stronger machine">Blocked by: a stronger machine</span>',
-    );
-    expect(card({})).not.toContain("badge-blocked");
+    expect(html).toContain('title="Blocked by: a stronger machine">Blocked by: a stronger machine</span>');
+    expect(card({})).not.toContain("Blocked by:");
   });
 
   it("comes after the other cards in Backlog", () => {

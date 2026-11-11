@@ -1,5 +1,6 @@
 import { Collapsible as BaseCollapsible } from "@base-ui/react/collapsible";
 import type { ReactNode } from "react";
+import { cn } from "../../lib/cn";
 
 export interface CollapsibleProps {
   open: boolean;
@@ -34,8 +35,12 @@ export function Collapsible({
   children,
 }: CollapsibleProps) {
   const button = (
-    <BaseCollapsible.Trigger className={triggerClassName}>
-      <svg className="chevron" viewBox="0 0 16 16" aria-hidden="true">
+    <BaseCollapsible.Trigger className={cn("group", triggerClassName)}>
+      <svg
+        className="size-4 flex-none transition-transform duration-150 group-data-panel-open:rotate-90 motion-reduce:transition-none"
+        viewBox="0 0 16 16"
+        aria-hidden="true"
+      >
         <path
           d="M6 4l4 4-4 4"
           fill="none"
