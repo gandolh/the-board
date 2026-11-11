@@ -1,5 +1,7 @@
 import { useEffect } from "react";
 import { useLogout, useSession, useWardLink, useWardResult, useWardSignOut } from "../vendor/ward/ward-auth-react.js";
+import { BUTTON, FACTS, NOTICE } from "./looks";
+import { cn } from "./lib/cn";
 import { accountMessage } from "./messages";
 import { navigate } from "./route";
 
@@ -26,9 +28,10 @@ export function AccountPage() {
   const failure = link.error ?? result.error ?? logout.error ?? wardSignOut.error;
 
   return (
-    <main className="account">
-      <p>
+    <main className="mx-auto max-w-140 p-6">
+      <p className="my-3.5">
         <a
+          className="text-accent underline"
           href="."
           onClick={(event) => {
             event.preventDefault();
@@ -38,8 +41,8 @@ export function AccountPage() {
           ← Back to the board
         </a>
       </p>
-      <h2>Account</h2>
-      <dl className="facts">
+      <h2 className="my-4 text-display font-bold">Account</h2>
+      <dl className={FACTS}>
         <dt>Signed in as</dt>
         <dd>{user.username}</dd>
         <dt>Signed in with</dt>
@@ -53,29 +56,29 @@ export function AccountPage() {
       </dl>
 
       {result.result === "linked" && (
-        <p className="gate-notice" role="status">
+        <p className={cn("my-3.5", NOTICE)} role="status">
           Ward is linked. You can sign in with it from now on.
         </p>
       )}
       {failure && (
-        <p className="auth-error" role="alert">
+        <p className="my-3.5 text-danger" role="alert">
           {accountMessage(failure)}
         </p>
       )}
 
-      <div className="account-actions">
+      <div className="mt-4 flex flex-wrap gap-2">
         {ward.enabled && !ward.linked && !link.linked && (
-          <button type="button" className="button" disabled={link.pending} onClick={() => void link.link()}>
+          <button type="button" className={BUTTON} disabled={link.pending} onClick={() => void link.link()}>
             {link.pending ? "Opening Ward…" : "Link Ward"}
           </button>
         )}
-        <button type="button" className="button" disabled={logout.pending} onClick={() => void logout.logout()}>
+        <button type="button" className={BUTTON} disabled={logout.pending} onClick={() => void logout.logout()}>
           Sign out
         </button>
         {viaWard && (
           <button
             type="button"
-            className="button"
+            className={BUTTON}
             disabled={wardSignOut.pending}
             onClick={() => void wardSignOut.signOut()}
           >
