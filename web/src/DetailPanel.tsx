@@ -1,8 +1,8 @@
-import { Dialog } from "@base-ui/react/dialog";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Markdown from "react-markdown";
 import { openRun, runDurationText, STATUS_LABELS, type TicketDetailResponse } from "@brief-board/shared";
 import { fetchTicket } from "./api";
+import { Panel, PanelTitle } from "./components/ui/Dialog";
 import { ROLE_LABELS } from "./labels";
 import { runEnding, runLine } from "./runs";
 import { when } from "./time";
@@ -30,7 +30,6 @@ export function DetailPanel({
 }) {
   const [detail, setDetail] = useState<TicketDetailResponse | null>(null);
   const [failed, setFailed] = useState(false);
-  const closeRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -56,196 +55,179 @@ export function DetailPanel({
     : [];
 
   return (
-    <Dialog.Root
-      open
-      modal={false}
-      disablePointerDismissal
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
+    <Panel
+      label={`Ticket ${ticketKey}`}
+      onClose={onClose}
+      top={
+        <span className="panel-key">
+          {ticketKey} <CopyButton text={ticketKey} label="Copy key" />
+        </span>
+      }
     >
-      <Dialog.Portal>
-        <Dialog.Popup className="panel" aria-label={`Ticket ${ticketKey}`} initialFocus={closeRef} render={<aside />}>
-          <div className="panel-top">
-            <span className="panel-key">
-              {ticketKey} <CopyButton text={ticketKey} label="Copy key" />
-            </span>
-            <Dialog.Close ref={closeRef} className="icon-button" aria-label="Close">
-              <svg viewBox="0 0 16 16" aria-hidden="true">
-                <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-              </svg>
-            </Dialog.Close>
+      {!shown ? (
+        <p className="muted">{failed ? "Couldn't load this ticket." : "Loading…"}</p>
+      ) : (
+        <div className="panel-body">
+          <PanelTitle className="panel-title">{shown.ticket.title}</PanelTitle>
+          <dl className="facts">
+            <dt>Status</dt>
+            <dd>
+              <span className={`status status-${shown.ticket.status}`}>{STATUS_LABELS[shown.ticket.status]}</span>
+              {shown.ticket.hidden && <span className="muted"> · hidden (superseded)</span>}
+            </dd>
+            {run && (
+              <>
+                <dt>Run</dt>
+                <dd className={run.stale ? "run-stale" : undefined}>{run.text}</dd>
+              </>
+            )}
+            <dt>Project</dt>
+            <dd>{shown.ticket.project}</dd>
+            <dt>Tags</dt>
+            <dd>
+              {shown.ticket.tags.length === 0 ? (
+                <span className="muted">none</span>
+              ) : (
+                shown.ticket.tags.map((tag) => (
+                  <span key={tag} className="tag">
+                    {tag}
+                  </span>
+                ))
+              )}
+            </dd>
+            {shown.ticket.blockedBy !== null && (
+              <>
+                <dt>Blocked by</dt>
+                <dd>{shown.ticket.blockedBy}</dd>
+              </>
+            )}
+            <dt>{shown.ticket.number === null ? "Todo" : "Brief"}</dt>
+            <dd className="brief-path">
+              <code>{shown.ticket.briefPath}</code> <CopyButton text={shown.ticket.briefPath} label="Copy path" />
+            </dd>
+          </dl>
+          {shown.ticket.status === "backlog" &&
+            (shown.ticket.number === null ? (
+              <p className="muted">
+                Sync keeps this ticket to its todo. It leaves Backlog when the todo is promoted to a brief.
+              </p>
+            ) : (
+              <p className="muted">
+                Sync keeps this ticket to its brief in blocked/. It leaves Backlog when the brief goes back to todo/.
+              </p>
+            ))}
+
+          <h3>Summary</h3>
+          <div className="markdown">
+            {shown.ticket.summary.trim() ? (
+              <Markdown skipHtml>{shown.ticket.summary}</Markdown>
+            ) : (
+              <p className="muted">No summary.</p>
+            )}
           </div>
 
-          {!shown ? (
-            <p className="muted">{failed ? "Couldn't load this ticket." : "Loading…"}</p>
-          ) : (
-            <div className="panel-body">
-              <h2 className="panel-title">{shown.ticket.title}</h2>
-              <dl className="facts">
-                <dt>Status</dt>
-                <dd>
-                  <span className={`status status-${shown.ticket.status}`}>{STATUS_LABELS[shown.ticket.status]}</span>
-                  {shown.ticket.hidden && <span className="muted"> · hidden (superseded)</span>}
-                </dd>
-                {run && (
-                  <>
-                    <dt>Run</dt>
-                    <dd className={run.stale ? "run-stale" : undefined}>{run.text}</dd>
-                  </>
-                )}
-                <dt>Project</dt>
-                <dd>{shown.ticket.project}</dd>
-                <dt>Tags</dt>
-                <dd>
-                  {shown.ticket.tags.length === 0 ? (
-                    <span className="muted">none</span>
-                  ) : (
-                    shown.ticket.tags.map((tag) => (
-                      <span key={tag} className="tag">
-                        {tag}
+          {questions.length > 0 && (
+            <>
+              <h3>Questions</h3>
+              <ol className="comments">
+                {questions.map((question) => (
+                  <li key={question.number} className="comment">
+                    <div className="comment-head">
+                      <span className={`role ${question.answeredAt === null ? "question-open" : "question-answered"}`}>
+                        {question.answeredAt === null ? "Open" : "Answered"}
                       </span>
-                    ))
-                  )}
-                </dd>
-                {shown.ticket.blockedBy !== null && (
-                  <>
-                    <dt>Blocked by</dt>
-                    <dd>{shown.ticket.blockedBy}</dd>
-                  </>
-                )}
-                <dt>{shown.ticket.number === null ? "Todo" : "Brief"}</dt>
-                <dd className="brief-path">
-                  <code>{shown.ticket.briefPath}</code> <CopyButton text={shown.ticket.briefPath} label="Copy path" />
-                </dd>
-              </dl>
-              {shown.ticket.status === "backlog" &&
-                (shown.ticket.number === null ? (
-                  <p className="muted">
-                    Sync keeps this ticket to its todo. It leaves Backlog when the todo is promoted to a brief.
-                  </p>
-                ) : (
-                  <p className="muted">
-                    Sync keeps this ticket to its brief in blocked/. It leaves Backlog when the brief goes back to
-                    todo/.
-                  </p>
-                ))}
-
-              <h3>Summary</h3>
-              <div className="markdown">
-                {shown.ticket.summary.trim() ? (
-                  <Markdown skipHtml>{shown.ticket.summary}</Markdown>
-                ) : (
-                  <p className="muted">No summary.</p>
-                )}
-              </div>
-
-              {questions.length > 0 && (
-                <>
-                  <h3>Questions</h3>
-                  <ol className="comments">
-                    {questions.map((question) => (
-                      <li key={question.number} className="comment">
-                        <div className="comment-head">
-                          <span
-                            className={`role ${question.answeredAt === null ? "question-open" : "question-answered"}`}
-                          >
-                            {question.answeredAt === null ? "Open" : "Answered"}
-                          </span>
-                          <span className="comment-author">#{question.number}</span>
-                          <span className="muted">{question.author}</span>
-                          <time className="muted" dateTime={question.askedAt}>
-                            {when(question.askedAt)}
-                          </time>
+                      <span className="comment-author">#{question.number}</span>
+                      <span className="muted">{question.author}</span>
+                      <time className="muted" dateTime={question.askedAt}>
+                        {when(question.askedAt)}
+                      </time>
+                    </div>
+                    <div className="markdown">
+                      <Markdown skipHtml>{question.text}</Markdown>
+                    </div>
+                    {question.answer !== null && (
+                      <div className="answer">
+                        <div className="comment-head muted">
+                          Answer from {question.answeredBy}, {question.answeredAt ? when(question.answeredAt) : ""}
                         </div>
                         <div className="markdown">
-                          <Markdown skipHtml>{question.text}</Markdown>
+                          <Markdown skipHtml>{question.answer}</Markdown>
                         </div>
-                        {question.answer !== null && (
-                          <div className="answer">
-                            <div className="comment-head muted">
-                              Answer from {question.answeredBy}, {question.answeredAt ? when(question.answeredAt) : ""}
-                            </div>
-                            <div className="markdown">
-                              <Markdown skipHtml>{question.answer}</Markdown>
-                            </div>
-                          </div>
-                        )}
-                      </li>
-                    ))}
-                  </ol>
-                </>
-              )}
-
-              <h3>Comments</h3>
-              {shown.comments.length === 0 ? (
-                <p className="muted">No comments.</p>
-              ) : (
-                <ol className="comments">
-                  {shown.comments.map((comment) => (
-                    <li key={comment.id} className="comment">
-                      <div className="comment-head">
-                        <span className={`role role-${comment.role ?? "comment"}`}>
-                          {ROLE_LABELS[comment.role ?? "comment"]}
-                        </span>
-                        <span className="comment-author">{comment.author}</span>
-                        {comment.move && (
-                          <span className="muted">
-                            {STATUS_LABELS[comment.move.from]} → {STATUS_LABELS[comment.move.to]}
-                          </span>
-                        )}
-                        <time className="muted" dateTime={comment.createdAt}>
-                          {when(comment.createdAt)}
-                        </time>
                       </div>
-                      <div className="markdown">
-                        <Markdown skipHtml>{comment.body}</Markdown>
-                      </div>
-                    </li>
-                  ))}
-                </ol>
-              )}
+                    )}
+                  </li>
+                ))}
+              </ol>
+            </>
+          )}
 
-              {ended.length > 0 && (
-                <>
-                  <h3>Earlier runs</h3>
-                  <ol className="history">
-                    {ended.map((earlier) => (
-                      <li key={earlier.id}>
-                        <span>
-                          {earlier.author}: {runEnding(earlier)}, {runDurationText(earlier, refreshedAt ?? new Date())}
-                        </span>
-                        <span className="muted">
-                          , {when(earlier.startedAt)} to {earlier.endedAt === null ? "" : when(earlier.endedAt)}
-                        </span>
-                      </li>
-                    ))}
-                  </ol>
-                </>
-              )}
+          <h3>Comments</h3>
+          {shown.comments.length === 0 ? (
+            <p className="muted">No comments.</p>
+          ) : (
+            <ol className="comments">
+              {shown.comments.map((comment) => (
+                <li key={comment.id} className="comment">
+                  <div className="comment-head">
+                    <span className={`role role-${comment.role ?? "comment"}`}>
+                      {ROLE_LABELS[comment.role ?? "comment"]}
+                    </span>
+                    <span className="comment-author">{comment.author}</span>
+                    {comment.move && (
+                      <span className="muted">
+                        {STATUS_LABELS[comment.move.from]} → {STATUS_LABELS[comment.move.to]}
+                      </span>
+                    )}
+                    <time className="muted" dateTime={comment.createdAt}>
+                      {when(comment.createdAt)}
+                    </time>
+                  </div>
+                  <div className="markdown">
+                    <Markdown skipHtml>{comment.body}</Markdown>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          )}
 
-              <h3>History</h3>
+          {ended.length > 0 && (
+            <>
+              <h3>Earlier runs</h3>
               <ol className="history">
-                {shown.history.map((event, index) => (
-                  <li key={index}>
+                {ended.map((earlier) => (
+                  <li key={earlier.id}>
                     <span>
-                      {event.from
-                        ? `${STATUS_LABELS[event.from]} → ${STATUS_LABELS[event.to]}`
-                        : `Created in ${STATUS_LABELS[event.to]}`}
+                      {earlier.author}: {runEnding(earlier)}, {runDurationText(earlier, refreshedAt ?? new Date())}
                     </span>
                     <span className="muted">
-                      {" "}
-                      by {event.author}
-                      {event.via === "sync" ? " (sync)" : ""}, {when(event.at)}
+                      , {when(earlier.startedAt)} to {earlier.endedAt === null ? "" : when(earlier.endedAt)}
                     </span>
                   </li>
                 ))}
               </ol>
-            </div>
+            </>
           )}
-        </Dialog.Popup>
-      </Dialog.Portal>
-    </Dialog.Root>
+
+          <h3>History</h3>
+          <ol className="history">
+            {shown.history.map((event, index) => (
+              <li key={index}>
+                <span>
+                  {event.from
+                    ? `${STATUS_LABELS[event.from]} → ${STATUS_LABELS[event.to]}`
+                    : `Created in ${STATUS_LABELS[event.to]}`}
+                </span>
+                <span className="muted">
+                  {" "}
+                  by {event.author}
+                  {event.via === "sync" ? " (sync)" : ""}, {when(event.at)}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
+    </Panel>
   );
 }
 
