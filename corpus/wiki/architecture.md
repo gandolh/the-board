@@ -31,7 +31,7 @@ the board address in this order:
 3. `~/.config/brief-board/env`,
 4. the local default.
 
-The token (since 2026-11-02, [decisions.md](decisions.md)) is
+The token (since 2026-11-02, [decisions-engineering.md](decisions-engineering.md)) is
 `BRIEF_BOARD_TOKEN` in the environment, else in `~/.config/brief-board/env`;
 never a repo's `.env`, since a secret shouldn't sit in every repo. With one,
 the CLI sends `Authorization: Bearer <token>` on every request. A 401
@@ -190,6 +190,6 @@ needs `PUBLIC_ORIGIN=http://127.0.0.1:8806`. `npm run dev` serves the board
 from Vite at `http://localhost:5178/brief-board/` through its proxy. The
 database is a SQLite file in the gitignored `data/` directory. Nothing restarts
 the local server; a down board never stops agent work, see
-[decisions.md](decisions.md). The UI polls the API and shows the active
+[decisions-engineering.md](decisions-engineering.md). The UI polls the API and shows the active
 sprint; the Done column shows its last 14 days, its older Done is on its own
 page, and closed sprints are on the Sprints page. Lanes with nothing open start collapsed.

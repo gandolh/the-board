@@ -5,7 +5,7 @@ updated: 2026-11-03
 
 # Sign-in
 
-Why the board is behind sign-in at all is in [decisions.md](decisions.md)
+Why the board is behind sign-in at all is in [decisions-engineering.md](decisions-engineering.md)
 ("On the VPS at /brief-board, behind sign-in like the other apps" and "The
 CLI authenticates with one shared token"). The code wins where this page and
 it disagree.
