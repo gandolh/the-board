@@ -45,14 +45,17 @@ const ACTIVE_SPRINT = "(SELECT number FROM sprints WHERE ended_on IS NULL)";
 
 /** A write on a ticket in a closed sprint, which nothing may change. */
 export class SprintClosedError extends Error {
-  constructor(
-    readonly key: string,
-    readonly sprint: number,
-    readonly endedOn: string,
-  ) {
+  readonly key: string;
+  readonly sprint: number;
+  readonly endedOn: string;
+
+  constructor(key: string, sprint: number, endedOn: string) {
     super(
       `${key} is in sprint ${sprint}, which closed on ${endedOn}; a closed sprint's tickets are frozen and nothing writes to them`,
     );
+    this.key = key;
+    this.sprint = sprint;
+    this.endedOn = endedOn;
   }
 }
 
@@ -131,13 +134,17 @@ interface HistoryRow {
 }
 
 export class Store {
-  constructor(
-    readonly db: Db,
-    /** The clock, so tests can age a ticket past `doneDays` or a run past `staleMs`. */
-    private readonly clock: () => Date = () => new Date(),
-    /** A run with no write on its ticket for longer than this is stale. */
-    private readonly staleMs: number = DEFAULT_STALE_HOURS * 60 * 60 * 1000,
-  ) {}
+  readonly db: Db;
+  /** The clock, so tests can age a ticket past `doneDays` or a run past `staleMs`. */
+  private readonly clock: () => Date;
+  /** A run with no write on its ticket for longer than this is stale. */
+  private readonly staleMs: number;
+
+  constructor(db: Db, clock: () => Date = () => new Date(), staleMs: number = DEFAULT_STALE_HOURS * 60 * 60 * 1000) {
+    this.db = db;
+    this.clock = clock;
+    this.staleMs = staleMs;
+  }
 
   now(): string {
     return this.clock().toISOString();

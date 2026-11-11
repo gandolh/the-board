@@ -34,11 +34,13 @@ const TIMEOUT_MS = 2_000;
 
 /** A refusal from the board, with its error body. */
 export class ApiRejected extends Rejected {
-  constructor(
-    readonly status: number,
-    readonly body: ErrorBody,
-  ) {
+  readonly status: number;
+  readonly body: ErrorBody;
+
+  constructor(status: number, body: ErrorBody) {
     super(body.message);
+    this.status = status;
+    this.body = body;
   }
 }
 
@@ -61,10 +63,13 @@ export class TokenRefused extends Error {
  * token, every request carries `Authorization: Bearer <token>`.
  */
 export class BoardClient {
-  constructor(
-    readonly url: string,
-    private readonly token?: string,
-  ) {}
+  readonly url: string;
+  private readonly token: string | undefined;
+
+  constructor(url: string, token?: string) {
+    this.url = url;
+    this.token = token;
+  }
 
   private async call<T>(method: string, path: string, body?: unknown): Promise<T> {
     const headers: Record<string, string> = {};

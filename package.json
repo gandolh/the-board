@@ -17,6 +17,7 @@
     "dev": "tsc -b shared && concurrently --names server,web --kill-others-on-fail \"npm run dev -w @brief-board/server\" \"npm run dev -w @brief-board/web\"",
     "build": "tsc -b && npm run build -w @brief-board/web",
     "start": "node server/dist/index.js",
+    "pretest": "tsc -b shared",
     "test": "vitest run",
     "typecheck": "tsc -b && tsc -p web --noEmit",
     "lint": "eslint .",

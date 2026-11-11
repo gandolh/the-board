@@ -16,7 +16,10 @@ export class Runtime {
   readonly root: string | null;
   private clientCache: BoardClient | undefined;
 
-  constructor(readonly ctx: Context) {
+  readonly ctx: Context;
+
+  constructor(ctx: Context) {
+    this.ctx = ctx;
     this.root = repoRoot(ctx.cwd);
   }
 

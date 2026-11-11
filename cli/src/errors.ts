@@ -13,9 +13,12 @@ export class Rejected extends Error {
 
 export class Unreachable extends Error {
   readonly exitCode = 3;
-  constructor(readonly url: string) {
+  readonly url: string;
+
+  constructor(url: string) {
     // The one line an agent sees. It must not suggest writing a path to
     // brief-board anywhere: other repos name it by its command only.
     super(`brief-board: the board isn't reachable at ${url}. Tell the owner and carry on without it.`);
+    this.url = url;
   }
 }
