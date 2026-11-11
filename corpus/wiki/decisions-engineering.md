@@ -1,5 +1,5 @@
 ---
-summary: Locked engineering calls for brief-board, each with date, rejected alternative and reason. One CLI on PATH that other repos name without a path; a down board never stops work (revisited 2026-11-02: the container now runs always, agents still carry on without it); Base UI for the UI's widgets, styled by our own CSS; the CLI authenticates with one shared token; the board on the VPS behind sign-in (2026-11-02); and the house style, vendored from the skills library, Prettier at width 120, npm run check as the gate (2026-11-11). Split out of decisions.md on 2026-11-11. Read before proposing to change any of these.
+summary: Locked engineering calls for brief-board, each with date, rejected alternative and reason. One CLI on PATH that other repos name without a path; a down board never stops work (revisited 2026-11-02: the container now runs always, agents still carry on without it); Base UI for the UI's widgets, styled with Tailwind (revisited 2026-11-11); the CLI authenticates with one shared token; the board on the VPS behind sign-in (2026-11-02); and the house style, vendored from the skills library, Prettier at width 120, npm run check as the gate (2026-11-11). Split out of decisions.md on 2026-11-11. Read before proposing to change any of these.
 updated: 2026-11-11
 ---
 
@@ -37,7 +37,7 @@ made while it is down are lost, and sync recovers them. Rejected: keeping the
 hand-started server on the owner's machine, which the VPS move exists to
 replace.
 
-## Base UI for the UI's widgets, styled by our own CSS
+## Base UI for the UI's widgets, styled with Tailwind
 _2026-10-23_. The detail panel is a Base UI `Dialog` and the lanes are Base UI
 `Collapsible`s. They keep `styles.css` and key off the attributes Base UI sets
 (`data-panel-open`). The owner asked for this on 2026-10-23, after a survey
@@ -52,6 +52,14 @@ is imported only under `web/src/components/ui/` (`Dialog`, `Collapsible`,
 `RadioGroup` wrappers), the panel has a `Dialog.Title`, and the needs strip,
 a filter, is a `RadioGroup` (arrow keys, one Tab stop) with "Show all" beside
 it, not a row of toggle buttons.
+
+_Revisited 2026-11-11_ (the owner's call of 2026-11-09: Base UI is styled with
+Tailwind, and whole apps move to it). The widgets, and now the whole web app,
+are styled with Tailwind 4 from one stylesheet, `web/src/styles/index.css`;
+`styles.css` is gone. This reverses "keep `styles.css`" and the rejection of
+Tailwind "in a board that has none". shadcn stays rejected, for a reason of its
+own: Base UI is used directly, without a styled kit on top. The native-controls
+half stands.
 
 ## The CLI authenticates with one shared token
 _2026-11-02_. Before the board leaves the owner's machine, the API gets one
@@ -95,8 +103,8 @@ Width 120 changed 1,208 lines in 50 files (about 12% of the code, from the 74
 TypeScript files plus the YAML and JSON that Prettier reads). The least churn
 here was 150, which touches 176 lines, but the estate has one width and the
 owner picked it. Markdown stays out of Prettier: the CLI prints `guide.md` to
-every agent, and done briefs are immutable. The old stylesheet stays out until
-the Tailwind migration deletes it. Rejected: a git or tarball dependency on the
+every agent, and done briefs are immutable. The old stylesheet stayed out until
+the Tailwind migration deleted it (2026-11-11). Rejected: a git or tarball dependency on the
 package (the Docker `deps` stage has no `git`, and the Dockerfile stays as it
 is); extending the vendored `tsconfig.base.json` (the image copies only the
 repo's own base, so the house flags are written into it); one `.claude/`

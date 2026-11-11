@@ -1,5 +1,5 @@
 ---
-summary: How the read-only board in the browser is built, as of 2026-11-10. Its GETs and where the API is, polling every 10 s and the banner when the API is down, the tag filter (in the browser, carried between pages), lanes that scroll sideways below 1100 px, cells past five cards that stop at 600px and scroll (2026-11-09), the Older Done page for Done past the board's 14 days and how a ticket is on exactly one of the two (2026-11-09), the shared header and the active sprint in it, the Sprints page of closed sprints (2026-11-10), the non-modal Base UI detail panel and the wrappers Base UI sits behind (2026-11-11), and the demo seed script.
+summary: How the read-only board in the browser is built, as of 2026-11-10. Its GETs and where the API is, polling every 10 s and the banner when the API is down, the tag filter (in the browser, carried between pages), lanes that scroll sideways below 1100 px, cells past five cards that stop at 600px and scroll (2026-11-09), the Older Done page for Done past the board's 14 days and how a ticket is on exactly one of the two (2026-11-09), the shared header and the active sprint in it, the Sprints page of closed sprints (2026-11-10), the non-modal Base UI detail panel and the wrappers Base UI sits behind (2026-11-11), the Tailwind stylesheet, its tokens and the Light / Dark / System switch (2026-11-11), and the demo seed script.
 updated: 2026-11-11
 ---
 
@@ -21,14 +21,16 @@ banner when the API is down. The tag filter works in the browser on the polled
 board; the Blocked count and the tab title ("(1 blocked) brief-board") stay
 board-wide. Below 1100 px each lane scrolls sideways on its own and shows its
 own column names, since one sticky header row can't stay aligned with all of
-them. Light and dark follow the system. Ticket markdown goes through
+them. Light, Dark and System are the owner's choice, light on a first visit
+(see "Styling and themes" below). Ticket markdown goes through
 `react-markdown` with `skipHtml`.
 
 Since 2026-11-09 a cell holding more than five cards (`CELL_CARDS` in
-`Board.tsx`) gets `.cell-long`: it stops at `--cell-cap` (600px, about five
-Done cards) and scrolls inside, and on a narrow screen its column name
-sticks to its top. Only that class caps a cell, so one of five cards or
-fewer is as tall as its cards whatever their height. Older Done
+`Board.tsx`) gets the `CELL_LONG` utilities and a `data-long` attribute: it
+stops at `--cell-cap` (600px, about five Done cards) and scrolls inside, and
+on a narrow screen its column name sticks to its top. Only those utilities cap
+a cell, so one of five cards or fewer is as tall as its cards whatever their
+height. Older Done
 (`DonePage.tsx`, `<base>done`) lists `GET /api/done`: Done tickets past the
 board's 14 days, not hidden, by project as the lanes are, newest Done first.
 The board keeps a ticket while `status_changed_at` is at or after the cutoff
@@ -63,9 +65,38 @@ Since 2026-11-11 Base UI is imported only under `web/src/components/ui/`:
 `RadioGroup` named "Needs you": one Tab stop, the arrow keys move and choose,
 nothing is chosen while the filter is off, and "Show all" beside it clears the
 choice (a chosen radio can't be unchecked, so a second click no longer clears
-it). The group is `display: contents` (`.needs-group`), so its radios lay out
-in the strip's own row. The classes are still `styles.css`'s, passed in as
-props; moving them to Tailwind is brief 18.
+it). The group is `display: contents` (class `contents`), so its radios lay out
+in the strip's own row; a box of its own wrapped the strip differently at
+390 px, and Chrome keeps the `radiogroup` role on a `contents` element. The
+wrappers take their utility classes as props from the caller.
+
+## Styling and themes
+
+Since 2026-11-11 the whole web app is Tailwind 4, from one stylesheet,
+`web/src/styles/index.css`. Its `@theme` holds every token and clears
+Tailwind's default colour, text, radius and shadow scales, so only the board's
+own exist. Colours name a role (`surface`, `ink`, `ink-muted`, `line`,
+`accent`, `danger`, `page`, `surface-sunk`, `banner-bg`, `banner-text`, plus
+`warn` and the seven status colours, named as the API names them) and are
+`light-dark()` pairs. The type scale is `micro`, `meta`, `small`, `body`,
+`heading`, `title`, `display`, sizes only: the line height is the body's 1.45.
+The 14 px base sits on `body`, the root keeps the browser's size. `narrow:`
+(`max-width: 1100px`) and `phone:` (`600px`) are custom variants that compile
+to the old queries, edge included.
+
+Classes that depend on data (a status's colour, a role's badge, a needs kind's
+colour) are whole strings in a `Record` beside the component that uses them, so
+Tailwind's scanner sees them. `web/src/lib/cn.ts` is `tailwind-merge` told these token
+names. `looks.ts` holds the class strings several screens share (the button,
+the count, the tag), and `MarkdownText.tsx` puts back, on its wrapper, what the
+reset took from react-markdown's elements.
+
+Light, Dark and System are a `RadioGroup` on the account page
+(`ThemeSwitch.tsx`), kept in `localStorage` and never sent to the API, so the
+board still only reads. `web/src/lib/theme.ts` sets `data-theme` on `<html>`; the boot
+script in `web/index.html` does the same before the first paint, light when
+nothing is stored. `color-scheme` follows the attribute, so System tracks the
+operating system in CSS, with no listener.
 
 `scripts/seed-demo.ts` (plain `node`) fills a scratch board with three
 made-up projects. It refuses a board holding any other project. No one ticket

@@ -59,13 +59,13 @@ them before the build, and if they don't, build these.
 
 ## What to do
 
-1. **Cells.** In [web/src/styles.css](../../../web/src/styles.css), cap
+1. **Cells.** In `web/src/styles.css` (deleted by brief 18), cap
    `.cell` height at roughly five cards and let it scroll vertically. A cell
    at or under five cards must look exactly as it does now: no reserved
    height and no scrollbar gutter. Keep focus visible, so that tabbing to a
    card scrolls it into view (the cards are already buttons). On narrow
    screens, lanes already scroll sideways
-   ([styles.css](../../../web/src/styles.css), "Narrow screens"). Check
+   (`styles.css`, "Narrow screens"). Check
    that the vertical scroll inside a cell still works there and that the
    page itself never scrolls sideways.
 2. **The route.** `GET /api/done` returns Done tickets that are not hidden

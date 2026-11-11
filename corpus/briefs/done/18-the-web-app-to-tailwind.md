@@ -237,3 +237,83 @@ Follow the skill's `migrating-from-plain-css.md`. One commit per numbered step; 
 - Brief 19 doesn't touch `web/`. If both are open at once, they conflict only in `package-lock.json`, so don't run them at the same time.
 - Brief 20 (the redesign) builds on this brief's tokens, type scale and theme switch.
 - wicket's brief and lantern's use the same token names, so a later shared token file stays possible. If this brief adds a name wicket should have, say so in the outcome note.
+
+## Outcome (2026-11-11)
+
+Built in 10 code commits, a762e8f to 27a7fcd, then the closeout (local, not pushed). Board: Ready for deploy, with one
+question for the owner (decision 7, the markdown wrapper, built as the brief's default: descendant variants on one
+wrapper, no `@tailwindcss/typography`).
+
+- **Parity.** 56 screenshots per set (1280 × 900 and 390 × 900, light and dark: login, a failed and an empty sign-in,
+  board, a collapsed lane, a chosen strip kind, keyboard focus on a card, the panel and "Copied", Older Done, Sprints,
+  account; plus the board and Older Done at 1101, 1099, 601 and 599 px, light), on a scratch database of made-up tickets
+  (a lane with eight To Do cards, Done, blocked, ready-for-test and ready-for-deploy tickets, a question, comments), the
+  browser clock fixed. 24 more per set from a mocked API (stale tone, the panel on a stale ticket, the API-down banner,
+  the gate's Loading and "can't be reached", the Ward button). The "before" sets were taken at the brief's first commit;
+  the extras from a scratch copy of the pre-migration `web/`. Two runs of the same code compared at 0 px. After the
+  migration every pair compares at 0 px except the account page (see below). The comparison is a script that counts
+  pixels whose channels differ by more than 24, since pixelmatch isn't installed here.
+- **Sizes.** Built CSS 12,445 bytes raw and 3,302 gzip before (the brief's 11,871 / 3,184 was the day before; sprints
+  and brief 17 grew it), 29,392 and 6,182 after: Tailwind's reset and the full `@theme static` token set. JS 512.22 kB
+  (157.86 gzip) before, 548.42 kB (167.64 gzip) after: `tailwind-merge`, `clsx` and the theme store.
+- **Counts.** 109 classes in 140 rules, 126 `className`s in 10 files before. After: no `.css` file but
+  `styles/index.css`; 0 arbitrary colours, 0 `text-[`, 0 class built from a template literal, 0 `style=`.
+  `check-base-ui` strict reads 0 / 0 (rule 5 was the stylesheet's place). `bg-red-500`, `shadow-md` and `rounded-lg`
+  compile to nothing; `text-in_progress` and `group-data-panel-open:rotate-90` compile. The two custom variants compile to
+  `@media (width<=1100px)` and `(width<=600px)`, the old queries.
+- **Tests.** 331 (was 324): `cn` (5), the theme store and the boot script (6), the switch (2), less one. The 25
+  class-name assertions became text, `title`, `aria-label` and `data-` assertions (`data-column`, `data-cell`,
+  `data-long`, `data-stale` on the markup).
+
+### Deliberate differences
+
+- **The account page** gains a Theme row (Light / Dark / System). Its heading is 20 px where the browser's `h2` was
+  21 px, a few pixels of drift in the spacing under it.
+- **`hover:` needs a hover-capable device.** A tapped card on a phone no longer keeps its hover tint.
+- **Markdown headings** in ticket text keep their weight and margins but not the browser's sizes (the reset removes
+  them). None of the tickets on the board use a heading.
+
+### Deviations
+
+- **`@theme static`** (`styles/index.css`): Tailwind drops unused theme variables, and the legacy aliases in step 2
+  needed them. Kept, so every token is always there; it costs a few hundred bytes.
+- **The theme follows the skill's `theme.md`, not the brief's step 6** (the skill wins): `data-theme` is `light`, `dark` or
+  `system`, the colour tokens are `light-dark()` pairs and `color-scheme` follows the attribute, so System follows the OS
+  in CSS, with no `matchMedia` listener and no `color-scheme` meta. The brief's "dark values in one block under
+  `[data-theme="dark"]`" became the pairs. `web/src/lib/theme.ts`, `web/src/ThemeSwitch.tsx`, the script in `web/index.html`.
+- **`phone:` exists though the skill says use `max-sm:`**: 600 px is not Tailwind's 640 px `sm`, and the brief measured
+  it. `narrow:` (1100 px) has no Tailwind equivalent at all.
+- **No Playwright test is committed:** this repo has no Playwright and adding `@playwright/test` and its browser was not
+  in the brief's file list. The three choices are covered by vitest (the store, the boot script run against stub
+  storage, the switch's markup); a scratch Playwright script checked first visit with a dark system (light), Dark, reload,
+  System with a live OS change, and Light with a dark OS, and the dark screens by pixel comparison.
+- **The needs strip's radio group keeps `display: contents`.** A box of its own (`flex flex-wrap`, with and without
+  `flex-1`) moved "Show all" to its own line at 390 px. Chrome keeps the role: the accessibility snapshot still shows
+  `radiogroup "Needs you"` with its four radios.
+- **Tokens beyond the brief's list:** `surface-hover` (the card's 8% accent tint, a `color-mix` of two tokens),
+  `shadow-panel`, `font-strong` (650), the radii `chip` / `box` / `gate`, the z scale `cell` / `columns` / `top` /
+  `panel`, `--default-mono-font-family: monospace`. `--top-h` and `--cell-cap` stay plain custom properties in `:root`.
+- **The data-driven colours are utilities in a `Record`, not a local `--col` property:** `border-t-in_progress`,
+  `bg-done/14 text-done`. Opacity tints use `color-mix` in oklab where the old CSS used srgb: no visible difference.
+- **A disabled select** keeps the browser's 0.7 opacity (`disabled:opacity-70`), because the reset sets it to 1.
+- **`cn()` overrides tailwind-merge's size / line-height conflict** (`web/src/lib/cn.ts`), as the todo app's did.
+- **The disabled button fades to 60%** as before (`disabled:opacity-60`, only while a request runs); the dry run's rule
+  says to fade the text around a control instead. Left for the redesign.
+- **`npm run check`'s knip** still lists 22 unused exports in `cli/`, `server/` and `web/` (`POLL_MS`, `authClient`, ...)
+  and exits 0; none are from this brief. `check-structure` stays `--warn-only`.
+- **Dependencies:** `tailwindcss` and `@tailwindcss/vite` 4.3.5 as `web` devDependencies; `clsx` 2.1.1 and
+  `tailwind-merge` 3.7.0 as dependencies, all pinned. `eslint-plugin-better-tailwindcss` stays at the root's 4.10.0.
+- **Files outside the brief's list:** `web/src/looks.ts` and `web/src/MarkdownText.tsx` (shared class strings, the
+  markdown wrapper), `package.json` (the strict gate), `web/src/components/ui/*` (utilities moved in, as the brief says).
+
+### Handoff for dependents
+
+- **Brief 20 (the redesign)** builds on `web/src/styles/index.css`: tokens `page`, `surface`, `surface-sunk`,
+  `surface-hover`, `ink`, `ink-muted`, `line`, `accent`, `danger`, `banner-bg`, `banner-text`, `warn`, the seven status
+  colours; `--text-micro` to `--text-display`; `font-strong`; radii and z names. A new token's name goes in
+  `web/src/lib/cn.ts`'s lists too.
+- **To wicket and lantern (names):** the family's list worked as written, with `page` for `--bg`. This board needed
+  `warn`, the status colours, `surface-hover`, `shadow-panel`; wicket's `shadow-card` is here too.
+- **Commands:** `npm run check` (ESLint with `better-tailwindcss`, `check-base-ui` strict); `npx eslint --fix web/src`
+  sorts classes.
+- **Deploy:** `node cli.ts brief-board deploy`, from the vps-deploy checkout.

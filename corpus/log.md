@@ -557,3 +557,13 @@ house-style entries are in `wiki/decisions-engineering.md`. Not deployed.
 Sprints page, which the audit missed) and `RadioGroup`, which the needs strip became: one Tab stop, arrow keys, "Show
 all" clears. `check-base-ui` strict reads 0 except rule 5 (the stylesheet's place), left for brief 18, so it stays
 `--warn-only`. No visible change at 1280 and 390 px, light and dark. Not deployed.
+
+## [2026-11-11] done | Brief 18, the web app to Tailwind
+
+[Brief 18](briefs/done/18-the-web-app-to-tailwind.md): `web/src/styles.css` is gone; the whole web app is Tailwind 4 from
+`web/src/styles/index.css`, with the estate's token names, a named type scale, `narrow:` and `phone:` variants that match
+the old queries, and `Record`s of whole class strings for the data-driven colours. Light / Dark / System on the account
+page, light on a first visit, kept on the device. `check-base-ui` runs strict and `better-tailwindcss` is an error. The
+decision "Base UI for the UI's widgets, styled by our own CSS" is revisited in `wiki/decisions-engineering.md`: Tailwind
+is in, shadcn stays out. No visible change at 1280 and 390 px or at the breakpoints' edges, light and dark, except the
+account page's new theme row. Not deployed.

@@ -156,7 +156,8 @@ move. The rules per brief state: [sync.md](sync.md).
 ## Board UI
 
 `web/src/`, a read-only Vite + React board: the board, the Older Done page
-and the detail panel, how it polls and lays out. See
+and the detail panel, how it polls and lays out, and its Tailwind stylesheet
+and theme switch. See
 [board-ui.md](board-ui.md).
 
 ## Build gotchas
