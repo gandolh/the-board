@@ -12,14 +12,18 @@
   "dependencies": {
     "@base-ui/react": "1.9.0",
     "@brief-board/shared": "0.1.0",
+    "clsx": "2.1.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "react-markdown": "10.1.0"
+    "react-markdown": "10.1.0",
+    "tailwind-merge": "3.7.0"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "4.3.5",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.7",
     "@vitejs/plugin-react": "6.1.1",
+    "tailwindcss": "4.3.5",
     "vite": "8.3.5"
   }
 }

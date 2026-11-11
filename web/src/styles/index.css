@@ -1,0 +1,122 @@
+/* The app's one stylesheet (base-ui rule 5). The layer order comes first: the first @layer
+   statement fixes it for the whole page. `legacy` holds the old stylesheet while it is
+   migrated, below the utilities, so a rule left in it always loses. */
+@layer theme, base, vendor, legacy, components, utilities;
+
+@import "tailwindcss";
+@import "../styles.css" layer(legacy);
+
+/* The vendored copies aren't the app's, and Tailwind would otherwise scan them for class names. */
+@source not "../../vendor";
+@source not "../../../vendor";
+
+/* dark: follows the theme switch, never the system alone. Colours change through the tokens,
+   so no class needs it. */
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where([data-theme="system"], [data-theme="system"] *) {
+      @slot;
+    }
+  }
+}
+
+/* The two widths the layout changes at. They are today's `max-width` queries, edge included:
+   Tailwind's own `max-*:` variants compile to `width <`, one pixel off. */
+@custom-variant narrow (@media (max-width: 1100px));
+@custom-variant phone (@media (max-width: 600px));
+
+@theme static {
+  --color-*: initial;
+  --text-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+
+  /* Colours name a role, never a value. light-dark() holds both themes; color-scheme on <html>
+     picks one. The family's names (wicket's list) come first. */
+  --color-page: light-dark(#f4f5f7, #1d2125);
+  --color-surface: light-dark(#ffffff, #22272b);
+  --color-surface-sunk: light-dark(#ebecf0, #161a1d);
+  --color-ink: light-dark(#172b4d, #dee4ea);
+  --color-ink-muted: light-dark(#5e6c84, #9fadbc);
+  --color-line: light-dark(#dfe1e6, #38414a);
+  --color-accent: light-dark(#0c66e4, #579dff);
+  --color-danger: light-dark(#c9372c, #f87168);
+  --color-banner-bg: light-dark(#fff7d6, #332e1b);
+  --color-banner-text: light-dark(#533f04, #f5cd47);
+  /* What this board alone needs: a stale run, and the status colours (the API's status names). */
+  --color-warn: light-dark(#a54800, #fea362);
+  --color-backlog: light-dark(#86765a, #bfa983);
+  --color-todo: light-dark(#8590a2, #8c9bab);
+  --color-in_progress: light-dark(#0c66e4, #579dff);
+  --color-ready_for_test: light-dark(#b38600, #e2b203);
+  --color-ready_for_deploy: light-dark(#6e5dc6, #9f8fef);
+  --color-done: light-dark(#1f845a, #4bce97);
+  /* A card or a row under the pointer: the surface, 8% toward the accent. */
+  --color-surface-hover: color-mix(in srgb, var(--color-surface) 92%, var(--color-accent));
+
+  /* A named type scale (Q62), sizes only: the line height is the body's 1.45, inherited. */
+  --text-micro: 0.6875rem;
+  --text-meta: 0.75rem;
+  --text-small: 0.8125rem;
+  --text-body: 0.875rem;
+  --text-heading: 0.9375rem;
+  --text-title: 1.125rem;
+  --text-display: 1.25rem;
+
+  --font-weight-strong: 650;
+
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --default-mono-font-family: monospace;
+
+  --radius-chip: 3px;
+  --radius-box: 4px;
+  --radius-gate: 8px;
+
+  --shadow-card:
+    0 1px 1px light-dark(rgb(9 30 66 / 0.25), rgb(0 0 0 / 0.5)),
+    0 0 1px light-dark(rgb(9 30 66 / 0.31), rgb(0 0 0 / 0.5));
+  --shadow-panel: -8px 0 24px rgb(9 30 66 / 0.15);
+
+  /* The stacking order: a long cell's sticky name, the column heads, the header, the panel. */
+  --z-index-cell: 1;
+  --z-index-columns: 2;
+  --z-index-top: 3;
+  --z-index-panel: 10;
+}
+
+@layer base {
+  /* Light on a first visit; the switch sets data-theme. */
+  :root {
+    color-scheme: light;
+    --top-h: 56px;
+    /*
+     * A long cell's height: five Done cards (key, a title of a line or two, the run, the
+     * footer: 100 to 140 px each) and their gaps. On a wide screen the top of a sixth shows,
+     * so the cell reads as one that scrolls.
+     */
+    --cell-cap: 600px;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+  }
+  :root[data-theme="system"] {
+    color-scheme: light dark;
+  }
+
+  /* The app's base size lives on body; html keeps the reader's own (Q44). */
+  body {
+    background-color: var(--color-page);
+    color: var(--color-ink);
+    font-size: var(--text-body);
+    line-height: 1.45;
+    overflow-x: hidden;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}

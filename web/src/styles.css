@@ -1,87 +1,26 @@
 /*
- * brief-board's look: a conventional Jira-style board, light or
- * dark as the system says. Colours are tokens here and nowhere else.
+ * The old stylesheet, in the `legacy` layer while the Tailwind migration moves it section by
+ * section. Its tokens are aliases of the @theme ones in styles/index.css.
  */
 :root {
-  color-scheme: light dark;
-  --bg: #f4f5f7;
-  --surface: #ffffff;
-  --surface-sunk: #ebecf0;
-  --text: #172b4d;
-  --text-muted: #5e6c84;
-  --line: #dfe1e6;
-  --accent: #0c66e4;
-  --shadow: 0 1px 1px rgb(9 30 66 / 0.25), 0 0 1px rgb(9 30 66 / 0.31);
-  --banner-bg: #fff7d6;
-  --banner-text: #533f04;
-  --warn: #a54800;
-  --backlog: #86765a;
-  --todo: #8590a2;
-  --in_progress: #0c66e4;
-  --blocked: #c9372c;
-  --ready_for_test: #b38600;
-  --ready_for_deploy: #6e5dc6;
-  --done: #1f845a;
-  --top-h: 56px;
-  /*
-   * A long cell's height: five Done cards (key, a title of a line or two, the
-   * run, the footer: 100 to 140 px each) and their gaps. On a wide screen
-   * the top of a sixth shows, so the cell reads as one that scrolls.
-   */
-  --cell-cap: 600px;
-  font-family:
-    system-ui,
-    -apple-system,
-    "Segoe UI",
-    Roboto,
-    sans-serif;
-  font-size: 14px;
-  line-height: 1.45;
-  color: var(--text);
-  background: var(--bg);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #1d2125;
-    --surface: #22272b;
-    --surface-sunk: #161a1d;
-    --text: #dee4ea;
-    --text-muted: #9fadbc;
-    --line: #38414a;
-    --accent: #579dff;
-    --shadow: 0 1px 1px rgb(0 0 0 / 0.5), 0 0 1px rgb(0 0 0 / 0.5);
-    --banner-bg: #332e1b;
-    --banner-text: #f5cd47;
-    --warn: #fea362;
-    --backlog: #bfa983;
-    --todo: #8c9bab;
-    --in_progress: #579dff;
-    --blocked: #f87168;
-    --ready_for_test: #e2b203;
-    --ready_for_deploy: #9f8fef;
-    --done: #4bce97;
-  }
-}
-
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  background: var(--bg);
-  overflow-x: hidden;
-}
-
-button {
-  font: inherit;
-  color: inherit;
-}
-
-:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  --bg: var(--color-page);
+  --surface: var(--color-surface);
+  --surface-sunk: var(--color-surface-sunk);
+  --text: var(--color-ink);
+  --text-muted: var(--color-ink-muted);
+  --line: var(--color-line);
+  --accent: var(--color-accent);
+  --shadow: var(--shadow-card);
+  --banner-bg: var(--color-banner-bg);
+  --banner-text: var(--color-banner-text);
+  --warn: var(--color-warn);
+  --backlog: var(--color-backlog);
+  --todo: var(--color-todo);
+  --in_progress: var(--color-in_progress);
+  --blocked: var(--color-danger);
+  --ready_for_test: var(--color-ready_for_test);
+  --ready_for_deploy: var(--color-ready_for_deploy);
+  --done: var(--color-done);
 }
 
 .muted {
