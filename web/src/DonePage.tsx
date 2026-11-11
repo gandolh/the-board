@@ -39,7 +39,9 @@ export function DonePage({ tag, onTag }: { tag: string; onTag: (tag: string) => 
 
       <main className="older-done">
         <h2 className="page-title">Older Done</h2>
-        <p className="page-intro">Tickets that reached Done more than {DEFAULT_DONE_DAYS} days ago, by project, newest first.</p>
+        <p className="page-intro">
+          Tickets that reached Done more than {DEFAULT_DONE_DAYS} days ago, by project, newest first.
+        </p>
         {done.data && <DoneList tickets={all} tag={tag} onOpen={setOpenKey} />}
       </main>
 
@@ -93,10 +95,19 @@ export function DoneList({
           <ul className="done-list">
             {inProject.map((ticket) => (
               <li key={ticket.key}>
-                <button type="button" className="done-row" onClick={() => onOpen(ticket.key)} aria-label={`${ticket.key}: ${ticket.title}`}>
+                <button
+                  type="button"
+                  className="done-row"
+                  onClick={() => onOpen(ticket.key)}
+                  aria-label={`${ticket.key}: ${ticket.title}`}
+                >
                   <span className="done-key">{ticket.key}</span>
                   <span className="done-title">{ticket.title}</span>
-                  <time className="done-date" dateTime={ticket.statusChangedAt} title={`Done since ${when(ticket.statusChangedAt)}`}>
+                  <time
+                    className="done-date"
+                    dateTime={ticket.statusChangedAt}
+                    title={`Done since ${when(ticket.statusChangedAt)}`}
+                  >
                     {day(ticket.statusChangedAt)}
                   </time>
                 </button>

@@ -1,7 +1,14 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { BLOCKED_BY_NOT_GIVEN, BRIEF_STATES, TODO_SLUG, type SyncBrief, type SyncProject, type SyncTodo } from "@brief-board/shared";
+import {
+  BLOCKED_BY_NOT_GIVEN,
+  BRIEF_STATES,
+  TODO_SLUG,
+  type SyncBrief,
+  type SyncProject,
+  type SyncTodo,
+} from "@brief-board/shared";
 import { readBoardName } from "../board-name.js";
 import { UsageError } from "../errors.js";
 import { blockedBy, briefSummary, briefTitle, todoIsOpen, todoSummary, todoTitle } from "./parse.js";
@@ -46,7 +53,8 @@ function readVar(file: string, name: string): string | undefined {
 /** `BRIEF_BOARD_PROJECTS_DIR` from the environment or `~/.config/brief-board/env`, else `~/projects`. */
 export function projectsDir(env: NodeJS.ProcessEnv, home: string = homedir()): string {
   const configured =
-    env.BRIEF_BOARD_PROJECTS_DIR?.trim() || readVar(join(home, ".config", "brief-board", "env"), "BRIEF_BOARD_PROJECTS_DIR");
+    env.BRIEF_BOARD_PROJECTS_DIR?.trim() ||
+    readVar(join(home, ".config", "brief-board", "env"), "BRIEF_BOARD_PROJECTS_DIR");
   const dir = configured ?? join(home, "projects");
   return dir.startsWith("~/") ? join(home, dir.slice(2)) : dir;
 }
@@ -63,7 +71,9 @@ function isDir(path: string): boolean {
 function conditionOf(markdown: string, file: string, warn: Warn): string {
   const condition = blockedBy(markdown);
   if (condition !== null) return condition;
-  warn(`${file}: in blocked/ but names no condition (a "**Blocked by:**" line under the title, or blocked-by: in the frontmatter); sent as "${BLOCKED_BY_NOT_GIVEN}"`);
+  warn(
+    `${file}: in blocked/ but names no condition (a "**Blocked by:**" line under the title, or blocked-by: in the frontmatter); sent as "${BLOCKED_BY_NOT_GIVEN}"`,
+  );
   return BLOCKED_BY_NOT_GIVEN;
 }
 
@@ -84,7 +94,9 @@ export function readTodos(root: string, warn: Warn = quiet): SyncTodo[] {
       if (!name.endsWith(".md") || !statSync(file).isFile()) continue;
       const slug = name.slice(0, -".md".length);
       if (!TODO_SLUG.test(slug)) {
-        throw new UsageError(`${file}: a todo's file name becomes its ticket key; use letters, digits, dots, dashes and underscores only`);
+        throw new UsageError(
+          `${file}: a todo's file name becomes its ticket key; use letters, digits, dots, dashes and underscores only`,
+        );
       }
       const twin = files.get(slug);
       if (twin !== undefined) {
@@ -187,7 +199,9 @@ export function readProjects(dir: string, only?: string, warn: Warn = quiet): Sy
   for (const { name, root } of roots) {
     const first = seen.get(name);
     if (first !== undefined) {
-      throw new UsageError(`two projects are named "${name}": ${first} and ${root}. Rename one, or give one a corpus/board-name; ticket keys come from the name.`);
+      throw new UsageError(
+        `two projects are named "${name}": ${first} and ${root}. Rename one, or give one a corpus/board-name; ticket keys come from the name.`,
+      );
     }
     seen.set(name, root);
   }

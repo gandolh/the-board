@@ -54,9 +54,7 @@ export function movesFrom(from: Status): MoveRule[] {
 
 export type MoveErrorCode = "move_not_allowed" | "message_required";
 
-export type MoveCheck =
-  | { ok: true; rule: MoveRule }
-  | { ok: false; code: MoveErrorCode; allowed: MoveRule[] };
+export type MoveCheck = { ok: true; rule: MoveRule } | { ok: false; code: MoveErrorCode; allowed: MoveRule[] };
 
 /**
  * Whether `from` → `to` is allowed with this message. A message counts only if

@@ -42,7 +42,10 @@ describe("ticket keys", () => {
 describe("todo keys", () => {
   it("round-trips <project>:<slug>", () => {
     expect(formatTodoKey("imbatranimOS", "linux-apps-sound")).toBe("imbatranimOS:linux-apps-sound");
-    expect(parseTodoKey("imbatranimOS:linux-apps-sound")).toEqual({ project: "imbatranimOS", slug: "linux-apps-sound" });
+    expect(parseTodoKey("imbatranimOS:linux-apps-sound")).toEqual({
+      project: "imbatranimOS",
+      slug: "linux-apps-sound",
+    });
     expect(parseTodoKey("3D-sandbox:walls-step-2")).toEqual({ project: "3D-sandbox", slug: "walls-step-2" });
   });
 

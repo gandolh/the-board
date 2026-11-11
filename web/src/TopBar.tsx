@@ -32,7 +32,9 @@ export function TopBar({
       </header>
       {polled.failing && (
         <div className="banner" role="status">
-          The board's API isn't answering.{polled.fetchedAt ? ` Showing what it said at ${clock(polled.fetchedAt)}.` : ""} Trying again every 10 seconds.
+          The board's API isn't answering.
+          {polled.fetchedAt ? ` Showing what it said at ${clock(polled.fetchedAt)}.` : ""} Trying again every 10
+          seconds.
         </div>
       )}
     </>
@@ -53,7 +55,15 @@ export function SprintName({ sprint }: { sprint: Pick<Sprint, "number" | "starte
  * chosen one when none of them carry it: the choice carries from one page
  * to the other, so the owner can always see and clear it.
  */
-export function TagFilter({ tags, value, onChange }: { tags: readonly string[]; value: string; onChange: (tag: string) => void }) {
+export function TagFilter({
+  tags,
+  value,
+  onChange,
+}: {
+  tags: readonly string[];
+  value: string;
+  onChange: (tag: string) => void;
+}) {
   const options = value && !tags.includes(value) ? [...tags, value].sort() : tags;
   return (
     <label className="filter">

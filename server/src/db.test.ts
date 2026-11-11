@@ -22,8 +22,14 @@ describe("the migrations", () => {
         )
         .run(at, at, at);
       old.prepare("INSERT INTO ticket_tags (ticket_key, tag) VALUES ('p-01', 'ui')").run();
-      old.prepare("INSERT INTO comments (ticket_key, author, body, created_at) VALUES ('p-01', 'agent', 'note', ?)").run(at);
-      old.prepare("INSERT INTO history (ticket_key, from_status, to_status, author, via, at) VALUES ('p-01', NULL, 'todo', 'sync', 'sync', ?)").run(at);
+      old
+        .prepare("INSERT INTO comments (ticket_key, author, body, created_at) VALUES ('p-01', 'agent', 'note', ?)")
+        .run(at);
+      old
+        .prepare(
+          "INSERT INTO history (ticket_key, from_status, to_status, author, via, at) VALUES ('p-01', NULL, 'todo', 'sync', 'sync', ?)",
+        )
+        .run(at);
       old.close();
 
       const db = openDatabase(path);
@@ -45,7 +51,9 @@ describe("the migrations", () => {
       insert.run("p-02", 2, "backlog", at, at, at);
       expect(db.prepare("SELECT blocked_by FROM tickets WHERE key = 'p-01'").get()).toEqual({ blocked_by: null });
       // A ticket holds at most one open run, and any number of ended ones.
-      const run = db.prepare("INSERT INTO runs (ticket_key, author, started_at, last_heard_at, ended_at, ended) VALUES ('p-01', 'agent', ?, ?, ?, ?)");
+      const run = db.prepare(
+        "INSERT INTO runs (ticket_key, author, started_at, last_heard_at, ended_at, ended) VALUES ('p-01', 'agent', ?, ?, ?, ?)",
+      );
       run.run(at, at, at, "moved");
       const open = Number(run.run(at, at, null, null).lastInsertRowid);
       expect(() => run.run(at, at, null, null)).toThrow(/UNIQUE/);
@@ -66,7 +74,9 @@ describe("the migrations", () => {
         `INSERT INTO tickets (key, project, number, title, summary, summary_source, brief_path, status, hidden, created_at, updated_at, status_changed_at)
          VALUES ('p-03', 'p', 3, 'T', '', 'sync', 'corpus/briefs/todo/03-t.md', 'todo', 0, ?, ?, ?)`,
       ).run(at, at, at);
-      const ask = db.prepare("INSERT INTO questions (ticket_key, number, text, author, asked_at, answer, answered_at) VALUES ('p-03', ?, 'Q?', 'agent', ?, ?, ?)");
+      const ask = db.prepare(
+        "INSERT INTO questions (ticket_key, number, text, author, asked_at, answer, answered_at) VALUES ('p-03', ?, 'Q?', 'agent', ?, ?, ?)",
+      );
       ask.run(1, at, null, null);
       expect(() => ask.run(1, at, null, null)).toThrow(/UNIQUE/);
       expect(() => ask.run(2, at, "yes", null)).toThrow(/CHECK/);
@@ -93,14 +103,24 @@ describe("the migrations", () => {
         )
         .run(at, at, at);
       old.prepare("INSERT INTO ticket_tags (ticket_key, tag) VALUES ('p-04', 'ui')").run();
-      const runId = Number(old.prepare("INSERT INTO runs (ticket_key, author, started_at, last_heard_at) VALUES ('p-04', 'agent', ?, ?)").run(at, at).lastInsertRowid);
+      const runId = Number(
+        old
+          .prepare("INSERT INTO runs (ticket_key, author, started_at, last_heard_at) VALUES ('p-04', 'agent', ?, ?)")
+          .run(at, at).lastInsertRowid,
+      );
       old.prepare("INSERT INTO holds (run_id, kind, value, held_at) VALUES (?, 'port', '5173', ?)").run(runId, at);
-      old.prepare("INSERT INTO questions (ticket_key, number, text, author, asked_at) VALUES ('p-04', 1, 'Q?', 'agent', ?)").run(at);
+      old
+        .prepare(
+          "INSERT INTO questions (ticket_key, number, text, author, asked_at) VALUES ('p-04', 1, 'Q?', 'agent', ?)",
+        )
+        .run(at);
       old.close();
 
       const db = openDatabase(path);
       expect(db.pragma("user_version", { simple: true })).toBe(MIGRATIONS.length);
-      expect(db.prepare("SELECT key, status, blocked_by FROM tickets").all()).toEqual([{ key: "p-04", status: "in_progress", blocked_by: null }]);
+      expect(db.prepare("SELECT key, status, blocked_by FROM tickets").all()).toEqual([
+        { key: "p-04", status: "in_progress", blocked_by: null },
+      ]);
       for (const table of ["ticket_tags", "runs", "holds", "questions"]) {
         expect(db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get()).toEqual({ n: 1 });
       }
@@ -140,7 +160,14 @@ describe("the sprints migration", () => {
       `INSERT INTO tickets (key, project, number, title, summary, summary_source, brief_path, status, hidden, created_at, updated_at, status_changed_at, blocked_by)
        VALUES (@key, @project, @number, @title, '', 'sync', @path, @status, @hidden, @at, @at, @at, @blockedBy)`,
     );
-    const rows: { key: string; project: string; number: number | null; status: string; hidden?: number; blockedBy?: string }[] = [
+    const rows: {
+      key: string;
+      project: string;
+      number: number | null;
+      status: string;
+      hidden?: number;
+      blockedBy?: string;
+    }[] = [
       { key: "p:night-mode", project: "p", number: null, status: "backlog" },
       { key: "p-01", project: "p", number: 1, status: "backlog", blockedBy: "a stronger machine" },
       { key: "p-02", project: "p", number: 2, status: "todo" },
@@ -163,11 +190,15 @@ describe("the sprints migration", () => {
       });
     }
     old.prepare("INSERT INTO ticket_tags (ticket_key, tag) VALUES ('p-07', 'ui'), ('p-03', 'api')").run();
-    const comment = old.prepare("INSERT INTO comments (ticket_key, author, body, role, move_from, move_to, created_at) VALUES (?, 'ana', ?, ?, ?, ?, ?)");
+    const comment = old.prepare(
+      "INSERT INTO comments (ticket_key, author, body, role, move_from, move_to, created_at) VALUES (?, 'ana', ?, ?, ?, ?, ?)",
+    );
     comment.run("p-07", "Shipped.", "conclusion", "in_progress", "done", at);
     comment.run("p-07", "A note after.", null, null, null, at);
     comment.run("p-04", "The owner picks.", "block_reason", "in_progress", "blocked", at);
-    const history = old.prepare("INSERT INTO history (ticket_key, from_status, to_status, author, via, at) VALUES (?, ?, ?, ?, ?, ?)");
+    const history = old.prepare(
+      "INSERT INTO history (ticket_key, from_status, to_status, author, via, at) VALUES (?, ?, ?, ?, ?, ?)",
+    );
     history.run("p-07", null, "todo", "sync", "sync", at);
     history.run("p-07", "todo", "in_progress", "ana", "move", at);
     history.run("p-07", "in_progress", "done", "ana", "move", at);
@@ -210,7 +241,8 @@ describe("the sprints migration", () => {
         { number: 1, started_on: day, ended_on: day },
         { number: 2, started_on: day, ended_on: null },
       ]);
-      const inSprint = (number: number) => db.prepare("SELECT key FROM tickets WHERE sprint = ? ORDER BY key").pluck().all(number);
+      const inSprint = (number: number) =>
+        db.prepare("SELECT key FROM tickets WHERE sprint = ? ORDER BY key").pluck().all(number);
       expect(inSprint(1)).toEqual(["p-07", "p-08", "q-01"]);
       expect(inSprint(2)).toEqual(["p-01", "p-02", "p-03", "p-04", "p-05", "p-06", "p:night-mode"]);
       // Every column but the new one is as it was, and every child row too.
@@ -223,9 +255,9 @@ describe("the sprints migration", () => {
 
       // One sprint is active at most, a closed one cannot end before it started, and a ticket's sprint exists.
       expect(() => db.prepare("INSERT INTO sprints (number, started_on) VALUES (3, ?)").run(day)).toThrow(/UNIQUE/);
-      expect(() => db.prepare("INSERT INTO sprints (number, started_on, ended_on) VALUES (3, '2026-11-10', '2026-11-09')").run()).toThrow(
-        /CHECK/,
-      );
+      expect(() =>
+        db.prepare("INSERT INTO sprints (number, started_on, ended_on) VALUES (3, '2026-11-10', '2026-11-09')").run(),
+      ).toThrow(/CHECK/);
       expect(() => db.prepare("UPDATE tickets SET sprint = 9 WHERE key = 'p-02'").run()).toThrow(/FOREIGN KEY/);
       db.close();
 

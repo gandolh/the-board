@@ -58,9 +58,9 @@ const optional = <T extends z.ZodType>(schema: T) =>
 
 const envSchema = z.object({
   HOST: optional(z.string()).transform((value) => value ?? "127.0.0.1"),
-  PORT: optional(z.coerce.number<string>().int().min(1).max(65535, { message: "PORT must be a port number (1-65535)." })).transform(
-    (value) => value ?? 8806,
-  ),
+  PORT: optional(
+    z.coerce.number<string>().int().min(1).max(65535, { message: "PORT must be a port number (1-65535)." }),
+  ).transform((value) => value ?? 8806),
   BRIEF_BOARD_DB: optional(z.string()),
   PUBLIC_ORIGIN: optional(
     z.string().refine((value) => URL.canParse(value) && new URL(value).origin === value, {
@@ -78,7 +78,9 @@ const envSchema = z.object({
     }),
   ).transform((value) => value ?? "/brief-board/"),
   BRIEF_BOARD_STALE_HOURS: optional(
-    z.coerce.number<string>().positive({ message: "BRIEF_BOARD_STALE_HOURS must be a number of hours above 0, such as 4." }),
+    z.coerce
+      .number<string>()
+      .positive({ message: "BRIEF_BOARD_STALE_HOURS must be a number of hours above 0, such as 4." }),
   ).transform((value) => value ?? DEFAULT_STALE_HOURS),
   BRIEF_BOARD_TOKEN: optional(
     z
@@ -102,18 +104,26 @@ function describe(issue: z.core.$ZodIssue): string {
  * under the API prefix, where the session cookie and the dev proxy are.
  * Messages never repeat the key.
  */
-function wardSettings(env: NodeJS.ProcessEnv, apiPrefix: string | undefined, problems: string[]): WardClientOptions | undefined {
+function wardSettings(
+  env: NodeJS.ProcessEnv,
+  apiPrefix: string | undefined,
+  problems: string[],
+): WardClientOptions | undefined {
   let ward: WardClientOptions | undefined;
   try {
     ward = wardClientOptionsFromEnv(env);
   } catch (error) {
-    problems.push(`${error instanceof Error ? error.message : String(error)}. Set all of them, or leave WARD_OIDC_ISSUER empty for local accounts only.`);
+    problems.push(
+      `${error instanceof Error ? error.message : String(error)}. Set all of them, or leave WARD_OIDC_ISSUER empty for local accounts only.`,
+    );
     return undefined;
   }
   if (ward === undefined || apiPrefix === undefined) return ward;
   const expected = `${apiPrefix}${WARD_CALLBACK_PATH}`;
   if (!URL.canParse(ward.redirectUri) || new URL(ward.redirectUri).pathname !== expected) {
-    problems.push(`WARD_OIDC_REDIRECT_URI must be the callback as the browser reaches it: the board's origin, then ${expected}.`);
+    problems.push(
+      `WARD_OIDC_REDIRECT_URI must be the callback as the browser reaches it: the board's origin, then ${expected}.`,
+    );
   }
   return ward;
 }

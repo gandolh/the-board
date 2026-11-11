@@ -49,7 +49,9 @@ export class ApiRejected extends Rejected {
 export class TokenRefused extends Error {
   readonly exitCode = 3;
   constructor() {
-    super("brief-board: the board refused the token: set BRIEF_BOARD_TOKEN in ~/.config/brief-board/env. Tell the owner and carry on without it.");
+    super(
+      "brief-board: the board refused the token: set BRIEF_BOARD_TOKEN in ~/.config/brief-board/env. Tell the owner and carry on without it.",
+    );
   }
 }
 
@@ -91,7 +93,8 @@ export class BoardClient {
     if (res.status === 401 && error?.code === UNAUTHORIZED) throw new TokenRefused();
     if (res.status >= 500 || !error?.code) {
       // Something answered, but not the board as the contract describes it.
-      if (res.status >= 500) throw new ApiRejected(res.status, { code: "internal", message: `the board failed (${res.status})` });
+      if (res.status >= 500)
+        throw new ApiRejected(res.status, { code: "internal", message: `the board failed (${res.status})` });
       throw new Unreachable(this.url);
     }
     throw new ApiRejected(res.status, error as ErrorBody);

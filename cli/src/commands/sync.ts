@@ -39,7 +39,9 @@ export async function sync(rt: Runtime, args: string[]): Promise<void> {
   const todos = projects.reduce((n, p) => n + (p.todos?.length ?? 0), 0);
   if (result.todos) {
     const t = result.todos;
-    rt.out(`Todo tickets, for ${todos} open todo(s): ${t.created} created, ${t.updated} updated, ${t.unchanged} unchanged, ${t.removed} removed.`);
+    rt.out(
+      `Todo tickets, for ${todos} open todo(s): ${t.created} created, ${t.updated} updated, ${t.unchanged} unchanged, ${t.removed} removed.`,
+    );
   } else {
     // A board from before Backlog drops the todos without a word.
     rt.out("warning: the board ignored the todos; it needs the update that added Backlog");
@@ -72,7 +74,8 @@ async function todoChanges(rt: Runtime, projects: SyncProject[]): Promise<string
   try {
     ({ lanes } = await rt.client().board());
   } catch (err) {
-    if (err instanceof Unreachable || err instanceof TokenRefused) return [`Todo tickets: not compared with the board (${err.message})`];
+    if (err instanceof Unreachable || err instanceof TokenRefused)
+      return [`Todo tickets: not compared with the board (${err.message})`];
     throw err;
   }
   const inRun = new Set(projects.map((p) => p.project));

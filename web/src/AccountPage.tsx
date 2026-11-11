@@ -73,7 +73,12 @@ export function AccountPage() {
           Sign out
         </button>
         {viaWard && (
-          <button type="button" className="button" disabled={wardSignOut.pending} onClick={() => void wardSignOut.signOut()}>
+          <button
+            type="button"
+            className="button"
+            disabled={wardSignOut.pending}
+            onClick={() => void wardSignOut.signOut()}
+          >
             Sign out of Ward too
           </button>
         )}

@@ -20,7 +20,10 @@ const isOpen = (ticket: Ticket) => ticket.status !== "done";
 /** A cell's cards in the server's order, the ones waiting on a condition last. */
 export function cellTickets(tickets: readonly Ticket[], status: Ticket["status"]): Ticket[] {
   const inCell = tickets.filter((ticket) => ticket.status === status);
-  return [...inCell.filter((ticket) => ticket.blockedBy === null), ...inCell.filter((ticket) => ticket.blockedBy !== null)];
+  return [
+    ...inCell.filter((ticket) => ticket.blockedBy === null),
+    ...inCell.filter((ticket) => ticket.blockedBy !== null),
+  ];
 }
 
 export function orderLanes(lanes: LaneData[]): LaneData[] {
@@ -45,7 +48,8 @@ export function Board({
   onOpen: (key: string) => void;
 }) {
   const counts = new Map(STATUSES.map((status) => [status, 0]));
-  for (const lane of lanes) for (const ticket of lane.tickets) counts.set(ticket.status, (counts.get(ticket.status) ?? 0) + 1);
+  for (const lane of lanes)
+    for (const ticket of lane.tickets) counts.set(ticket.status, (counts.get(ticket.status) ?? 0) + 1);
 
   return (
     <div className="board">
@@ -59,7 +63,9 @@ export function Board({
       {lanes.map((lane) => {
         const startsOpen = lane.tickets.some(isOpen);
         const expanded = toggled.has(lane.project) ? !startsOpen : startsOpen;
-        return <Lane key={lane.project} lane={lane} expanded={expanded} now={now} onToggle={onToggle} onOpen={onOpen} />;
+        return (
+          <Lane key={lane.project} lane={lane} expanded={expanded} now={now} onToggle={onToggle} onOpen={onOpen} />
+        );
       })}
     </div>
   );
@@ -88,7 +94,14 @@ function Lane({
     >
       <Collapsible.Trigger className="lane-head">
         <svg className="chevron" viewBox="0 0 16 16" aria-hidden="true">
-          <path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+          <path
+            d="M6 4l4 4-4 4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.75"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
         </svg>
         <span className="lane-name">{lane.project}</span>
         <span className="lane-meta">

@@ -106,7 +106,10 @@ export function todoStatus(markdown: string): string | null {
   if (declared !== undefined) return word(declared);
   const lines = body.split(/\r?\n/);
   const title = lines.findIndex((line) => /^#\s+/.test(line));
-  const near = lines.slice(title + 1).filter((line) => line.trim() !== "").slice(0, 5);
+  const near = lines
+    .slice(title + 1)
+    .filter((line) => line.trim() !== "")
+    .slice(0, 5);
   const line = near.find((candidate) => /^\s*\**status\**\s*:/i.test(candidate));
   return line === undefined ? null : word(line.replace(/^\s*\**status\**\s*:/i, ""));
 }
@@ -154,7 +157,10 @@ export function blockedBy(markdown: string): string | null {
   if (declared !== undefined) return cleanCondition(declared);
   const lines = body.split(/\r?\n/);
   const title = lines.findIndex((line) => /^#\s+/.test(line));
-  const near = lines.slice(title + 1).filter((line) => line.trim() !== "").slice(0, 5);
+  const near = lines
+    .slice(title + 1)
+    .filter((line) => line.trim() !== "")
+    .slice(0, 5);
   for (const line of near) {
     const match = /^blocked[ -]by\s*\**\s*:\s*\**\s*(.*)$/i.exec(line.trim().replace(/^\*+\s*/, ""));
     if (match) return cleanCondition(match[1]!.replace(/\*+$/, ""));

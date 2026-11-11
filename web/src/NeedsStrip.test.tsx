@@ -30,7 +30,10 @@ describe("the needs strip", () => {
       need("question", "p-02"),
       need("blocked", "p-02"),
     ]);
-    const counts = [...html.matchAll(/class="needs-kind needs-([a-z_]+)" aria-pressed="false">([^<]+)</g)].map((m) => [m[1], m[2]]);
+    const counts = [...html.matchAll(/class="needs-kind needs-([a-z_]+)" aria-pressed="false">([^<]+)</g)].map((m) => [
+      m[1],
+      m[2],
+    ]);
     expect(counts).toEqual([
       ["question", "2 questions"],
       ["blocked", "1 blocked"],

@@ -61,7 +61,9 @@ export function refusal(key: string, from: Status, to: Status, check: Extract<Mo
   }
   if (check.code === "message_required") {
     const rule = movesFrom(from).find((candidate) => candidate.to === to);
-    return [`${key}: ${label(from)} → ${label(to)} needs a ${ROLE_WORDS[rule?.role ?? "comment"]}. Pass it with -m "...".`];
+    return [
+      `${key}: ${label(from)} → ${label(to)} needs a ${ROLE_WORDS[rule?.role ?? "comment"]}. Pass it with -m "...".`,
+    ];
   }
   return [`${key} is ${label(from)} and cannot go to ${label(to)}.`, ...allowedMoves(from)];
 }
@@ -102,7 +104,9 @@ export function runEnding(run: Run): string {
 export function ticketLine(ticket: Ticket, now: Date = new Date()): string {
   const tags = ticket.tags.length ? `  [${ticket.tags.join(", ")}]` : "";
   const run = openRun(ticket);
-  const mark = run ? `  (${run.stale ? `stale run by ${run.author}, heard ${ago(run.lastHeardAt, now)} ago` : `run by ${run.author}`})` : "";
+  const mark = run
+    ? `  (${run.stale ? `stale run by ${run.author}, heard ${ago(run.lastHeardAt, now)} ago` : `run by ${run.author}`})`
+    : "";
   const blocked = ticket.blockedBy !== null ? `  (blocked by ${ticket.blockedBy})` : "";
   return `${ticket.key.padEnd(24)} ${label(ticket.status).padEnd(16)} ${ticket.title}${tags}${mark}${blocked}`;
 }
@@ -145,7 +149,9 @@ export function ticketDetail(
     lines.push(`Earlier runs (${ended.length}):`);
     for (const run of ended) {
       const leftovers = run.holds.length ? `; leftovers: ${holdList(run.holds)}` : "";
-      lines.push(`  [${run.startedAt}] ${run.author}: ${runEnding(run)}, ${runDurationText(run, now)}, ended ${run.endedAt}${leftovers}`);
+      lines.push(
+        `  [${run.startedAt}] ${run.author}: ${runEnding(run)}, ${runDurationText(run, now)}, ended ${run.endedAt}${leftovers}`,
+      );
     }
     lines.push("");
   }
@@ -155,7 +161,9 @@ export function ticketDetail(
     const answered = questions.filter((question) => question.answeredAt !== null);
     lines.push(`Questions (${open.length} open, ${answered.length} answered):`);
     for (const question of [...open, ...answered]) {
-      lines.push(`  #${question.number} [${question.askedAt}] ${question.author}: ${question.text.replace(/\n/g, "\n    ")}`);
+      lines.push(
+        `  #${question.number} [${question.askedAt}] ${question.author}: ${question.text.replace(/\n/g, "\n    ")}`,
+      );
       lines.push(
         question.answeredAt === null
           ? "    open"
@@ -175,7 +183,9 @@ export function ticketDetail(
   lines.push("", "History:");
   for (const event of history) {
     const from = event.from ? label(event.from) : "created";
-    lines.push(`  [${event.at}] ${from} → ${label(event.to)} by ${event.author}${event.via === "sync" ? " (sync)" : ""}`);
+    lines.push(
+      `  [${event.at}] ${from} → ${label(event.to)} by ${event.author}${event.via === "sync" ? " (sync)" : ""}`,
+    );
   }
   return lines;
 }

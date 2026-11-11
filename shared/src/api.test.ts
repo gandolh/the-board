@@ -39,7 +39,17 @@ describe("the API contract", () => {
   });
 
   it("parses a ticket's run, open or ended, and says which is open", () => {
-    const run = { id: 1, author: "agent", message: null, startedAt: now, lastHeardAt: now, stale: false, endedAt: null, ended: null, endedTo: null };
+    const run = {
+      id: 1,
+      author: "agent",
+      message: null,
+      startedAt: now,
+      lastHeardAt: now,
+      stale: false,
+      endedAt: null,
+      ended: null,
+      endedTo: null,
+    };
     expect(runSchema.parse(run)).toEqual(run);
     expect(openRun({ run })).toEqual(run);
     const moved = { ...run, endedAt: now, ended: "moved", endedTo: "ready_for_deploy" };
@@ -63,7 +73,9 @@ describe("the API contract", () => {
   });
 
   it("defaults a ticket's tags to none", () => {
-    expect(upsertTicketRequestSchema.parse({ title: "T", summary: "", briefPath: "corpus/briefs/todo/01-t.md" }).tags).toEqual([]);
+    expect(
+      upsertTicketRequestSchema.parse({ title: "T", summary: "", briefPath: "corpus/briefs/todo/01-t.md" }).tags,
+    ).toEqual([]);
   });
 
   it("rejects a move to a status that does not exist", () => {
@@ -72,15 +84,22 @@ describe("the API contract", () => {
 
   it("takes a brief's state as todo, blocked, done or superseded only", () => {
     const brief = { number: 1, title: "T", summary: "", briefPath: "corpus/briefs/todo/01-t.md" };
-    expect(syncRequestSchema.safeParse({ projects: [{ project: "p", briefs: [{ ...brief, state: "done" }] }] }).success).toBe(true);
-    expect(syncRequestSchema.safeParse({ projects: [{ project: "p", briefs: [{ ...brief, state: "archived" }] }] }).success).toBe(false);
+    expect(
+      syncRequestSchema.safeParse({ projects: [{ project: "p", briefs: [{ ...brief, state: "done" }] }] }).success,
+    ).toBe(true);
+    expect(
+      syncRequestSchema.safeParse({ projects: [{ project: "p", briefs: [{ ...brief, state: "archived" }] }] }).success,
+    ).toBe(false);
   });
 
   it("takes a project's open todos, or none from an older CLI, and a todo ticket with no number", () => {
     const todo = { slug: "linux-apps-sound", title: "Sound", summary: "", path: "corpus/todos/linux-apps-sound.md" };
     expect(syncRequestSchema.parse({ projects: [{ project: "p", briefs: [] }] }).projects[0]!.todos).toBeUndefined();
     expect(syncRequestSchema.safeParse({ projects: [{ project: "p", briefs: [], todos: [todo] }] }).success).toBe(true);
-    expect(syncRequestSchema.safeParse({ projects: [{ project: "p", briefs: [], todos: [{ ...todo, slug: "a:b" }] }] }).success).toBe(false);
+    expect(
+      syncRequestSchema.safeParse({ projects: [{ project: "p", briefs: [], todos: [{ ...todo, slug: "a:b" }] }] })
+        .success,
+    ).toBe(false);
     const ticket = ticketSchema.parse({
       key: "p:linux-apps-sound",
       project: "p",
@@ -105,11 +124,25 @@ describe("the API contract", () => {
 
   it("takes a blocked brief with its condition, and a payload from a CLI from before blocked/", () => {
     const brief = { number: 14, title: "T", summary: "", briefPath: "corpus/briefs/blocked/14-t.md", state: "blocked" };
-    const blocked = syncRequestSchema.parse({ projects: [{ project: "p", briefs: [{ ...brief, blockedBy: "a stronger machine" }] }] });
+    const blocked = syncRequestSchema.parse({
+      projects: [{ project: "p", briefs: [{ ...brief, blockedBy: "a stronger machine" }] }],
+    });
     expect(blocked.projects[0]!.briefs[0]!.blockedBy).toBe("a stronger machine");
-    const todo = { slug: "sonarqube", title: "SonarQube", summary: "", path: "corpus/todos/blocked/sonarqube.md", blockedBy: "a stronger machine" };
-    expect(syncRequestSchema.safeParse({ projects: [{ project: "p", briefs: [], todos: [todo, { ...todo, slug: "x", blockedBy: null }] }] }).success).toBe(true);
-    const older = syncRequestSchema.parse({ projects: [{ project: "p", briefs: [{ ...brief, state: "todo" }], todos: [{ ...todo, blockedBy: undefined }] }] });
+    const todo = {
+      slug: "sonarqube",
+      title: "SonarQube",
+      summary: "",
+      path: "corpus/todos/blocked/sonarqube.md",
+      blockedBy: "a stronger machine",
+    };
+    expect(
+      syncRequestSchema.safeParse({
+        projects: [{ project: "p", briefs: [], todos: [todo, { ...todo, slug: "x", blockedBy: null }] }],
+      }).success,
+    ).toBe(true);
+    const older = syncRequestSchema.parse({
+      projects: [{ project: "p", briefs: [{ ...brief, state: "todo" }], todos: [{ ...todo, blockedBy: undefined }] }],
+    });
     expect(older.projects[0]!.briefs[0]!.blockedBy).toBeUndefined();
     expect(older.projects[0]!.todos![0]!.blockedBy).toBeUndefined();
   });

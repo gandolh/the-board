@@ -33,12 +33,20 @@ describe("the board", () => {
     {
       project: "p",
       tickets: [
-        ticket({ key: "p:walls-step-2", number: null, title: "Walls meet", status: "backlog", briefPath: "corpus/todos/walls-step-2.md" }),
+        ticket({
+          key: "p:walls-step-2",
+          number: null,
+          title: "Walls meet",
+          status: "backlog",
+          briefPath: "corpus/todos/walls-step-2.md",
+        }),
         ticket({}),
       ],
     },
   ];
-  const html = renderToStaticMarkup(<Board lanes={lanes} now={now} toggled={new Set()} onToggle={() => {}} onOpen={() => {}} />);
+  const html = renderToStaticMarkup(
+    <Board lanes={lanes} now={now} toggled={new Set()} onToggle={() => {}} onOpen={() => {}} />,
+  );
 
   it("puts Backlog first among the columns", () => {
     const heads = [...html.matchAll(/class="col-head col-([a-z_]+)"/g)].map((match) => match[1]);
@@ -58,9 +66,12 @@ describe("the board", () => {
 });
 
 describe("a long cell", () => {
-  const done = (n: number) => Array.from({ length: n }, (_, i) => ticket({ key: `p-${i + 1}`, number: i + 1, status: "done" }));
+  const done = (n: number) =>
+    Array.from({ length: n }, (_, i) => ticket({ key: `p-${i + 1}`, number: i + 1, status: "done" }));
   const html = (tickets: Ticket[]) =>
-    renderToStaticMarkup(<Board lanes={[{ project: "p", tickets }]} now={now} toggled={new Set()} onToggle={() => {}} onOpen={() => {}} />);
+    renderToStaticMarkup(
+      <Board lanes={[{ project: "p", tickets }]} now={now} toggled={new Set()} onToggle={() => {}} onOpen={() => {}} />,
+    );
 
   it("scrolls past five cards, and only that cell", () => {
     expect(CELL_CARDS).toBe(5);
@@ -89,7 +100,8 @@ describe("a card's run", () => {
     endedTo: null,
     ...fields,
   });
-  const card = (fields: Partial<Ticket>) => renderToStaticMarkup(<Card ticket={ticket({ status: "in_progress", ...fields })} now={now} onOpen={() => {}} />);
+  const card = (fields: Partial<Ticket>) =>
+    renderToStaticMarkup(<Card ticket={ticket({ status: "in_progress", ...fields })} now={now} onOpen={() => {}} />);
 
   it("shows who runs an In Progress ticket, how long it has been running, and when the board last heard", () => {
     expect(card({ run: run({}) })).toContain('<span class="card-run">ana · running 2h · heard 20m ago</span>');
@@ -103,16 +115,21 @@ describe("a card's run", () => {
 
   it("says an In Progress ticket has no run, including after its run ended", () => {
     expect(card({})).toContain('<span class="card-run">no run</span>');
-    expect(card({ run: run({ endedAt: minutesAgo(5), ended: "released" }) })).toContain('<span class="card-run">no run</span>');
+    expect(card({ run: run({ endedAt: minutesAgo(5), ended: "released" }) })).toContain(
+      '<span class="card-run">no run</span>',
+    );
   });
 
   it("shows how long the last run took outside In Progress, and nothing where none ran", () => {
-    expect(card({ status: "ready_for_deploy", run: run({ endedAt: minutesAgo(40), ended: "moved", endedTo: "ready_for_deploy" }) })).toContain(
-      '<span class="card-run">ana · took 1h 20m</span>',
-    );
-    expect(card({ status: "done", run: run({ lastHeardAt: minutesAgo(50), endedAt: minutesAgo(5), ended: "stale" }) })).toContain(
-      '<span class="card-run">ana · took ≥ 1h 10m</span>',
-    );
+    expect(
+      card({
+        status: "ready_for_deploy",
+        run: run({ endedAt: minutesAgo(40), ended: "moved", endedTo: "ready_for_deploy" }),
+      }),
+    ).toContain('<span class="card-run">ana · took 1h 20m</span>');
+    expect(
+      card({ status: "done", run: run({ lastHeardAt: minutesAgo(50), endedAt: minutesAgo(5), ended: "stale" }) }),
+    ).toContain('<span class="card-run">ana · took ≥ 1h 10m</span>');
     expect(card({ status: "todo" })).not.toContain("card-run");
   });
 
@@ -128,11 +145,14 @@ describe("a card's run", () => {
 });
 
 describe("a card's questions", () => {
-  const card = (fields: Partial<Ticket>) => renderToStaticMarkup(<Card ticket={ticket(fields)} now={now} onOpen={() => {}} />);
+  const card = (fields: Partial<Ticket>) =>
+    renderToStaticMarkup(<Card ticket={ticket(fields)} now={now} onOpen={() => {}} />);
 
   it("counts open questions in a badge, in every column, Done included", () => {
     for (const status of STATUSES) {
-      expect(card({ status, openQuestions: 2 })).toContain('<span class="badge-questions" title="2 questions for the owner">2 questions</span>');
+      expect(card({ status, openQuestions: 2 })).toContain(
+        '<span class="badge-questions" title="2 questions for the owner">2 questions</span>',
+      );
     }
     expect(card({ status: "done", openQuestions: 1 })).toContain(">1 question</span>");
   });
@@ -143,11 +163,14 @@ describe("a card's questions", () => {
 });
 
 describe("a blocked card", () => {
-  const card = (fields: Partial<Ticket>) => renderToStaticMarkup(<Card ticket={ticket(fields)} now={now} onOpen={() => {}} />);
+  const card = (fields: Partial<Ticket>) =>
+    renderToStaticMarkup(<Card ticket={ticket(fields)} now={now} onOpen={() => {}} />);
 
   it("says what it waits on in a badge, with the whole condition in its title", () => {
     const html = card({ key: "p-14", number: 14, status: "backlog", blockedBy: "a stronger machine" });
-    expect(html).toContain('<span class="badge-blocked" title="Blocked by: a stronger machine">Blocked by: a stronger machine</span>');
+    expect(html).toContain(
+      '<span class="badge-blocked" title="Blocked by: a stronger machine">Blocked by: a stronger machine</span>',
+    );
     expect(card({})).not.toContain("badge-blocked");
   });
 

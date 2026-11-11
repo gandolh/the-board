@@ -72,7 +72,12 @@ export class Runtime {
 /** A status as an agent might type it: `ready_for_test`, `ready-for-test`, "Ready for test". */
 export function statusArg(value: string | undefined): Status {
   if (!value) throw new UsageError("which status? One of: " + statusSchema.options.join(", "));
-  const parsed = statusSchema.safeParse(value.trim().toLowerCase().replace(/[\s-]+/g, "_"));
+  const parsed = statusSchema.safeParse(
+    value
+      .trim()
+      .toLowerCase()
+      .replace(/[\s-]+/g, "_"),
+  );
   if (!parsed.success) throw new UsageError(`"${value}" is not a status. One of: ${statusSchema.options.join(", ")}`);
   return parsed.data;
 }

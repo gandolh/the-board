@@ -46,12 +46,16 @@ describe("the guide", () => {
   });
 
   it("says where a corpus whose folder name isn't its board name puts the name", () => {
-    expect(guide).toContain("A corpus whose folder name isn't\nits board name puts the name alone in corpus/board-name.");
+    expect(guide).toContain(
+      "A corpus whose folder name isn't\nits board name puts the name alone in corpus/board-name.",
+    );
   });
 
   it("puts the end move before the brief goes to done/, and says why", () => {
     const finishing = guide.slice(guide.indexOf("## 5. Finishing"), guide.indexOf("## 6."));
-    expect(finishing).toContain("Make the end move before you move the brief to done/ and before the commit\nthat moves it");
+    expect(finishing).toContain(
+      "Make the end move before you move the brief to done/ and before the commit\nthat moves it",
+    );
     expect(finishing).toContain("a sync in between closes the ticket under you");
   });
 
@@ -76,13 +80,16 @@ describe("the guide", () => {
     expect(controller).toContain("Give each agent a name to pass as --author");
     expect(controller).toContain("Before a sync the owner asks for, run `brief-board runs`");
     expect(controller).toContain("first ask it to wind down");
-    expect(controller).toContain('brief-board release <ticket> -m "<why, and what it left running: a port, a container>"');
+    expect(controller).toContain(
+      'brief-board release <ticket> -m "<why, and what it left running: a port, a container>"',
+    );
     expect(controller).toContain("At a hand-back, show the owner `brief-board needs` first.");
   });
 
   it("asks for the report lines in the end move, and questions as --question", () => {
     const finishing = guide.slice(guide.indexOf("## 5. Finishing"), guide.indexOf("## 6."));
-    for (const line of ["  Commits: ", "  Checks run: ", "  Checks skipped: ", "  Owner steps: "]) expect(finishing).toContain(line);
+    for (const line of ["  Commits: ", "  Checks run: ", "  Checks skipped: ", "  Owner steps: "])
+      expect(finishing).toContain(line);
     expect(finishing).toContain("the full report goes in the brief's outcome note");
     expect(finishing).toContain('Ask each question for the owner with --question "<question>"');
     expect(finishing).toContain("never as prose in the message");
@@ -94,7 +101,9 @@ describe("the guide", () => {
 
   it("says not to start a sprint unless the owner asks, what a start does, and that the sprint reads only read", () => {
     const rules = guide.slice(guide.indexOf("## 9. Hard rules"), guide.indexOf("## 10."));
-    expect(rules).toContain("- Don't run `brief-board sync` unless the owner asks.\n- Don't run `brief-board sprint start` unless the owner asks.");
+    expect(rules).toContain(
+      "- Don't run `brief-board sync` unless the owner asks.\n- Don't run `brief-board sprint start` unless the owner asks.",
+    );
     expect(rules).toContain(
       "It closes the\n  active sprint and moves every ticket that is not Done into the next one,\n  and nothing undoes it.",
     );

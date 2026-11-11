@@ -20,10 +20,15 @@ const LIST_USAGE = "list [--status <s>] [--all] [--sprint <n>]";
  * sprint's included. A sprint that does not exist is a usage mistake, exit 1.
  */
 export async function list(rt: Runtime, args: string[]): Promise<void> {
-  const { values, positionals } = rt.parse(args, { status: { type: "string" }, all: { type: "boolean" }, sprint: { type: "string" } });
+  const { values, positionals } = rt.parse(args, {
+    status: { type: "string" },
+    all: { type: "boolean" },
+    sprint: { type: "string" },
+  });
   if (positionals.length > 0) throw new UsageError(`list takes no arguments: ${LIST_USAGE}`);
   const status = values.status === undefined ? undefined : statusArg(values.status);
-  if (values.sprint !== undefined && !/^\d+$/.test(values.sprint.trim())) throw new UsageError(`--sprint takes a sprint's number: ${LIST_USAGE}`);
+  if (values.sprint !== undefined && !/^\d+$/.test(values.sprint.trim()))
+    throw new UsageError(`--sprint takes a sprint's number: ${LIST_USAGE}`);
   const sprint = values.sprint === undefined ? undefined : Number.parseInt(values.sprint.trim(), 10);
   const project = values.all ? null : rt.project(values.project);
   const lanes = sprint === undefined ? (await rt.client().board()).lanes : await sprintLanes(rt, sprint);
@@ -45,7 +50,9 @@ export async function list(rt: Runtime, args: string[]): Promise<void> {
   }
   if (shown === 0) {
     const inSprint = sprint === undefined ? "" : ` in sprint ${sprint}`;
-    rt.out(project ? `No tickets for ${project}${status ? ` in ${status}` : ""}${inSprint}.` : `No tickets${inSprint}.`);
+    rt.out(
+      project ? `No tickets for ${project}${status ? ` in ${status}` : ""}${inSprint}.` : `No tickets${inSprint}.`,
+    );
   }
 }
 

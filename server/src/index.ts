@@ -48,8 +48,14 @@ const app = await buildApp({
   logger: true,
 });
 app.log.info(`database: ${dbPath}`);
-app.log.info(config.token ? "the CLI's token is set" : "no BRIEF_BOARD_TOKEN: the CLI is shut out, only a signed-in browser reads the board");
-app.log.info(config.ward ? "Sign in with Ward is on" : "WARD_OIDC_ISSUER is not set: local accounts only, no Sign in with Ward");
+app.log.info(
+  config.token
+    ? "the CLI's token is set"
+    : "no BRIEF_BOARD_TOKEN: the CLI is shut out, only a signed-in browser reads the board",
+);
+app.log.info(
+  config.ward ? "Sign in with Ward is on" : "WARD_OIDC_ISSUER is not set: local accounts only, no Sign in with Ward",
+);
 
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
   process.once(signal, () => {

@@ -19,7 +19,15 @@ import { when } from "./time";
  * on another card switches the ticket. App keys it by ticket, so each ticket
  * opens fresh: focus goes to the close button, and back to its card on close.
  */
-export function DetailPanel({ ticketKey, refreshedAt, onClose }: { ticketKey: string; refreshedAt: Date | null; onClose: () => void }) {
+export function DetailPanel({
+  ticketKey,
+  refreshedAt,
+  onClose,
+}: {
+  ticketKey: string;
+  refreshedAt: Date | null;
+  onClose: () => void;
+}) {
   const [detail, setDetail] = useState<TicketDetailResponse | null>(null);
   const [failed, setFailed] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -39,7 +47,8 @@ export function DetailPanel({ ticketKey, refreshedAt, onClose }: { ticketKey: st
 
   const shown = detail?.ticket.key === ticketKey ? detail : null;
   const open = shown ? openRun(shown.ticket) : null;
-  const run = shown && (open || shown.ticket.status === "in_progress") ? runLine(open, refreshedAt ?? new Date()) : null;
+  const run =
+    shown && (open || shown.ticket.status === "in_progress") ? runLine(open, refreshedAt ?? new Date()) : null;
   const ended = shown?.runs.filter((candidate) => candidate.endedAt !== null) ?? [];
   // Open questions first: those are the ones waiting for the owner.
   const questions = shown
@@ -112,14 +121,23 @@ export function DetailPanel({ ticketKey, refreshedAt, onClose }: { ticketKey: st
               </dl>
               {shown.ticket.status === "backlog" &&
                 (shown.ticket.number === null ? (
-                  <p className="muted">Sync keeps this ticket to its todo. It leaves Backlog when the todo is promoted to a brief.</p>
+                  <p className="muted">
+                    Sync keeps this ticket to its todo. It leaves Backlog when the todo is promoted to a brief.
+                  </p>
                 ) : (
-                  <p className="muted">Sync keeps this ticket to its brief in blocked/. It leaves Backlog when the brief goes back to todo/.</p>
+                  <p className="muted">
+                    Sync keeps this ticket to its brief in blocked/. It leaves Backlog when the brief goes back to
+                    todo/.
+                  </p>
                 ))}
 
               <h3>Summary</h3>
               <div className="markdown">
-                {shown.ticket.summary.trim() ? <Markdown skipHtml>{shown.ticket.summary}</Markdown> : <p className="muted">No summary.</p>}
+                {shown.ticket.summary.trim() ? (
+                  <Markdown skipHtml>{shown.ticket.summary}</Markdown>
+                ) : (
+                  <p className="muted">No summary.</p>
+                )}
               </div>
 
               {questions.length > 0 && (
@@ -129,7 +147,9 @@ export function DetailPanel({ ticketKey, refreshedAt, onClose }: { ticketKey: st
                     {questions.map((question) => (
                       <li key={question.number} className="comment">
                         <div className="comment-head">
-                          <span className={`role ${question.answeredAt === null ? "question-open" : "question-answered"}`}>
+                          <span
+                            className={`role ${question.answeredAt === null ? "question-open" : "question-answered"}`}
+                          >
                             {question.answeredAt === null ? "Open" : "Answered"}
                           </span>
                           <span className="comment-author">#{question.number}</span>
@@ -165,7 +185,9 @@ export function DetailPanel({ ticketKey, refreshedAt, onClose }: { ticketKey: st
                   {shown.comments.map((comment) => (
                     <li key={comment.id} className="comment">
                       <div className="comment-head">
-                        <span className={`role role-${comment.role ?? "comment"}`}>{ROLE_LABELS[comment.role ?? "comment"]}</span>
+                        <span className={`role role-${comment.role ?? "comment"}`}>
+                          {ROLE_LABELS[comment.role ?? "comment"]}
+                        </span>
                         <span className="comment-author">{comment.author}</span>
                         {comment.move && (
                           <span className="muted">
@@ -206,7 +228,11 @@ export function DetailPanel({ ticketKey, refreshedAt, onClose }: { ticketKey: st
               <ol className="history">
                 {shown.history.map((event, index) => (
                   <li key={index}>
-                    <span>{event.from ? `${STATUS_LABELS[event.from]} → ${STATUS_LABELS[event.to]}` : `Created in ${STATUS_LABELS[event.to]}`}</span>
+                    <span>
+                      {event.from
+                        ? `${STATUS_LABELS[event.from]} → ${STATUS_LABELS[event.to]}`
+                        : `Created in ${STATUS_LABELS[event.to]}`}
+                    </span>
                     <span className="muted">
                       {" "}
                       by {event.author}

@@ -19,7 +19,14 @@ function asked(rt: Runtime, key: string, questions: Question[] | undefined): voi
  * Check the move locally first, so an agent reads the rules from the CLI, not
  * from a 400. A move that ends a run prints what the run still held.
  */
-async function moveTo(rt: Runtime, key: string, to: Status, message: string | undefined, author: string, questions?: string[]): Promise<void> {
+async function moveTo(
+  rt: Runtime,
+  key: string,
+  to: Status,
+  message: string | undefined,
+  author: string,
+  questions?: string[],
+): Promise<void> {
   const client = rt.client();
   const { ticket } = await client.ticket(key);
   const check = checkMove(ticket.status, to, message);
@@ -55,7 +62,11 @@ export async function start(rt: Runtime, args: string[]): Promise<void> {
       `brief-board: warning: ${key} had an open run by ${before.author}, heard ${ago(before.lastHeardAt, new Date())} ago. It passes to ${author}; make sure ${before.author} has stopped.`,
     );
   }
-  rt.out(result.resumed ? `${key}: resumed (already In Progress)` : `${key}: ${label(ticket.status)} → ${label(result.ticket.status)}`);
+  rt.out(
+    result.resumed
+      ? `${key}: resumed (already In Progress)`
+      : `${key}: ${label(ticket.status)} → ${label(result.ticket.status)}`,
+  );
   asked(rt, key, result.questions);
 }
 
@@ -72,7 +83,9 @@ export async function comment(rt: Runtime, args: string[]): Promise<void> {
   const { values, positionals } = rt.parse(args, MESSAGE_OPTIONS);
   const key = rt.ticketKey(positionals[0], values.project);
   if (!values.message?.trim()) throw new UsageError("comment needs -m <message>");
-  const result = await rt.client().comment(key, { body: values.message, author: rt.author(values.author), questions: values.question });
+  const result = await rt
+    .client()
+    .comment(key, { body: values.message, author: rt.author(values.author), questions: values.question });
   rt.out(`${key}: comment added`);
   asked(rt, key, result.questions);
 }

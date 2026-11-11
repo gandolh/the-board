@@ -7,7 +7,15 @@ import { z } from "zod";
  * only sync puts tickets there or takes them off. The ids are the API's; the
  * labels are what the board shows.
  */
-export const STATUSES = ["backlog", "todo", "in_progress", "blocked", "ready_for_test", "ready_for_deploy", "done"] as const;
+export const STATUSES = [
+  "backlog",
+  "todo",
+  "in_progress",
+  "blocked",
+  "ready_for_test",
+  "ready_for_deploy",
+  "done",
+] as const;
 export const statusSchema = z.enum(STATUSES);
 export type Status = z.infer<typeof statusSchema>;
 

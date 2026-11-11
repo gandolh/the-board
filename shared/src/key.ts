@@ -84,7 +84,10 @@ export function normalizeTicketKey(key: string): string | null {
 export const ticketKeySchema = z.string().transform((value, ctx) => {
   const key = normalizeTicketKey(value);
   if (!key) {
-    ctx.addIssue({ code: "custom", message: `"${value}" is not a ticket key (<project>-<number>, or <project>:<todo> for a todo's)` });
+    ctx.addIssue({
+      code: "custom",
+      message: `"${value}" is not a ticket key (<project>-<number>, or <project>:<todo> for a todo's)`,
+    });
     return z.NEVER;
   }
   return key;

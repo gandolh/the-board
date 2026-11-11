@@ -50,7 +50,10 @@ describe("a run's duration", () => {
 
   it("is at least start to last heard for a stale run, open or ended by sync", () => {
     const heard = ago(5 * HOUR - (3 * HOUR + 10 * MINUTE));
-    expect(runDuration(run({ stale: true, lastHeardAt: heard }), now)).toEqual({ ms: 3 * HOUR + 10 * MINUTE, atLeast: true });
+    expect(runDuration(run({ stale: true, lastHeardAt: heard }), now)).toEqual({
+      ms: 3 * HOUR + 10 * MINUTE,
+      atLeast: true,
+    });
     expect(runDurationText(run({ stale: true, lastHeardAt: heard }), now)).toBe("ran ≥ 3h 10m");
     expect(runDurationText(run({ lastHeardAt: heard, endedAt: ago(0), ended: "stale" }), now)).toBe("took ≥ 3h 10m");
   });

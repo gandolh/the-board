@@ -82,7 +82,18 @@ async function ticket(): Promise<string> {
 
 describe("create", () => {
   it("finds the brief file and creates the ticket in the current project", async () => {
-    const res = await run(["create", "7", "--title", "Plan a run", "--summary", "A first run", "--tag", "ui", "--tag", "api"]);
+    const res = await run([
+      "create",
+      "7",
+      "--title",
+      "Plan a run",
+      "--summary",
+      "A first run",
+      "--tag",
+      "ui",
+      "--tag",
+      "api",
+    ]);
     expect(res).toMatchObject({ code: 0 });
     expect(res.out).toBe("Created sports-app-07 (To Do): Plan a run");
     const show = await run(["show", "7"]);
@@ -149,7 +160,9 @@ describe("start, move and comment", () => {
 
   it("takes the author from BRIEF_BOARD_AUTHOR when --author is absent", async () => {
     const key = await ticket();
-    await run(["start", key], { env: { BRIEF_BOARD_URL: url, BRIEF_BOARD_TOKEN: TOKEN, BRIEF_BOARD_AUTHOR: "night-shift" } });
+    await run(["start", key], {
+      env: { BRIEF_BOARD_URL: url, BRIEF_BOARD_TOKEN: TOKEN, BRIEF_BOARD_AUTHOR: "night-shift" },
+    });
     expect((await run(["show", key])).out).toMatch(/To Do → In Progress by night-shift/);
   });
 });
@@ -173,7 +186,9 @@ describe("runs", () => {
     const show = (await run(["show", key])).out;
     expect(show).toContain("Run:     run by ana, started 2h ago, heard 2h ago, running 2h");
     expect(show).not.toContain("Earlier runs");
-    expect((await run(["list", "--status", "in_progress"])).out).toContain(`Ticket ${key.split("-").pop()}  (run by ana)`);
+    expect((await run(["list", "--status", "in_progress"])).out).toContain(
+      `Ticket ${key.split("-").pop()}  (run by ana)`,
+    );
     await run(["move", key, "ready_for_deploy", "-m", "npm run deploy", "--author", "ana"]);
     const after = (await run(["show", key])).out;
     expect(after).toContain("Run:     no run");
@@ -204,7 +219,9 @@ describe("runs", () => {
     await earlier(5 * HOUR, () => run(["comment", key, "-m", "a first step", "--author", "ana"]));
     const stale = (await run(["show", key])).out;
     expect(stale).toContain("Run:     stale run by ana, started 6h ago, heard 5h ago, ran ≥ 1h");
-    expect((await run(["runs"])).out.split("\n").find((line) => line.startsWith(key))).toMatch(/ ana +ran ≥ 1h +started 6h ago/);
+    expect((await run(["runs"])).out.split("\n").find((line) => line.startsWith(key))).toMatch(
+      / ana +ran ≥ 1h +started 6h ago/,
+    );
     await run(["comment", key, "-m", "back", "--author", "ana"]);
     expect((await run(["show", key])).out).toContain("Run:     run by ana, started 6h ago, heard 0m ago, running 6h");
     await run(["move", key, "done", "--author", "ana"]);
@@ -214,7 +231,9 @@ describe("runs", () => {
   it("marks a stale run in show and list", async () => {
     const key = await ticket();
     await earlier(5 * HOUR, () => run(["start", key, "--author", "ana"]));
-    expect((await run(["show", key])).out).toContain("Run:     stale run by ana, started 5h ago, heard 5h ago, ran ≥ <1m");
+    expect((await run(["show", key])).out).toContain(
+      "Run:     stale run by ana, started 5h ago, heard 5h ago, ran ≥ <1m",
+    );
     expect((await run(["list"])).out).toContain("(stale run by ana, heard 5h ago)");
   });
 
@@ -259,7 +278,11 @@ describe("holds", () => {
     const key = await ticket();
     await run(["start", key, "--author", "ana"]);
     expect((await run(["show", key])).out).toContain("Holds:   nothing");
-    expect(await run(["hold", key, "port", "5201"])).toMatchObject({ code: 0, out: `${key}: the run holds port 5201`, err: "" });
+    expect(await run(["hold", key, "port", "5201"])).toMatchObject({
+      code: 0,
+      out: `${key}: the run holds port 5201`,
+      err: "",
+    });
     expect((await run(["hold", key, "Path", "tmp/os-copy"])).out).toBe(`${key}: the run holds path tmp/os-copy`);
     expect((await run(["hold", key, "port", "5201"])).out).toBe(`${key}: the run already holds port 5201`);
     expect((await run(["show", key])).out).toContain("Holds:   port 5201, path tmp/os-copy");
@@ -291,7 +314,9 @@ describe("holds", () => {
     const notHeld = await run(["drop", key, "port", "5203"]);
     expect(notHeld.code).toBe(1);
     expect(notHeld.err).toBe(`brief-board: ${key}'s run holds no port 5203; it holds pid 5203`);
-    expect((await run(["hold", key, "socket", "x"])).err).toBe('brief-board: "socket" is not a kind to hold. One of: port, pid, container, path');
+    expect((await run(["hold", key, "socket", "x"])).err).toBe(
+      'brief-board: "socket" is not a kind to hold. One of: port, pid, container, path',
+    );
     expect((await run(["hold", key, "port"])).code).toBe(1);
   });
 
@@ -306,7 +331,9 @@ describe("holds", () => {
     );
     const show = (await run(["show", key])).out;
     expect(show).not.toContain("Holds:");
-    expect(show).toMatch(/ana: moved to Ready for test, took <1m, ended [^;\n]+; leftovers: port 5204, container vite-5204/);
+    expect(show).toMatch(
+      /ana: moved to Ready for test, took <1m, ended [^;\n]+; leftovers: port 5204, container vite-5204/,
+    );
     // A move that ends no run prints none.
     expect((await run(["move", key, "done"])).out).toBe(`${key}: Ready for test → Done`);
   });
@@ -319,7 +346,9 @@ describe("holds", () => {
     expect(released.out).toBe(
       `${key}: released the run by ana; the ticket stays In Progress\n${key}: the run ended still holding port 5205 (kept on the run as leftovers)`,
     );
-    expect((await run(["show", key])).out).toMatch(/ana: released, unfinished, took <1m, ended [^;\n]+; leftovers: port 5205/);
+    expect((await run(["show", key])).out).toMatch(
+      /ana: released, unfinished, took <1m, ended [^;\n]+; leftovers: port 5205/,
+    );
   });
 
   it("runs shows each open run's holds in its last column", async () => {
@@ -336,7 +365,17 @@ describe("questions", () => {
   it("a move with two --question stores both, numbered, and show lists them", async () => {
     const key = await ticket();
     await run(["start", key]);
-    const moved = await run(["move", key, "ready_for_deploy", "-m", "npm run deploy", "--question", "Tabs too?", "--question", "Keep the old parser?"]);
+    const moved = await run([
+      "move",
+      key,
+      "ready_for_deploy",
+      "-m",
+      "npm run deploy",
+      "--question",
+      "Tabs too?",
+      "--question",
+      "Keep the old parser?",
+    ]);
     expect(moved.code).toBe(0);
     expect(moved.out).toBe(`${key}: In Progress → Ready for deploy\n${key}: asked questions 1, 2`);
     const show = (await run(["show", key])).out;
@@ -370,7 +409,18 @@ describe("questions", () => {
   it("questions lists open ones across projects, oldest first, and --project narrows it", async () => {
     const first = await ticket();
     await run(["start", first, "--question", "Asked first?"]);
-    await run(["create", "1", "--title", "Elsewhere", "--summary", "", "--project", "quiz", "--brief", "corpus/briefs/todo/01-x.md"]);
+    await run([
+      "create",
+      "1",
+      "--title",
+      "Elsewhere",
+      "--summary",
+      "",
+      "--project",
+      "quiz",
+      "--brief",
+      "corpus/briefs/todo/01-x.md",
+    ]);
     await run(["start", "quiz-01", "--question", "Asked second?"]);
     const all = (await run(["questions"])).out.split("\n");
     const a = all.findIndex((line) => line.includes("Asked first?"));
@@ -385,10 +435,40 @@ describe("questions", () => {
 
 describe("needs", () => {
   it("lists what waits on the owner by kind, with a count line, and --project narrows it", async () => {
-    await run(["create", "1", "--title", "Waiting", "--summary", "", "--project", "owner-a", "--brief", "corpus/briefs/todo/01-x.md"]);
-    await run(["create", "2", "--title", "Blocked", "--summary", "", "--project", "owner-a", "--brief", "corpus/briefs/todo/02-x.md"]);
+    await run([
+      "create",
+      "1",
+      "--title",
+      "Waiting",
+      "--summary",
+      "",
+      "--project",
+      "owner-a",
+      "--brief",
+      "corpus/briefs/todo/01-x.md",
+    ]);
+    await run([
+      "create",
+      "2",
+      "--title",
+      "Blocked",
+      "--summary",
+      "",
+      "--project",
+      "owner-a",
+      "--brief",
+      "corpus/briefs/todo/02-x.md",
+    ]);
     await run(["start", "owner-a-01", "--project", "owner-a"]);
-    await run(["move", "owner-a-01", "ready_for_deploy", "-m", "node cli.ts owner-a deploy\nthen check the page", "--question", "Today?"]);
+    await run([
+      "move",
+      "owner-a-01",
+      "ready_for_deploy",
+      "-m",
+      "node cli.ts owner-a deploy\nthen check the page",
+      "--question",
+      "Today?",
+    ]);
     await run(["start", "owner-a-02"]);
     await run(["move", "owner-a-02", "blocked", "-m", "The owner picks a colour", "--question", "Blue or green?"]);
     const res = await run(["needs", "--project", "owner-a"]);
@@ -415,7 +495,18 @@ describe("list", () => {
   it("lists this project's tickets, every project's with --all, and filters on --status", async () => {
     const key = await ticket();
     await run(["start", key]);
-    await run(["create", "1", "--title", "Elsewhere", "--summary", "", "--project", "trips", "--brief", "corpus/briefs/todo/01-x.md"]);
+    await run([
+      "create",
+      "1",
+      "--title",
+      "Elsewhere",
+      "--summary",
+      "",
+      "--project",
+      "trips",
+      "--brief",
+      "corpus/briefs/todo/01-x.md",
+    ]);
     const mine = (await run(["list"])).out;
     expect(mine).toContain(key);
     expect(mine).not.toContain("trips-01");
@@ -433,7 +524,9 @@ describe("errors and exit codes", () => {
     const res = await run(["list"], { env: { BRIEF_BOARD_URL: dead } });
     expect(res.code).toBe(3);
     expect(res.out).toBe("");
-    expect(res.errLines).toEqual([`brief-board: the board isn't reachable at ${dead}. Tell the owner and carry on without it.`]);
+    expect(res.errLines).toEqual([
+      `brief-board: the board isn't reachable at ${dead}. Tell the owner and carry on without it.`,
+    ]);
   });
 
   it("exits 2 when the board refuses, and 1 for a usage mistake", async () => {
@@ -477,7 +570,9 @@ describe("a corpus nested in a repo", () => {
     const dir = nested(number);
     const res = await run(["create", String(number), "--title", "Nested", "--summary", "S"], { cwd: join(dir, "src") });
     expect(res.out).toBe(`Created nested-site-${number} (To Do): Nested`);
-    expect((await run(["show", `nested-site-${number}`])).out).toContain(`Brief:   corpus/briefs/todo/${number}-nested.md`);
+    expect((await run(["show", `nested-site-${number}`])).out).toContain(
+      `Brief:   corpus/briefs/todo/${number}-nested.md`,
+    );
   });
 
   it("is the git root's name outside the nested corpus, and --project wins over both", async () => {
@@ -511,7 +606,9 @@ describe("sync", () => {
     expect(res.code).toBe(0);
     expect(res.out).toContain("alpha: 3 brief(s), 1 todo, 1 done, 1 superseded; in todo: 1; 3 open todo(s)");
     expect(res.out).toContain("beta: 2 brief(s), 1 todo, 1 done, 0 superseded; in todo: 7\n");
-    expect(res.out).toContain("Todo tickets it would create: alpha:no-status, alpha:plain-line-open, alpha:walls-step-2");
+    expect(res.out).toContain(
+      "Todo tickets it would create: alpha:no-status, alpha:plain-line-open, alpha:walls-step-2",
+    );
     expect(res.out).toContain("Todo tickets it would remove: none");
     expect(res.out).toContain("Blocked: 0 brief(s), 0 todo(s)");
     expect((await run(["show", "alpha-01"], { env: env() })).code).toBe(2);
@@ -552,7 +649,9 @@ describe("sync", () => {
 
   it("refuses an unknown --project, and exits 3 when the board is down", async () => {
     expect((await run(["sync", "--project", "gamma"], { env: env() })).code).toBe(1);
-    const down = await run(["sync"], { env: { BRIEF_BOARD_URL: `http://127.0.0.1:${await freePort()}`, BRIEF_BOARD_PROJECTS_DIR: fixtures } });
+    const down = await run(["sync"], {
+      env: { BRIEF_BOARD_URL: `http://127.0.0.1:${await freePort()}`, BRIEF_BOARD_PROJECTS_DIR: fixtures },
+    });
     expect(down.code).toBe(3);
     expect(down.errLines).toHaveLength(1);
   });
@@ -612,7 +711,10 @@ describe("the token", () => {
   });
 
   it("refused, exits 3 with one line saying where to set it", async () => {
-    for (const env of [{ BRIEF_BOARD_URL: guardedUrl() }, { BRIEF_BOARD_URL: guardedUrl(), BRIEF_BOARD_TOKEN: "w".repeat(44) }]) {
+    for (const env of [
+      { BRIEF_BOARD_URL: guardedUrl() },
+      { BRIEF_BOARD_URL: guardedUrl(), BRIEF_BOARD_TOKEN: "w".repeat(44) },
+    ]) {
       const res = await run(["list", "--all"], { env });
       expect(res.code).toBe(3);
       expect(res.errLines).toHaveLength(1);
@@ -649,16 +751,27 @@ describe("blocked/ folders", () => {
   it("syncs a blocked brief and todo into Backlog, lists them by condition, and lets the brief out from todo/", async () => {
     const dir = join(scratch, "projects");
     const root = join(dir, "waiting-room");
-    for (const sub of ["briefs/todo", "briefs/blocked", "todos/blocked"]) mkdirSync(join(root, "corpus", sub), { recursive: true });
-    writeFileSync(join(root, "corpus/briefs/blocked/14-sonar.md"), "# Task 14: SonarQube on the box\n\n**Blocked by:** A stronger  machine\n");
-    writeFileSync(join(root, "corpus/todos/blocked/bitwarden.md"), "---\ntitle: Bitwarden\nblocked-by: a stronger machine\n---\n");
+    for (const sub of ["briefs/todo", "briefs/blocked", "todos/blocked"])
+      mkdirSync(join(root, "corpus", sub), { recursive: true });
+    writeFileSync(
+      join(root, "corpus/briefs/blocked/14-sonar.md"),
+      "# Task 14: SonarQube on the box\n\n**Blocked by:** A stronger  machine\n",
+    );
+    writeFileSync(
+      join(root, "corpus/todos/blocked/bitwarden.md"),
+      "---\ntitle: Bitwarden\nblocked-by: a stronger machine\n---\n",
+    );
     writeFileSync(join(root, "corpus/todos/blocked/sonarr.md"), "# Sonarr\n");
     const env = { BRIEF_BOARD_URL: url, BRIEF_BOARD_TOKEN: TOKEN, BRIEF_BOARD_PROJECTS_DIR: dir };
 
     const dry = await run(["sync", "--dry-run"], { env });
-    expect(dry.out).toContain("waiting-room: 1 brief(s), 0 todo, 1 blocked, 0 done, 0 superseded; 2 open todo(s), 2 blocked");
+    expect(dry.out).toContain(
+      "waiting-room: 1 brief(s), 0 todo, 1 blocked, 0 done, 0 superseded; 2 open todo(s), 2 blocked",
+    );
     expect(dry.out).toContain("Blocked: 1 brief(s), 2 todo(s)");
-    expect(dry.out).toContain(`warning: ${join(root, "corpus/todos/blocked/sonarr.md")}: in blocked/ but names no condition`);
+    expect(dry.out).toContain(
+      `warning: ${join(root, "corpus/todos/blocked/sonarr.md")}: in blocked/ but names no condition`,
+    );
 
     const synced = await run(["sync"], { env });
     expect(synced.code).toBe(0);
@@ -686,7 +799,9 @@ describe("blocked/ folders", () => {
     expect((await run(["sync"], { env })).code).toBe(0);
     expect((await run(["show", "waiting-room-14"], { env })).out).toContain("Status:  To Do\nRun:");
     const after = (await run(["blocked", "--project", "waiting-room"], { env })).out;
-    expect(after).toContain("2 blocked, waiting on 2 conditions.\n\na stronger machine (1):\n  waiting-room:bitwarden ");
+    expect(after).toContain(
+      "2 blocked, waiting on 2 conditions.\n\na stronger machine (1):\n  waiting-room:bitwarden ",
+    );
     expect(after).not.toContain("waiting-room-14");
     expect((await run(["start", "waiting-room-14"], { env })).code).toBe(0);
   });
@@ -732,7 +847,12 @@ describe("sprints", () => {
     const stale = await on(["sprint", "start", "3"]);
     expect(stale.code).toBe(1);
     expect(stale.err).toBe("brief-board: sprint 3 is the active one, so the next is 4, not 3; nothing changed");
-    for (const argv of [["sprint", "start"], ["sprint", "start", "four"], ["sprint", "stop"], ["sprint", "start", "4", "5"]]) {
+    for (const argv of [
+      ["sprint", "start"],
+      ["sprint", "start", "four"],
+      ["sprint", "stop"],
+      ["sprint", "start", "4", "5"],
+    ]) {
       expect((await on(argv)).code, argv.join(" ")).toBe(1);
     }
     expect((await on(["sprint"])).out).toMatch(/^Sprint 3, /);
@@ -755,7 +875,9 @@ describe("sprints", () => {
     expect((await on(["show", "3"])).out).toContain("Status:  Done");
     const late = await on(["comment", "3", "-m", "late"]);
     expect(late.code).toBe(2);
-    expect(late.err).toBe(`sports-app-03 is in sprint 2, which closed on ${today()}; a closed sprint's tickets are frozen and nothing writes to them`);
+    expect(late.err).toBe(
+      `sports-app-03 is in sprint 2, which closed on ${today()}; a closed sprint's tickets are frozen and nothing writes to them`,
+    );
   });
 
   it("prints the rule in the guide", async () => {

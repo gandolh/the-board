@@ -36,6 +36,7 @@ export async function needs(rt: Runtime, args: string[]): Promise<void> {
   for (const group of groups) {
     rt.out();
     rt.out(`${HEADINGS[group.kind]} (${group.needs.length}):`);
-    for (const need of group.needs) rt.out(`  ${need.key.padEnd(24)} ${firstLine(need.reason)}  (${need.by}, ${ago(need.since, now)} ago)`);
+    for (const need of group.needs)
+      rt.out(`  ${need.key.padEnd(24)} ${firstLine(need.reason)}  (${need.by}, ${ago(need.since, now)} ago)`);
   }
 }

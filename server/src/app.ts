@@ -190,7 +190,10 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
   const store = new Store(db, options.now, (options.staleHours ?? DEFAULT_STALE_HOURS) * 60 * 60 * 1000);
   const apiPrefix = options.apiPrefix ?? API_PREFIX;
   const webBase = options.webBase ?? BOARD_PATH;
-  const app = Fastify({ logger: options.logger ?? false, rewriteUrl: (request) => stripApiPrefix(request.url ?? "/", apiPrefix) });
+  const app = Fastify({
+    logger: options.logger ?? false,
+    rewriteUrl: (request) => stripApiPrefix(request.url ?? "/", apiPrefix),
+  });
   app.addHook("onClose", async () => db.close());
 
   // Fastify's own 4xx (bad JSON, wrong content type) in the contract's shape,
@@ -226,7 +229,8 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     isPublic: (request) => {
       const path = pathOf(request.url);
       // The CLI: its token, compared in constant time. With no token configured this path is closed.
-      if (isUnder(path, "/api")) return expected !== undefined && bearerMatches(request.headers.authorization, expected);
+      if (isUnder(path, "/api"))
+        return expected !== undefined && bearerMatches(request.headers.authorization, expected);
       // The plugin's own list says which sign-in routes are open.
       if (isUnder(path, AUTH_ROUTE_PREFIX)) return false;
       // The board's files, the redirect to them, and a 404: the login page has to load.
@@ -252,7 +256,8 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
   // error shape is `{ code, message }`, which the CLI reads for "the board
   // refused the token". The sign-in routes keep the plugin's shape for its hooks.
   app.addHook("onSend", async (request, reply, payload) => {
-    if (reply.statusCode !== 401 || typeof payload !== "string" || !isUnder(pathOf(request.url), "/api")) return payload;
+    if (reply.statusCode !== 401 || typeof payload !== "string" || !isUnder(pathOf(request.url), "/api"))
+      return payload;
     let body: unknown;
     try {
       body = JSON.parse(payload);
@@ -318,7 +323,8 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
 
   app.get("/api/sprints/:number", async (request, reply) => {
     const params = sprintParamsSchema.safeParse(request.params);
-    if (!params.success) return fail(reply, 400, { code: "invalid_request", message: "a sprint is a number: /api/sprints/<number>" });
+    if (!params.success)
+      return fail(reply, 400, { code: "invalid_request", message: "a sprint is a number: /api/sprints/<number>" });
     const sprint = store.sprint(params.data.number);
     if (!sprint) {
       return fail(reply, 404, {
@@ -451,7 +457,12 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     const result = store.move(key, move.to, move.message, move.author ?? DEFAULT_AUTHOR, move.questions);
     if (!result) return notFound(reply, key);
     if (!result.ok) return refused(reply, key, move.to, result.check);
-    const body: MoveResponse = { ticket: result.ticket, comment: result.comment, questions: result.questions, endedRun: result.endedRun };
+    const body: MoveResponse = {
+      ticket: result.ticket,
+      comment: result.comment,
+      questions: result.questions,
+      endedRun: result.endedRun,
+    };
     return body;
   });
 
@@ -483,7 +494,10 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     if (!ticket) return notFound(reply, key);
     const result = store.release(key, fields.message, fields.author ?? DEFAULT_AUTHOR);
     if (!result) {
-      return fail(reply, 400, { code: NO_OPEN_RUN, message: `${key} has no open run to release (it is ${STATUS_LABELS[ticket.status]})` });
+      return fail(reply, 400, {
+        code: NO_OPEN_RUN,
+        message: `${key} has no open run to release (it is ${STATUS_LABELS[ticket.status]})`,
+      });
     }
     const body: ReleaseResponse = result;
     return body;
@@ -521,8 +535,13 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     const result = store.drop(key, fields.kind, fields.value);
     if (!result.ok && result.reason === "no_open_run") return noRunToHold(reply, key, ticket.status);
     if (!result.ok) {
-      const holds = result.holds.length ? `it holds ${result.holds.map((hold) => `${hold.kind} ${hold.value}`).join(", ")}` : "it holds nothing";
-      return fail(reply, 400, { code: NOT_HELD, message: `${key}'s run holds no ${fields.kind} ${fields.value}; ${holds}` });
+      const holds = result.holds.length
+        ? `it holds ${result.holds.map((hold) => `${hold.kind} ${hold.value}`).join(", ")}`
+        : "it holds nothing";
+      return fail(reply, 400, {
+        code: NOT_HELD,
+        message: `${key}'s run holds no ${fields.kind} ${fields.value}; ${holds}`,
+      });
     }
     const body: DropResponse = { run: result.run };
     return body;
@@ -548,7 +567,10 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
   app.post("/api/tickets/:key/questions/:number/answer", async (request, reply) => {
     const params = questionParamsSchema.safeParse(request.params);
     if (!params.success) {
-      return fail(reply, 400, { code: "invalid_key", message: "answer a question as /api/tickets/<key>/questions/<number>/answer" });
+      return fail(reply, 400, {
+        code: "invalid_key",
+        message: "answer a question as /api/tickets/<key>/questions/<number>/answer",
+      });
     }
     const { key, number } = params.data;
     const fields = parse(answerRequestSchema, request.body, reply);
@@ -579,7 +601,8 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
   if (webBase !== "/") app.get("/", async (_request, reply) => reply.redirect(webBase));
   app.setNotFoundHandler((request, reply) => {
     const path = pathOf(request.url);
-    if (serving && request.method === "GET" && webBase !== "/" && path === webBase.slice(0, -1)) return reply.redirect(webBase);
+    if (serving && request.method === "GET" && webBase !== "/" && path === webBase.slice(0, -1))
+      return reply.redirect(webBase);
     if (serving && (request.method === "GET" || request.method === "HEAD") && path.startsWith(webBase)) {
       return reply.sendFile("index.html");
     }
@@ -588,4 +611,3 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
 
   return app;
 }
-

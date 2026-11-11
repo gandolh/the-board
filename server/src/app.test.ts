@@ -50,7 +50,10 @@ function call(options: InjectOptions): Promise<LightMyRequestResponse> {
   return app.inject({ ...options, headers: { ...BEARER, ...options.headers } });
 }
 
-const put = (key: string, fields: Partial<{ title: string; summary: string; briefPath: string; tags: string[] }> = {}) =>
+const put = (
+  key: string,
+  fields: Partial<{ title: string; summary: string; briefPath: string; tags: string[] }> = {},
+) =>
   call({
     method: "PUT",
     url: `/api/tickets/${key}`,
@@ -109,7 +112,11 @@ describe("moves through the route", () => {
       expect(res.statusCode).toBe(200);
       const body = res.json<MoveResponse>();
       expect(body.ticket.status).toBe(rule.to);
-      expect(body.comment).toMatchObject({ body: "what happened", role: rule.role, move: { from: rule.from, to: rule.to } });
+      expect(body.comment).toMatchObject({
+        body: "what happened",
+        role: rule.role,
+        move: { from: rule.from, to: rule.to },
+      });
       const { history } = await detail(key);
       expect(history.at(-1)).toMatchObject({ from: rule.from, to: rule.to, via: "move", author: "agent" });
     });
@@ -176,7 +183,10 @@ describe("tickets", () => {
   it("creating twice leaves one ticket, updated, with its status untouched", async () => {
     const first = await put("sports-app-1", { title: "First" });
     expect(first.statusCode).toBe(201);
-    expect(first.json<UpsertTicketResponse>()).toMatchObject({ created: true, ticket: { key: "sports-app-01", status: "todo" } });
+    expect(first.json<UpsertTicketResponse>()).toMatchObject({
+      created: true,
+      ticket: { key: "sports-app-01", status: "todo" },
+    });
     await move("sports-app-01", "in_progress");
     const second = await put("sports-app-01", { title: "Second", tags: ["ui", "sports-app", "ui"] });
     expect(second.statusCode).toBe(200);
@@ -305,8 +315,17 @@ describe("sync", () => {
     ]);
     expect(res).toMatchObject({ created: 0, updated: 2 });
     expect((await detail("atrium-01")).ticket).toMatchObject({ title: "New 1", summary: "New summary 1" });
-    expect((await detail("atrium-02")).ticket).toMatchObject({ title: "New 2", summary: "Agent summary", summarySource: "agent" });
-    expect(await sync("atrium", [{ number: 1, title: "New 1", summary: "New summary 1" }, { number: 2, title: "New 2" }])).toMatchObject({
+    expect((await detail("atrium-02")).ticket).toMatchObject({
+      title: "New 2",
+      summary: "Agent summary",
+      summarySource: "agent",
+    });
+    expect(
+      await sync("atrium", [
+        { number: 1, title: "New 1", summary: "New summary 1" },
+        { number: 2, title: "New 2" },
+      ]),
+    ).toMatchObject({
       unchanged: 2,
     });
   });
@@ -316,21 +335,31 @@ describe("sync", () => {
     await ticketIn("p-02", "in_progress");
     await call({ method: "POST", url: "/api/tickets/p-02/release", payload: { message: "stopped" } });
     await ticketIn("p-03", "blocked");
-    const res = await sync("p", [1, 2, 3].map((number) => ({ number, state: "done" as const })));
+    const res = await sync(
+      "p",
+      [1, 2, 3].map((number) => ({ number, state: "done" as const })),
+    );
     expect(res.updated).toBe(3);
     for (const key of ["p-01", "p-02", "p-03"]) {
       const { ticket, comments, history } = await detail(key);
       expect(ticket.status).toBe("done");
       expect(ticket.briefPath).toContain("/done/");
       expect(history.at(-1)).toMatchObject({ to: "done", via: "sync", author: "sync" });
-      expect(comments.at(-1)).toMatchObject({ body: "Closed by sync: the brief is in done/.", role: "conclusion", author: "sync" });
+      expect(comments.at(-1)).toMatchObject({
+        body: "Closed by sync: the brief is in done/.",
+        role: "conclusion",
+        author: "sync",
+      });
     }
   });
 
   it("leaves Ready for test and Ready for deploy alone when the brief is done", async () => {
     await ticketIn("p-01", "ready_for_test");
     await ticketIn("p-02", "ready_for_deploy");
-    await sync("p", [1, 2].map((number) => ({ number, state: "done" as const })));
+    await sync(
+      "p",
+      [1, 2].map((number) => ({ number, state: "done" as const })),
+    );
     expect((await detail("p-01")).ticket.status).toBe("ready_for_test");
     expect((await detail("p-02")).ticket.status).toBe("ready_for_deploy");
   });
@@ -416,7 +445,12 @@ describe("runs", () => {
     later(HOUR);
     await move("p-01", "ready_for_deploy", "npm run deploy");
     const { ticket, runs } = await detail("p-01");
-    expect(ticket.run).toMatchObject({ ended: "moved", endedTo: "ready_for_deploy", endedAt: clock.toISOString(), stale: false });
+    expect(ticket.run).toMatchObject({
+      ended: "moved",
+      endedTo: "ready_for_deploy",
+      endedAt: clock.toISOString(),
+      stale: false,
+    });
     expect(runs).toHaveLength(1);
   });
 
@@ -459,7 +493,10 @@ describe("runs", () => {
     expect(res.ticket.run).toMatchObject({ author: "bo", lastHeardAt: clock.toISOString(), ended: null });
     expect((await detail("p-01")).runs).toHaveLength(1);
     // The same author resuming is heard from, and nothing passes.
-    expect((await start("p-01", "bo", "Back after lunch")).json<StartResponse>()).toMatchObject({ resumed: true, passedFrom: null });
+    expect((await start("p-01", "bo", "Back after lunch")).json<StartResponse>()).toMatchObject({
+      resumed: true,
+      passedFrom: null,
+    });
   });
 
   it("a start on an In Progress ticket with no run opens one", async () => {
@@ -498,7 +535,11 @@ describe("runs", () => {
     const quick = await buildApp({ dbPath: ":memory:", now: () => clock, token: TOKEN, staleHours: 1 });
     try {
       const inject = (options: InjectOptions) => quick.inject({ ...options, headers: BEARER });
-      await inject({ method: "PUT", url: "/api/tickets/p-01", payload: { title: "A", summary: "", briefPath: "corpus/briefs/todo/01-a.md" } });
+      await inject({
+        method: "PUT",
+        url: "/api/tickets/p-01",
+        payload: { title: "A", summary: "", briefPath: "corpus/briefs/todo/01-a.md" },
+      });
       await inject({ method: "POST", url: "/api/tickets/p-01/start", payload: {} });
       later(HOUR + 1000);
       expect((await inject({ url: "/api/tickets/p-01" })).json<TicketDetailResponse>().ticket.run?.stale).toBe(true);
@@ -531,7 +572,9 @@ describe("runs", () => {
     await put("p-01");
     await start("p-01", "ana");
     const res = await sync("p", [{ number: 1, state: "done" }]);
-    expect(res.warnings).toEqual(["p-01: its brief is in done/, but its run by ana is open; the run's end move decides"]);
+    expect(res.warnings).toEqual([
+      "p-01: its brief is in done/, but its run by ana is open; the run's end move decides",
+    ]);
     const { ticket } = await detail("p-01");
     expect(ticket).toMatchObject({ status: "in_progress", run: { ended: null } });
     expect(ticket.briefPath).toContain("/done/");
@@ -551,7 +594,9 @@ describe("runs", () => {
     expect(ticket.status).toBe("done");
     expect(runs).toMatchObject([{ author: "ana", ended: "stale", endedTo: null, lastHeardAt: heard, stale: false }]);
     expect(history.at(-1)).toMatchObject({ from: "in_progress", to: "done", via: "sync" });
-    expect(comments.at(-1)?.body).toBe(`Closed by sync: the brief is in done/. The run by ana, last heard ${heard}, was stale and ends here.`);
+    expect(comments.at(-1)?.body).toBe(
+      `Closed by sync: the brief is in done/. The run by ana, last heard ${heard}, was stale and ends here.`,
+    );
   });
 
   it("sync closes an In Progress ticket with no open run, as before", async () => {
@@ -568,7 +613,8 @@ describe("holds", () => {
   const later = (ms: number) => {
     clock = new Date(clock.getTime() + ms);
   };
-  const start = (key: string, author?: string) => call({ method: "POST", url: `/api/tickets/${key}/start`, payload: { author } });
+  const start = (key: string, author?: string) =>
+    call({ method: "POST", url: `/api/tickets/${key}/start`, payload: { author } });
   const hold = (key: string, kind: string, value: string) =>
     call({ method: "POST", url: `/api/tickets/${key}/hold`, payload: { kind, value } });
   const drop = (key: string, kind: string, value: string) =>
@@ -587,11 +633,17 @@ describe("holds", () => {
     expect(body).toMatchObject({ held: true, clashes: [], run: { author: "ana", lastHeardAt: clock.toISOString() } });
     expect(body.run.holds).toEqual([{ kind: "port", value: "5173", heldAt: clock.toISOString() }]);
     await hold("p-01", "container", "vite-dev");
-    expect((await hold("p-01", "port", "5173")).json<HoldResponse>()).toMatchObject({ held: false, run: { holds: [{}, {}] } });
+    expect((await hold("p-01", "port", "5173")).json<HoldResponse>()).toMatchObject({
+      held: false,
+      run: { holds: [{}, {}] },
+    });
     later(HOUR);
     const dropped = await drop("p-01", "port", "5173");
     expect(dropped.statusCode).toBe(200);
-    expect(dropped.json<DropResponse>().run).toMatchObject({ lastHeardAt: clock.toISOString(), holds: [{ kind: "container", value: "vite-dev" }] });
+    expect(dropped.json<DropResponse>().run).toMatchObject({
+      lastHeardAt: clock.toISOString(),
+      holds: [{ kind: "container", value: "vite-dev" }],
+    });
     const { ticket, runs } = await detail("p-01");
     expect(ticket.run?.lastHeardAt).toBe(clock.toISOString());
     expect(holdsOf(runs[0]!.holds)).toEqual(["container vite-dev"]);
@@ -602,10 +654,15 @@ describe("holds", () => {
   it("drop of something the run doesn't hold is 400 not_held, naming what it holds", async () => {
     await put("p-01");
     await start("p-01");
-    expect((await drop("p-01", "port", "5173")).json<ErrorBody>()).toEqual({ code: "not_held", message: "p-01's run holds no port 5173; it holds nothing" });
+    expect((await drop("p-01", "port", "5173")).json<ErrorBody>()).toEqual({
+      code: "not_held",
+      message: "p-01's run holds no port 5173; it holds nothing",
+    });
     await hold("p-01", "path", "tmp/os-copy");
     await hold("p-01", "pid", "4242");
-    expect((await drop("p-01", "port", "5173")).json<ErrorBody>().message).toBe("p-01's run holds no port 5173; it holds path tmp/os-copy, pid 4242");
+    expect((await drop("p-01", "port", "5173")).json<ErrorBody>().message).toBe(
+      "p-01's run holds no port 5173; it holds path tmp/os-copy, pid 4242",
+    );
   });
 
   it("warns of another open run holding the same kind and value, and holds it anyway", async () => {
@@ -622,7 +679,9 @@ describe("holds", () => {
     const res = (await hold("q-01", "port", "5173")).json<HoldResponse>();
     expect(res.held).toBe(true);
     // The ended run on r-01 still lists it as a leftover, but only open runs clash.
-    expect(res.clashes.map((entry) => [entry.key, entry.run.author, holdsOf(entry.run.holds)])).toEqual([["p-01", "ana", ["port 5173"]]]);
+    expect(res.clashes.map((entry) => [entry.key, entry.run.author, holdsOf(entry.run.holds)])).toEqual([
+      ["p-01", "ana", ["port 5173"]],
+    ]);
     expect((await hold("q-01", "container", "5173")).json<HoldResponse>().clashes).toEqual([]);
     // Both hold it now: the record, not a lock.
     const { runs } = (await call({ url: "/api/runs" })).json<RunsResponse>();
@@ -636,7 +695,10 @@ describe("holds", () => {
     await put("p-01");
     const none = await hold("p-01", "port", "5173");
     expect(none.statusCode).toBe(400);
-    expect(none.json<ErrorBody>()).toEqual({ code: "no_open_run", message: "p-01 has no open run (it is To Do); brief-board start p-01 opens one" });
+    expect(none.json<ErrorBody>()).toEqual({
+      code: "no_open_run",
+      message: "p-01 has no open run (it is To Do); brief-board start p-01 opens one",
+    });
     expect((await drop("p-01", "port", "5173")).json<ErrorBody>().code).toBe("no_open_run");
     await start("p-01");
     expect((await hold("p-01", "socket", "x")).json<ErrorBody>().code).toBe("invalid_request");
@@ -690,8 +752,13 @@ describe("questions", () => {
   const ask = (key: string, to: Status, message: string, questions: string[]) =>
     call({ method: "POST", url: `/api/tickets/${key}/moves`, payload: { to, message, questions, author: "ana" } });
   const answer = (key: string, number: number | string, text?: string) =>
-    call({ method: "POST", url: `/api/tickets/${key}/questions/${number}/answer`, payload: { answer: text, author: "owner" } });
-  const open = async (query = "") => (await call({ url: `/api/questions${query}` })).json<QuestionsResponse>().questions;
+    call({
+      method: "POST",
+      url: `/api/tickets/${key}/questions/${number}/answer`,
+      payload: { answer: text, author: "owner" },
+    });
+  const open = async (query = "") =>
+    (await call({ url: `/api/questions${query}` })).json<QuestionsResponse>().questions;
 
   it("a move with two questions stores both, numbered, and the move as before", async () => {
     await ticketIn("p-01", "in_progress");
@@ -701,8 +768,24 @@ describe("questions", () => {
     expect(body.ticket).toMatchObject({ status: "ready_for_deploy", openQuestions: 2 });
     expect(body.comment).toMatchObject({ body: "npm run deploy", role: "deploy_steps" });
     expect(body.questions).toEqual([
-      { number: 1, text: "Tabs too?", author: "ana", askedAt: clock.toISOString(), answer: null, answeredBy: null, answeredAt: null },
-      { number: 2, text: "Keep the old parser?", author: "ana", askedAt: clock.toISOString(), answer: null, answeredBy: null, answeredAt: null },
+      {
+        number: 1,
+        text: "Tabs too?",
+        author: "ana",
+        askedAt: clock.toISOString(),
+        answer: null,
+        answeredBy: null,
+        answeredAt: null,
+      },
+      {
+        number: 2,
+        text: "Keep the old parser?",
+        author: "ana",
+        askedAt: clock.toISOString(),
+        answer: null,
+        answeredBy: null,
+        answeredAt: null,
+      },
     ]);
     expect((await detail("p-01")).questions.map((q) => q.number)).toEqual([1, 2]);
   });
@@ -711,11 +794,19 @@ describe("questions", () => {
     await put("p-01");
     const started = await call({ method: "POST", url: "/api/tickets/p-01/start", payload: { questions: ["First?"] } });
     expect(started.json<StartResponse>().questions.map((q) => q.number)).toEqual([1]);
-    const commented = await call({ method: "POST", url: "/api/tickets/p-01/comments", payload: { body: "note", questions: ["Second?"] } });
+    const commented = await call({
+      method: "POST",
+      url: "/api/tickets/p-01/comments",
+      payload: { body: "note", questions: ["Second?"] },
+    });
     expect(commented.json<CommentResponse>().questions.map((q) => q.number)).toEqual([2]);
     expect((await ask("p-01", "blocked", "", ["Never asked?"])).statusCode).toBe(400);
     await put("p-02");
-    await call({ method: "POST", url: "/api/tickets/p-02/comments", payload: { body: "note", questions: ["Other ticket?"] } });
+    await call({
+      method: "POST",
+      url: "/api/tickets/p-02/comments",
+      payload: { body: "note", questions: ["Other ticket?"] },
+    });
     expect((await detail("p-01")).questions.map((q) => [q.number, q.text])).toEqual([
       [1, "First?"],
       [2, "Second?"],
@@ -730,9 +821,17 @@ describe("questions", () => {
     const res = await answer("p-01", 2, "No, drop it.");
     expect(res.statusCode).toBe(200);
     const body = res.json<AnswerResponse>();
-    expect(body.question).toMatchObject({ number: 2, answer: "No, drop it.", answeredBy: "owner", answeredAt: clock.toISOString() });
+    expect(body.question).toMatchObject({
+      number: 2,
+      answer: "No, drop it.",
+      answeredBy: "owner",
+      answeredAt: clock.toISOString(),
+    });
     expect(body.ticket.openQuestions).toBe(1);
-    expect(body.comment).toMatchObject({ author: "owner", body: "Answered question 2: Keep the old parser?\n\nNo, drop it." });
+    expect(body.comment).toMatchObject({
+      author: "owner",
+      body: "Answered question 2: Keep the old parser?\n\nNo, drop it.",
+    });
     expect((await detail("p-01")).ticket.status).toBe("ready_for_test");
   });
 
@@ -750,7 +849,9 @@ describe("questions", () => {
     }
     await answer("p-01", 1, "a");
     await answer("p-01", 3, "b");
-    expect((await answer("p-01", 1, "c")).json<ErrorBody>().message).toBe("p-01 has no open question 1; it has no open questions");
+    expect((await answer("p-01", 1, "c")).json<ErrorBody>().message).toBe(
+      "p-01 has no open question 1; it has no open questions",
+    );
     expect((await answer("p-01", 0, "c")).json<ErrorBody>().code).toBe("invalid_key");
     expect((await answer("p-01", 1)).json<ErrorBody>().code).toBe("invalid_request");
     expect((await answer("p-09", 1, "c")).statusCode).toBe(404);
@@ -764,7 +865,9 @@ describe("questions", () => {
     await ask("p-01", "ready_for_test", "try it", ["Newer?", "Answered?"]);
     await answer("p-01", 2, "done");
     const all = await open();
-    expect(all.map((entry) => [entry.key, entry.project, entry.status, entry.question.number, entry.question.text])).toEqual([
+    expect(
+      all.map((entry) => [entry.key, entry.project, entry.status, entry.question.number, entry.question.text]),
+    ).toEqual([
       ["q-01", "q", "blocked", 1, "Older?"],
       ["p-01", "p", "ready_for_test", 1, "Newer?"],
     ]);
@@ -873,8 +976,17 @@ describe("what needs the owner", () => {
 });
 
 describe("todos and Backlog", () => {
-  const todo = (slug: string, title = `Todo ${slug}`) => ({ slug, title, summary: `About ${slug}`, path: `corpus/todos/${slug}.md` });
-  const syncTodos = async (project: string, todos: ReturnType<typeof todo>[] | undefined, briefs: Partial<SyncBrief>[] = []) =>
+  const todo = (slug: string, title = `Todo ${slug}`) => ({
+    slug,
+    title,
+    summary: `About ${slug}`,
+    path: `corpus/todos/${slug}.md`,
+  });
+  const syncTodos = async (
+    project: string,
+    todos: ReturnType<typeof todo>[] | undefined,
+    briefs: Partial<SyncBrief>[] = [],
+  ) =>
     (
       await call({
         method: "POST",
@@ -902,7 +1014,12 @@ describe("todos and Backlog", () => {
     expect(result.todos).toEqual({ created: 1, updated: 0, unchanged: 0, removed: 0 });
     expect(result.created).toBe(0);
     const { ticket, history } = await detail("p:walls-step-2");
-    expect(ticket).toMatchObject({ number: null, status: "backlog", title: "Todo walls-step-2", briefPath: "corpus/todos/walls-step-2.md" });
+    expect(ticket).toMatchObject({
+      number: null,
+      status: "backlog",
+      title: "Todo walls-step-2",
+      briefPath: "corpus/todos/walls-step-2.md",
+    });
     expect(history).toMatchObject([{ from: null, to: "backlog", via: "sync" }]);
     const [lane] = (await board()).lanes;
     expect(lane!.tickets.map((t) => t.key)).toEqual(["p:walls-step-2"]);
@@ -911,7 +1028,12 @@ describe("todos and Backlog", () => {
   it("keeps a todo's ticket to its title, summary and path", async () => {
     await syncTodos("p", [todo("a")]);
     expect((await syncTodos("p", [todo("a")])).todos).toEqual({ created: 0, updated: 0, unchanged: 1, removed: 0 });
-    expect((await syncTodos("p", [todo("a", "A better title")])).todos).toEqual({ created: 0, updated: 1, unchanged: 0, removed: 0 });
+    expect((await syncTodos("p", [todo("a", "A better title")])).todos).toEqual({
+      created: 0,
+      updated: 1,
+      unchanged: 0,
+      removed: 0,
+    });
     expect((await detail("p:a")).ticket.title).toBe("A better title");
   });
 
@@ -931,7 +1053,12 @@ describe("todos and Backlog", () => {
 
   it("leaves a project's todo tickets alone when a CLI from before Backlog sends no todos", async () => {
     await syncTodos("p", [todo("a")]);
-    expect((await syncTodos("p", undefined, [{ number: 1 }])).todos).toEqual({ created: 0, updated: 0, unchanged: 0, removed: 0 });
+    expect((await syncTodos("p", undefined, [{ number: 1 }])).todos).toEqual({
+      created: 0,
+      updated: 0,
+      unchanged: 0,
+      removed: 0,
+    });
     expect((await detail("p:a")).ticket.status).toBe("backlog");
   });
 
@@ -971,7 +1098,8 @@ describe("blocked briefs and todos", () => {
   const later = (ms: number) => {
     clock = new Date(clock.getTime() + ms);
   };
-  const start = (key: string, author?: string) => call({ method: "POST", url: `/api/tickets/${key}/start`, payload: { author } });
+  const start = (key: string, author?: string) =>
+    call({ method: "POST", url: `/api/tickets/${key}/start`, payload: { author } });
   const release = (key: string, message: string) =>
     call({ method: "POST", url: `/api/tickets/${key}/release`, payload: { message } });
   const blocked = (number: number, blockedBy: string | null = "a stronger machine"): Partial<SyncBrief> => ({
@@ -997,7 +1125,13 @@ describe("blocked briefs and todos", () => {
           projects: [
             {
               project: "p",
-              briefs: briefs.map((b) => ({ title: `Brief ${b.number}`, summary: "", briefPath: `corpus/briefs/todo/${b.number}-x.md`, state: "todo", ...b })),
+              briefs: briefs.map((b) => ({
+                title: `Brief ${b.number}`,
+                summary: "",
+                briefPath: `corpus/briefs/todo/${b.number}-x.md`,
+                state: "todo",
+                ...b,
+              })),
               ...(todos ? { todos } : {}),
             },
           ],
@@ -1009,7 +1143,12 @@ describe("blocked briefs and todos", () => {
     const result = await syncWith([blocked(14)]);
     expect(result).toMatchObject({ created: 1, warnings: [] });
     const { ticket, history } = await detail("p-14");
-    expect(ticket).toMatchObject({ number: 14, status: "backlog", blockedBy: "a stronger machine", briefPath: "corpus/briefs/blocked/14-x.md" });
+    expect(ticket).toMatchObject({
+      number: 14,
+      status: "backlog",
+      blockedBy: "a stronger machine",
+      briefPath: "corpus/briefs/blocked/14-x.md",
+    });
     expect(history).toMatchObject([{ from: null, to: "backlog", via: "sync" }]);
   });
 
@@ -1026,7 +1165,10 @@ describe("blocked briefs and todos", () => {
     await ticketIn("p-02", "blocked");
     const result = await syncWith([blocked(1), blocked(2)]);
     expect(result).toMatchObject({ updated: 2, warnings: [] });
-    for (const [key, from] of [["p-01", "todo"], ["p-02", "blocked"]] as const) {
+    for (const [key, from] of [
+      ["p-01", "todo"],
+      ["p-02", "blocked"],
+    ] as const) {
       const { ticket, history, comments } = await detail(key);
       expect(ticket).toMatchObject({ status: "backlog", blockedBy: "a stronger machine" });
       expect(history.at(-1)).toMatchObject({ from, to: "backlog", via: "sync", author: "sync" });
@@ -1038,8 +1180,14 @@ describe("blocked briefs and todos", () => {
     await put("p-01");
     await start("p-01", "ana");
     const result = await syncWith([blocked(1)]);
-    expect(result.warnings).toEqual(["p-01: its brief is in blocked/, but its run by ana is open; the run's end move decides"]);
-    expect((await detail("p-01")).ticket).toMatchObject({ status: "in_progress", blockedBy: "a stronger machine", run: { ended: null } });
+    expect(result.warnings).toEqual([
+      "p-01: its brief is in blocked/, but its run by ana is open; the run's end move decides",
+    ]);
+    expect((await detail("p-01")).ticket).toMatchObject({
+      status: "in_progress",
+      blockedBy: "a stronger machine",
+      run: { ended: null },
+    });
   });
 
   it("moves an In Progress ticket to Backlog once its run is stale, ending the run, or released", async () => {
@@ -1048,11 +1196,15 @@ describe("blocked briefs and todos", () => {
     const heard = clock.toISOString();
     later(5 * HOUR);
     const stale = await syncWith([blocked(1)]);
-    expect(stale.warnings).toEqual([`p-01: waits in Backlog; its run by ana was stale (last heard ${heard}) and ends here`]);
+    expect(stale.warnings).toEqual([
+      `p-01: waits in Backlog; its run by ana was stale (last heard ${heard}) and ends here`,
+    ]);
     const first = await detail("p-01");
     expect(first.ticket.status).toBe("backlog");
     expect(first.runs).toMatchObject([{ author: "ana", ended: "stale", endedTo: "backlog" }]);
-    expect(first.comments.at(-1)?.body).toBe(`${WAITING} The run by ana, last heard ${heard}, was stale and ends here.`);
+    expect(first.comments.at(-1)?.body).toBe(
+      `${WAITING} The run by ana, last heard ${heard}, was stale and ends here.`,
+    );
 
     await put("p-02");
     await start("p-02", "ben");
@@ -1092,7 +1244,10 @@ describe("blocked briefs and todos", () => {
 
   it("closes a blocked brief's ticket when the brief is done, and hides it when superseded", async () => {
     await syncWith([blocked(1), blocked(2)]);
-    await syncWith([{ number: 1, state: "done" }, { number: 2, state: "superseded" }]);
+    await syncWith([
+      { number: 1, state: "done" },
+      { number: 2, state: "superseded" },
+    ]);
     expect((await detail("p-01")).ticket).toMatchObject({ status: "done", blockedBy: null });
     expect((await detail("p-01")).comments.at(-1)?.body).toBe("Closed by sync: the brief is in done/.");
     expect((await detail("p-02")).ticket).toMatchObject({ status: "backlog", hidden: true, blockedBy: null });
@@ -1123,7 +1278,10 @@ describe("blocked briefs and todos", () => {
       briefPath: "corpus/todos/blocked/sonarqube.md",
     });
     await syncWith([], [todo("sonarqube")]);
-    expect((await detail("p:sonarqube")).ticket).toMatchObject({ blockedBy: null, briefPath: "corpus/todos/sonarqube.md" });
+    expect((await detail("p:sonarqube")).ticket).toMatchObject({
+      blockedBy: null,
+      briefPath: "corpus/todos/sonarqube.md",
+    });
     expect((await detail("p:sonarqube")).history).toHaveLength(1);
   });
 
@@ -1143,14 +1301,18 @@ describe("blocked briefs and todos", () => {
         projects: [
           {
             project: "p",
-            briefs: [{ number: 1, title: "Brief 1", summary: "", briefPath: "corpus/briefs/todo/1-x.md", state: "todo" }],
+            briefs: [
+              { number: 1, title: "Brief 1", summary: "", briefPath: "corpus/briefs/todo/1-x.md", state: "todo" },
+            ],
             todos: [{ slug: "a", title: "A", summary: "", path: "corpus/todos/a.md" }],
           },
         ],
       },
     });
     expect(older.statusCode).toBe(200);
-    expect(older.json<SyncResponse>().warnings).toEqual(["p-14: no brief with this number in p's corpus; nothing changed"]);
+    expect(older.json<SyncResponse>().warnings).toEqual([
+      "p-14: no brief with this number in p's corpus; nothing changed",
+    ]);
     expect((await detail("p-01")).ticket).toMatchObject({ status: "todo", blockedBy: null });
     expect((await detail("p:a")).ticket.blockedBy).toBeNull();
     expect((await detail("p-14")).ticket).toMatchObject({ status: "backlog", blockedBy: "a stronger machine" });
@@ -1173,8 +1335,10 @@ describe("sprints", () => {
   };
   const today = () => clock.toISOString().slice(0, 10);
   const sprints = async () => (await call({ url: "/api/sprints" })).json<SprintsResponse>();
-  const sprintDetail = async (number: number) => (await call({ url: `/api/sprints/${number}` })).json<SprintDetailResponse>();
-  const startSprint = (payload?: Record<string, unknown>) => call({ method: "POST", url: "/api/sprints", ...(payload && { payload }) });
+  const sprintDetail = async (number: number) =>
+    (await call({ url: `/api/sprints/${number}` })).json<SprintDetailResponse>();
+  const startSprint = (payload?: Record<string, unknown>) =>
+    call({ method: "POST", url: "/api/sprints", ...(payload && { payload }) });
 
   it("starts with Sprint 1 closed and empty and Sprint 2 active, both dated today, and the board names the active one", async () => {
     const day = (await sprints()).active.startedOn;
@@ -1200,7 +1364,11 @@ describe("sprints", () => {
     ] as const) {
       await ticketIn(key, status);
     }
-    await call({ method: "POST", url: "/api/tickets/p-02/comments", payload: { body: "Half done.", questions: ["Today?"] } });
+    await call({
+      method: "POST",
+      url: "/api/tickets/p-02/comments",
+      payload: { body: "Half done.", questions: ["Today?"] },
+    });
     later(60_000);
     await ticketIn("p-07", "done");
     const before = await detail("p-02");
@@ -1220,7 +1388,13 @@ describe("sprints", () => {
     expect(after.comments.at(-1)?.body).toBe("Half done.");
 
     expect((await board()).sprint.number).toBe(3);
-    expect((await board()).lanes.flatMap((lane) => lane.tickets.map((ticket) => ticket.key))).toEqual(["p-01", "p-02", "p-03", "p-04", "p-05"]);
+    expect((await board()).lanes.flatMap((lane) => lane.tickets.map((ticket) => ticket.key))).toEqual([
+      "p-01",
+      "p-02",
+      "p-03",
+      "p-04",
+      "p-05",
+    ]);
     expect((await sprints()).closed.map((sprint) => sprint.number)).toEqual([2, 1]);
     // A closed sprint's Done tickets, by project, newest Done first.
     expect((await sprintDetail(2)).tickets.map((ticket) => ticket.key)).toEqual(["p-07", "p-06", "q-01"]);
@@ -1267,7 +1441,11 @@ describe("sprints", () => {
     const before = await detail("p-01");
     const writes: InjectOptions[] = [
       { method: "POST", url: "/api/tickets/p-01/moves", payload: { to: "in_progress", message: "again" } },
-      { method: "PUT", url: "/api/tickets/p-01", payload: { title: "Renamed", summary: "", briefPath: "corpus/briefs/todo/01-a.md" } },
+      {
+        method: "PUT",
+        url: "/api/tickets/p-01",
+        payload: { title: "Renamed", summary: "", briefPath: "corpus/briefs/todo/01-a.md" },
+      },
       { method: "POST", url: "/api/tickets/p-01/comments", payload: { body: "late" } },
       { method: "POST", url: "/api/tickets/p-01/start", payload: {} },
       { method: "POST", url: "/api/tickets/p-01/release", payload: { message: "stopped" } },
@@ -1306,7 +1484,9 @@ describe("serving the board", () => {
       const missing = await served.inject({ url: "/api/missing", headers: BEARER });
       expect(missing.statusCode).toBe(404);
       expect(missing.json<ErrorBody>().code).toBe("not_found");
-      expect((await served.inject({ url: "/brief-board-api/api/missing", headers: BEARER })).json<ErrorBody>().code).toBe("not_found");
+      expect(
+        (await served.inject({ url: "/brief-board-api/api/missing", headers: BEARER })).json<ErrorBody>().code,
+      ).toBe("not_found");
       // Signed out, the board's files still load (the login page is one of them), and the API doesn't.
       expect((await served.inject({ url: "/brief-board/login" })).statusCode).toBe(200);
       expect((await served.inject({ url: "/api/missing" })).statusCode).toBe(401);
@@ -1338,7 +1518,12 @@ describe("the CLI's token", () => {
   const TOKEN = "t".repeat(40);
   const routes = [
     { name: "a read", method: "GET" as const, url: "/api/board" },
-    { name: "a write", method: "PUT" as const, url: "/api/tickets/atrium-01", payload: { title: "A", summary: "", briefPath: "corpus/briefs/todo/01-a.md" } },
+    {
+      name: "a write",
+      method: "PUT" as const,
+      url: "/api/tickets/atrium-01",
+      payload: { title: "A", summary: "", briefPath: "corpus/briefs/todo/01-a.md" },
+    },
     { name: "a sync", method: "POST" as const, url: "/api/sync", payload: { projects: [] } },
   ];
 
@@ -1348,7 +1533,10 @@ describe("the CLI's token", () => {
       for (const route of routes) {
         expect((await tokenless.inject(route)).statusCode, `${route.name} with no header`).toBe(401);
         expect((await tokenless.inject({ ...route, headers: { authorization: "Bearer " } })).statusCode).toBe(401);
-        expect((await tokenless.inject({ ...route, headers: BEARER })).statusCode, `${route.name} with some token`).toBe(401);
+        expect(
+          (await tokenless.inject({ ...route, headers: BEARER })).statusCode,
+          `${route.name} with some token`,
+        ).toBe(401);
       }
       expect((await tokenless.inject({ url: "/api/health" })).statusCode).toBe(200);
     } finally {
@@ -1394,7 +1582,11 @@ describe("signing in", () => {
   const PASSWORD = "p".repeat(12);
   const signIn = async (): Promise<string> => {
     await seedUser(app.accounts, { username: "owner", password: PASSWORD });
-    const res = await app.inject({ method: "POST", url: "/brief-board-api/auth/login", payload: { username: "owner", password: PASSWORD } });
+    const res = await app.inject({
+      method: "POST",
+      url: "/brief-board-api/auth/login",
+      payload: { username: "owner", password: PASSWORD },
+    });
     expect(res.statusCode).toBe(200);
     const header = res.headers["set-cookie"];
     const lines = header === undefined ? [] : Array.isArray(header) ? header : [header];
@@ -1411,12 +1603,18 @@ describe("signing in", () => {
   });
 
   it("reads the board and a ticket with a local session", async () => {
-    await call({ method: "PUT", url: "/api/tickets/atrium-01", payload: { title: "A", summary: "", briefPath: "corpus/briefs/todo/01-a.md" } });
+    await call({
+      method: "PUT",
+      url: "/api/tickets/atrium-01",
+      payload: { title: "A", summary: "", briefPath: "corpus/briefs/todo/01-a.md" },
+    });
     const cookie = await signIn();
     const board = await app.inject({ url: "/brief-board-api/api/board", headers: { cookie } });
     expect(board.statusCode).toBe(200);
     expect(board.json<BoardResponse>().lanes.map((lane) => lane.project)).toEqual(["atrium"]);
-    expect((await app.inject({ url: "/brief-board-api/api/tickets/atrium-01", headers: { cookie } })).statusCode).toBe(200);
+    expect((await app.inject({ url: "/brief-board-api/api/tickets/atrium-01", headers: { cookie } })).statusCode).toBe(
+      200,
+    );
     expect((await app.inject({ url: "/brief-board-api/api/sprints", headers: { cookie } })).statusCode).toBe(200);
     expect((await app.inject({ url: "/brief-board-api/api/sprints/1", headers: { cookie } })).statusCode).toBe(200);
     const session = await app.inject({ url: "/brief-board-api/auth/session", headers: { cookie } });
@@ -1424,10 +1622,18 @@ describe("signing in", () => {
   });
 
   it("refuses a session's writes and sync, and keeps it signed in", async () => {
-    await call({ method: "PUT", url: "/api/tickets/atrium-01", payload: { title: "A", summary: "", briefPath: "corpus/briefs/todo/01-a.md" } });
+    await call({
+      method: "PUT",
+      url: "/api/tickets/atrium-01",
+      payload: { title: "A", summary: "", briefPath: "corpus/briefs/todo/01-a.md" },
+    });
     const cookie = await signIn();
     const writes: InjectOptions[] = [
-      { method: "PUT", url: "/brief-board-api/api/tickets/atrium-02", payload: { title: "B", summary: "", briefPath: "corpus/briefs/todo/02-b.md" } },
+      {
+        method: "PUT",
+        url: "/brief-board-api/api/tickets/atrium-02",
+        payload: { title: "B", summary: "", briefPath: "corpus/briefs/todo/02-b.md" },
+      },
       { method: "POST", url: "/brief-board-api/api/tickets/atrium-01/comments", payload: { body: "hi" } },
       { method: "POST", url: "/brief-board-api/api/tickets/atrium-01/moves", payload: { to: "in_progress" } },
       { method: "POST", url: "/brief-board-api/api/sync", payload: { projects: [] } },
@@ -1436,18 +1642,27 @@ describe("signing in", () => {
     for (const write of writes) {
       const res = await app.inject({ ...write, headers: { cookie } });
       expect(res.statusCode, `${write.method} ${write.url}`).toBe(401);
-      expect(res.json<ErrorBody & { reason?: string }>()).toMatchObject({ code: "unauthorized", reason: "read_only_session" });
+      expect(res.json<ErrorBody & { reason?: string }>()).toMatchObject({
+        code: "unauthorized",
+        reason: "read_only_session",
+      });
       expect(res.headers["set-cookie"], "the cookie is not cleared").toBeUndefined();
     }
     expect((await detail("atrium-01")).comments).toEqual([]);
     expect((await call({ url: "/api/sprints" })).json<SprintsResponse>().active.number).toBe(2);
     expect((await app.inject({ url: "/brief-board-api/api/board", headers: { cookie } })).statusCode).toBe(200);
-    expect((await app.inject({ url: "/brief-board-api/auth/session", headers: { cookie } })).json<{ user: unknown }>().user).not.toBeNull();
+    expect(
+      (await app.inject({ url: "/brief-board-api/auth/session", headers: { cookie } })).json<{ user: unknown }>().user,
+    ).not.toBeNull();
   });
 
   it("still lets the token read and write, with or without a cookie", async () => {
     const cookie = await signIn();
-    const put = { method: "PUT" as const, url: "/api/tickets/atrium-03", payload: { title: "C", summary: "", briefPath: "corpus/briefs/todo/03-c.md" } };
+    const put = {
+      method: "PUT" as const,
+      url: "/api/tickets/atrium-03",
+      payload: { title: "C", summary: "", briefPath: "corpus/briefs/todo/03-c.md" },
+    };
     expect((await call(put)).statusCode).toBe(201);
     expect((await app.inject({ ...put, headers: { ...BEARER, cookie } })).statusCode).toBe(200);
     expect((await call({ url: "/api/board" })).statusCode).toBe(200);
@@ -1455,7 +1670,12 @@ describe("signing in", () => {
 
   it("has no rename route, so a session cannot change its username", async () => {
     const cookie = await signIn();
-    const res = await app.inject({ method: "POST", url: "/brief-board-api/auth/username", payload: { username: "someone" }, headers: { cookie } });
+    const res = await app.inject({
+      method: "POST",
+      url: "/brief-board-api/auth/username",
+      payload: { username: "someone" },
+      headers: { cookie },
+    });
     expect(res.statusCode).toBe(404);
     const session = await app.inject({ url: "/brief-board-api/auth/session", headers: { cookie } });
     expect(session.json<{ user: { username: string } }>().user.username).toBe("owner");

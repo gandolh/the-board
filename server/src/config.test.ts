@@ -23,7 +23,11 @@ describe("the server's settings", () => {
   });
 
   it("treats an empty value as unset, and splits the trusted proxies", () => {
-    const config = loadConfig({ BRIEF_BOARD_TOKEN: "", PUBLIC_ORIGIN: " ", AUTH_TRUSTED_PROXIES: "172.16.0.0/12, ,10.0.0.1" });
+    const config = loadConfig({
+      BRIEF_BOARD_TOKEN: "",
+      PUBLIC_ORIGIN: " ",
+      AUTH_TRUSTED_PROXIES: "172.16.0.0/12, ,10.0.0.1",
+    });
     expect(config.token).toBeUndefined();
     expect(config.publicOrigin).toBe("http://localhost:5178");
     expect(config.trustedProxies).toEqual(["172.16.0.0/12", "10.0.0.1"]);

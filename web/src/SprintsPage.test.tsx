@@ -4,7 +4,12 @@ import type { Sprint, Ticket } from "@brief-board/shared";
 import { SprintList, SprintTickets, sprintDates } from "./SprintsPage";
 import { SprintName } from "./TopBar";
 
-const sprint = (number: number, startedOn: string, endedOn: string | null, doneCount = 0): Sprint => ({ number, startedOn, endedOn, doneCount });
+const sprint = (number: number, startedOn: string, endedOn: string | null, doneCount = 0): Sprint => ({
+  number,
+  startedOn,
+  endedOn,
+  doneCount,
+});
 const ticket = (fields: Partial<Ticket>): Ticket => ({
   key: "p-01",
   project: "p",
@@ -32,7 +37,9 @@ const writeControls = /<(form|input|textarea|select)\b/;
 describe("the header", () => {
   it("names the active sprint and the day it started, as stored", () => {
     const html = renderToStaticMarkup(<SprintName sprint={{ number: 2, startedOn: "2026-11-10" }} />);
-    expect(html).toBe('<span class="sprint-name">Sprint 2 · since <time dateTime="2026-11-10">2026-11-10</time></span>');
+    expect(html).toBe(
+      '<span class="sprint-name">Sprint 2 · since <time dateTime="2026-11-10">2026-11-10</time></span>',
+    );
     expect(html.replace(/<[^>]+>/g, "")).toBe("Sprint 2 · since 2026-11-10");
   });
 });
@@ -40,7 +47,11 @@ describe("the header", () => {
 describe("the Sprints page", () => {
   const list = (closed: Sprint[], toggled: ReadonlySet<number> = new Set()) =>
     renderToStaticMarkup(<SprintList closed={closed} toggled={toggled} onToggle={() => {}} onOpen={() => {}} />);
-  const closed = [sprint(1, "2026-11-10", "2026-11-10"), sprint(3, "2026-11-24", "2026-12-08", 4), sprint(2, "2026-11-10", "2026-11-24", 7)];
+  const closed = [
+    sprint(1, "2026-11-10", "2026-11-10"),
+    sprint(3, "2026-11-24", "2026-12-08", 4),
+    sprint(2, "2026-11-10", "2026-11-24", 7),
+  ];
 
   it("lists the closed sprints newest first, each a heading with its dates and Done count", () => {
     const html = list(closed);
@@ -64,7 +75,9 @@ describe("the Sprints page", () => {
   });
 
   it("lists a sprint's Done tickets by project, as older Done does, and an empty one says so", () => {
-    expect(renderToStaticMarkup(<SprintTickets tickets={[]} onOpen={() => {}} />)).toBe('<p class="empty">No Done tickets.</p>');
+    expect(renderToStaticMarkup(<SprintTickets tickets={[]} onOpen={() => {}} />)).toBe(
+      '<p class="empty">No Done tickets.</p>',
+    );
     const html = renderToStaticMarkup(
       <SprintTickets
         tickets={[

@@ -4,7 +4,17 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { UsageError } from "../errors.js";
-import { BLOCKED_BY_MAX, blockedBy, briefSummary, briefTitle, cut, SUMMARY_MAX, todoIsOpen, todoStatus, todoTitle } from "./parse.js";
+import {
+  BLOCKED_BY_MAX,
+  blockedBy,
+  briefSummary,
+  briefTitle,
+  cut,
+  SUMMARY_MAX,
+  todoIsOpen,
+  todoStatus,
+  todoTitle,
+} from "./parse.js";
 import { findProjects, projectsDir, readProject, readProjects, readTodos } from "./read.js";
 
 const FIXTURES = fileURLToPath(new URL("../../test/fixtures/projects/", import.meta.url));
@@ -44,7 +54,9 @@ describe("brief summaries", () => {
   });
 
   it("falls back to Problem, then to the first paragraph after the H1 that is not Status:", () => {
-    expect(briefSummary("# T\n\nStatus: x\n\n## Problem\n\nThe problem. ![img](a.png) here.")).toBe("The problem. img here.");
+    expect(briefSummary("# T\n\nStatus: x\n\n## Problem\n\nThe problem. ![img](a.png) here.")).toBe(
+      "The problem. img here.",
+    );
     expect(briefSummary("# T\n\nStatus: draft\n\nThe first real paragraph.")).toBe("The first real paragraph.");
     expect(briefSummary("Status: draft\n\nNo heading, just this.")).toBe("No heading, just this.");
   });
@@ -115,8 +127,10 @@ describe("todos", () => {
   });
 
   it("is open unless dropped, closed, promoted or done", () => {
-    for (const status of ["open", "parked", "grill-first"]) expect(todoIsOpen(`---\nstatus: ${status}\n---\n`)).toBe(true);
-    for (const status of ["dropped", "closed", "promoted", "done"]) expect(todoIsOpen(`---\nstatus: ${status}\n---\n`)).toBe(false);
+    for (const status of ["open", "parked", "grill-first"])
+      expect(todoIsOpen(`---\nstatus: ${status}\n---\n`)).toBe(true);
+    for (const status of ["dropped", "closed", "promoted", "done"])
+      expect(todoIsOpen(`---\nstatus: ${status}\n---\n`)).toBe(false);
     expect(todoIsOpen("No status here.")).toBe(true);
   });
 
@@ -128,7 +142,13 @@ describe("todos", () => {
 
   it("sends the open ones directly in corpus/todos/, and never a subfolder's", () => {
     expect(readTodos(join(FIXTURES, "alpha"))).toEqual([
-      { slug: "no-status", title: "no-status", summary: "Just prose, no heading and no status.", path: "corpus/todos/no-status.md", blockedBy: null },
+      {
+        slug: "no-status",
+        title: "no-status",
+        summary: "Just prose, no heading and no status.",
+        path: "corpus/todos/no-status.md",
+        blockedBy: null,
+      },
       {
         slug: "plain-line-open",
         title: "A plain status line",
@@ -273,12 +293,15 @@ describe("blocked briefs and todos", () => {
   });
 
   it("keep the Blocked by line out of a brief's summary", () => {
-    expect(briefSummary("# T\n\n**Blocked by:** a stronger machine\n\nThe first real paragraph.")).toBe("The first real paragraph.");
+    expect(briefSummary("# T\n\n**Blocked by:** a stronger machine\n\nThe first real paragraph.")).toBe(
+      "The first real paragraph.",
+    );
   });
 
   const project = () => {
     const root = mkdtempSync(join(tmpdir(), "brief-board-blocked-"));
-    for (const dir of ["briefs/todo", "briefs/blocked", "todos/blocked", "todos/closed"]) mkdirSync(join(root, "corpus", dir), { recursive: true });
+    for (const dir of ["briefs/todo", "briefs/blocked", "todos/blocked", "todos/closed"])
+      mkdirSync(join(root, "corpus", dir), { recursive: true });
     return root;
   };
 
@@ -286,10 +309,16 @@ describe("blocked briefs and todos", () => {
     const root = project();
     try {
       writeFileSync(join(root, "corpus/briefs/todo/01-a.md"), "# Task 01: A\n");
-      writeFileSync(join(root, "corpus/briefs/blocked/02-b.md"), "# Task 02: B\n\n**Blocked by:** a stronger machine\n\n## Context\n\nWhy.\n");
+      writeFileSync(
+        join(root, "corpus/briefs/blocked/02-b.md"),
+        "# Task 02: B\n\n**Blocked by:** a stronger machine\n\n## Context\n\nWhy.\n",
+      );
       writeFileSync(join(root, "corpus/briefs/blocked/03-c.md"), "# Task 03: C\n\n## Context\n\nNo line.\n");
       writeFileSync(join(root, "corpus/todos/open.md"), "# Open\n");
-      writeFileSync(join(root, "corpus/todos/blocked/sonarqube.md"), "---\ntitle: SonarQube\nblocked-by: a stronger machine\n---\n");
+      writeFileSync(
+        join(root, "corpus/todos/blocked/sonarqube.md"),
+        "---\ntitle: SonarQube\nblocked-by: a stronger machine\n---\n",
+      );
       writeFileSync(join(root, "corpus/todos/blocked/shelved.md"), "---\nstatus: dropped\n---\n");
       writeFileSync(join(root, "corpus/todos/closed/archived.md"), "# Archived\n");
       const warnings: string[] = [];
@@ -318,7 +347,9 @@ describe("blocked briefs and todos", () => {
       writeFileSync(join(root, "corpus/todos/sonarqube.md"), "---\nstatus: dropped\n---\n");
       writeFileSync(join(root, "corpus/todos/blocked/sonarqube.md"), "---\nblocked-by: x\n---\n");
       expect(() => readTodos(root)).toThrow(UsageError);
-      expect(() => readTodos(root)).toThrow(`${join(root, "corpus/todos/sonarqube.md")} and ${join(root, "corpus/todos/blocked/sonarqube.md")}`);
+      expect(() => readTodos(root)).toThrow(
+        `${join(root, "corpus/todos/sonarqube.md")} and ${join(root, "corpus/todos/blocked/sonarqube.md")}`,
+      );
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

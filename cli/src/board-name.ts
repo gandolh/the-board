@@ -22,7 +22,9 @@ export function readBoardName(dir: string): string | null {
   if (!existsSync(file)) return null;
   const name = readFileSync(file, "utf8").split(/\r?\n/)[0]!.trim();
   if (parseKey(formatKey(name, 1))?.project !== name) {
-    throw new UsageError(`${file}: "${name}" is not a project name; use letters, digits, dots, dashes and underscores, ending in a letter, digit, dot or underscore`);
+    throw new UsageError(
+      `${file}: "${name}" is not a project name; use letters, digits, dots, dashes and underscores, ending in a letter, digit, dot or underscore`,
+    );
   }
   return name;
 }

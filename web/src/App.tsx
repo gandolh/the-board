@@ -39,14 +39,19 @@ function BoardPage({ tag, onTag }: { tag: string; onTag: (tag: string) => void }
 
   const allLanes = useMemo(() => board.data?.lanes ?? [], [board.data]);
   const blocked = allLanes.reduce((n, lane) => n + lane.tickets.filter((t) => t.status === "blocked").length, 0);
-  const tags = useMemo(() => [...new Set(allLanes.flatMap((lane) => lane.tickets.flatMap((t) => t.tags)))].sort(), [allLanes]);
+  const tags = useMemo(
+    () => [...new Set(allLanes.flatMap((lane) => lane.tickets.flatMap((t) => t.tags)))].sort(),
+    [allLanes],
+  );
   const allNeeds = useMemo(() => needs.data?.needs ?? [], [needs.data]);
   const needFilter = useMemo(() => needKeys(allNeeds, needKind), [allNeeds, needKind]);
   const lanes = useMemo(() => {
     const keep = (t: LaneTicket) => (!tag || t.tags.includes(tag)) && (!needFilter || needFilter.has(t.key));
     const filtered =
       tag || needFilter
-        ? allLanes.map((lane) => ({ ...lane, tickets: lane.tickets.filter(keep) })).filter((lane) => lane.tickets.length > 0)
+        ? allLanes
+            .map((lane) => ({ ...lane, tickets: lane.tickets.filter(keep) }))
+            .filter((lane) => lane.tickets.length > 0)
         : allLanes;
     return orderLanes(filtered);
   }, [allLanes, tag, needFilter]);
@@ -89,7 +94,13 @@ function BoardPage({ tag, onTag }: { tag: string; onTag: (tag: string) => void }
                 : "No tickets yet. An agent runs brief-board sync to fill the board."}
           </p>
         ) : (
-          <Board lanes={lanes} now={board.fetchedAt ?? new Date()} toggled={toggled} onToggle={toggle} onOpen={setOpenKey} />
+          <Board
+            lanes={lanes}
+            now={board.fetchedAt ?? new Date()}
+            toggled={toggled}
+            onToggle={toggle}
+            onOpen={setOpenKey}
+          />
         )}
       </main>
 

@@ -19,7 +19,8 @@ function holdArgs(rt: Runtime, verb: "hold" | "drop", args: string[]): { key: st
   if (positionals.length !== 3) throw new UsageError(usage);
   const key = rt.ticketKey(positionals[0], values.project);
   const kind = holdKindSchema.safeParse(positionals[1]!.trim().toLowerCase());
-  if (!kind.success) throw new UsageError(`"${positionals[1]}" is not a kind to ${verb}. One of: ${HOLD_KINDS.join(", ")}`);
+  if (!kind.success)
+    throw new UsageError(`"${positionals[1]}" is not a kind to ${verb}. One of: ${HOLD_KINDS.join(", ")}`);
   const value = positionals[2]!.trim();
   if (!value) throw new UsageError(usage);
   return { key, kind: kind.data, value };
@@ -30,7 +31,8 @@ async function asUsage<T>(call: () => Promise<T>): Promise<T> {
   try {
     return await call();
   } catch (err) {
-    if (err instanceof ApiRejected && (err.body.code === NO_OPEN_RUN || err.body.code === NOT_HELD)) throw new UsageError(err.body.message);
+    if (err instanceof ApiRejected && (err.body.code === NO_OPEN_RUN || err.body.code === NOT_HELD))
+      throw new UsageError(err.body.message);
     throw err;
   }
 }

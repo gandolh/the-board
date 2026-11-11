@@ -85,8 +85,18 @@ export function runSync(store: Store, request: SyncRequest): SyncResponse {
       const all = store.projectTickets(project);
       const tickets = all.filter((ticket) => ticket.sprint === active);
       const frozen = new Map(all.filter((ticket) => ticket.sprint !== active).map((ticket) => [ticket.key, ticket]));
-      if (todos) syncTodos(store, project, todos, tickets.filter((ticket) => ticket.number === null), frozen, result);
-      const existing = new Map(tickets.filter((ticket) => ticket.number !== null).map((ticket) => [ticket.number!, ticket]));
+      if (todos)
+        syncTodos(
+          store,
+          project,
+          todos,
+          tickets.filter((ticket) => ticket.number === null),
+          frozen,
+          result,
+        );
+      const existing = new Map(
+        tickets.filter((ticket) => ticket.number !== null).map((ticket) => [ticket.number!, ticket]),
+      );
       const seen = new Set<number>();
 
       for (const brief of briefs) {
@@ -153,13 +163,17 @@ export function runSync(store: Store, request: SyncRequest): SyncResponse {
           } else if (ticket.status === "in_progress") {
             const run = openRun(ticket);
             if (run && !run.stale) {
-              result.warnings.push(`${key}: its brief is in blocked/, but its run by ${run.author} is open; the run's end move decides`);
+              result.warnings.push(
+                `${key}: its brief is in blocked/, but its run by ${run.author} is open; the run's end move decides`,
+              );
             } else {
               let body = waiting(blockedBy);
               if (run) {
                 store.endRun(key, "stale", "backlog");
                 body += ` The run by ${run.author}, last heard ${run.lastHeardAt}, was stale and ends here.`;
-                result.warnings.push(`${key}: waits in Backlog; its run by ${run.author} was stale (last heard ${run.lastHeardAt}) and ends here`);
+                result.warnings.push(
+                  `${key}: waits in Backlog; its run by ${run.author} was stale (last heard ${run.lastHeardAt}) and ends here`,
+                );
               }
               store.setStatus(key, ticket.status, "backlog", SYNC_AUTHOR, "sync");
               store.addComment(key, { author: SYNC_AUTHOR, body, role: "comment", move: null });
@@ -181,13 +195,17 @@ export function runSync(store: Store, request: SyncRequest): SyncResponse {
         if (brief.state === "done" && CLOSABLE.includes(ticket.status)) {
           const run = openRun(ticket);
           if (run && !run.stale) {
-            result.warnings.push(`${key}: its brief is in done/, but its run by ${run.author} is open; the run's end move decides`);
+            result.warnings.push(
+              `${key}: its brief is in done/, but its run by ${run.author} is open; the run's end move decides`,
+            );
           } else {
             let body = CLOSED_BY_SYNC;
             if (run) {
               store.endRun(key, "stale");
               body += ` The run by ${run.author}, last heard ${run.lastHeardAt}, was stale and ends here.`;
-              result.warnings.push(`${key}: closed; its run by ${run.author} was stale (last heard ${run.lastHeardAt}) and ends here`);
+              result.warnings.push(
+                `${key}: closed; its run by ${run.author} was stale (last heard ${run.lastHeardAt}) and ends here`,
+              );
             }
             store.setStatus(key, ticket.status, "done", SYNC_AUTHOR, "sync");
             store.addComment(key, { author: SYNC_AUTHOR, body, role: "conclusion", move: null });
@@ -235,7 +253,8 @@ function syncTodos(
       continue;
     }
     const ticket = existing.get(key);
-    const blockedBy = todo.blockedBy === undefined || todo.blockedBy === null ? null : todo.blockedBy.trim() || BLOCKED_BY_NOT_GIVEN;
+    const blockedBy =
+      todo.blockedBy === undefined || todo.blockedBy === null ? null : todo.blockedBy.trim() || BLOCKED_BY_NOT_GIVEN;
     if (!ticket) {
       store.insertTicket({
         key,

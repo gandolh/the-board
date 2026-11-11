@@ -46,8 +46,12 @@ export function SprintsPage() {
 
       <main className="sprints">
         <h2 className="page-title">Sprints</h2>
-        <p className="page-intro">The closed sprints, newest first, each with the tickets that were Done when it closed.</p>
-        {sprints.data && <SprintList closed={sprints.data.closed} toggled={toggled} onToggle={toggle} onOpen={setOpenKey} />}
+        <p className="page-intro">
+          The closed sprints, newest first, each with the tickets that were Done when it closed.
+        </p>
+        {sprints.data && (
+          <SprintList closed={sprints.data.closed} toggled={toggled} onToggle={toggle} onOpen={setOpenKey} />
+        )}
       </main>
 
       {openKey && <DetailPanel key={openKey} ticketKey={openKey} refreshedAt={sprints.fetchedAt} onClose={close} />}
@@ -120,11 +124,22 @@ function SprintSection({
   }, [needed, sprint.number]);
 
   return (
-    <Collapsible.Root open={open} onOpenChange={() => onToggle(sprint.number)} render={<section className="sprint" aria-label={`Sprint ${sprint.number}`} />}>
+    <Collapsible.Root
+      open={open}
+      onOpenChange={() => onToggle(sprint.number)}
+      render={<section className="sprint" aria-label={`Sprint ${sprint.number}`} />}
+    >
       <h3 className="sprint-heading">
         <Collapsible.Trigger className="sprint-head">
           <svg className="chevron" viewBox="0 0 16 16" aria-hidden="true">
-            <path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+            <path
+              d="M6 4l4 4-4 4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.75"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
           <span className="sprint-number">Sprint {sprint.number}</span>
           <span className="sprint-dates">{sprintDates(sprint)}</span>
@@ -137,7 +152,11 @@ function SprintSection({
         ) : tickets ? (
           <SprintTickets tickets={tickets} onOpen={onOpen} />
         ) : (
-          <p className="empty">{failed ? "The board's API didn't answer for this sprint. Close it and open it again to retry." : "Loading…"}</p>
+          <p className="empty">
+            {failed
+              ? "The board's API didn't answer for this sprint. Close it and open it again to retry."
+              : "Loading…"}
+          </p>
         )}
       </Collapsible.Panel>
     </Collapsible.Root>

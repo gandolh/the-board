@@ -76,7 +76,11 @@ describe("starting a sprint", () => {
     aBoard();
     const today = store.today();
     expect(store.activeSprint()).toEqual({ number: 2, startedOn: today, endedOn: null, doneCount: 1 });
-    const children = (key: string) => ({ runs: store.runs(key), questions: store.questions(key), comments: store.comments(key) });
+    const children = (key: string) => ({
+      runs: store.runs(key),
+      questions: store.questions(key),
+      comments: store.comments(key),
+    });
     const before = { "p-03": children("p-03"), "p-07": children("p-07") };
     const updatedAt = store.getTicket("p-02")!.updatedAt;
     const events = historyCount();
@@ -88,7 +92,8 @@ describe("starting a sprint", () => {
       closed: { number: 2, startedOn: today, endedOn: today, doneCount: 1 },
       moved: 7,
     });
-    for (const key of ["p:night-mode", "p-01", "p-02", "p-03", "p-04", "p-05", "p-06"]) expect(sprintOf(key), key).toBe(3);
+    for (const key of ["p:night-mode", "p-01", "p-02", "p-03", "p-04", "p-05", "p-06"])
+      expect(sprintOf(key), key).toBe(3);
     expect(sprintOf("p-07")).toBe(2);
     expect(sprintOf("p-08")).toBe(2);
     expect(store.getTicket("p-01")).toMatchObject({ status: "backlog", blockedBy: "a stronger machine" });
@@ -112,7 +117,8 @@ describe("starting a sprint", () => {
   it("refuses a number that is not the active one plus one, and changes nothing", () => {
     aBoard();
     const today = store.today();
-    for (const stale of [1, 2, 4]) expect(store.startSprint(stale, today)).toMatchObject({ ok: false, active: { number: 2 } });
+    for (const stale of [1, 2, 4])
+      expect(store.startSprint(stale, today)).toMatchObject({ ok: false, active: { number: 2 } });
     expect(store.startSprint(3, today).ok).toBe(true);
     // The same command again starts no second sprint.
     expect(store.startSprint(3, today)).toMatchObject({ ok: false, active: { number: 3, endedOn: null } });

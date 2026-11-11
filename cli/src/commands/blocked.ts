@@ -38,7 +38,9 @@ export async function blocked(rt: Runtime, args: string[]): Promise<void> {
   const { values, positionals } = rt.parse(args, {});
   if (positionals.length > 0) throw new UsageError("blocked takes no arguments: blocked [--project <name>]");
   const { lanes } = await rt.client().board();
-  const tickets = lanes.filter((lane) => !values.project || lane.project === values.project).flatMap((lane) => lane.tickets);
+  const tickets = lanes
+    .filter((lane) => !values.project || lane.project === values.project)
+    .flatMap((lane) => lane.tickets);
   const groups = groupBlocked(tickets);
   if (groups.length === 0) {
     rt.out(values.project ? `Nothing is blocked in ${values.project}.` : "Nothing is blocked.");

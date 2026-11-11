@@ -30,7 +30,8 @@ const brief = (number: number, fields: Partial<SyncBrief> = {}): SyncBrief => ({
   ...fields,
 });
 const todo = (slug: string): SyncTodo => ({ slug, title: slug, summary: "", path: `corpus/todos/${slug}.md` });
-const sync = (briefs: SyncBrief[], todos?: SyncTodo[]) => runSync(store, { projects: [{ project: "p", briefs, ...(todos && { todos }) }] });
+const sync = (briefs: SyncBrief[], todos?: SyncTodo[]) =>
+  runSync(store, { projects: [{ project: "p", briefs, ...(todos && { todos }) }] });
 
 /** Everything stored about a ticket: its row and every row hanging off it. */
 const everything = (key: string) => ({
@@ -73,10 +74,14 @@ describe("sync after a sprint start", () => {
     closedSprintWithDone();
     const before = everything("p-01");
     const back = sync([brief(1, { title: "Again" }), brief(2)]);
-    expect(back.warnings).toEqual(["p-01 is Done in sprint 2, which is closed, but its brief is in todo/; nothing changed"]);
+    expect(back.warnings).toEqual([
+      "p-01 is Done in sprint 2, which is closed, but its brief is in todo/; nothing changed",
+    ]);
     expect(everything("p-01")).toEqual(before);
     const blocked = sync([brief(1, { state: "blocked", blockedBy: "a stronger machine" }), brief(2)]);
-    expect(blocked.warnings).toEqual(["p-01 is Done in sprint 2, which is closed, but its brief is in blocked/; nothing changed"]);
+    expect(blocked.warnings).toEqual([
+      "p-01 is Done in sprint 2, which is closed, but its brief is in blocked/; nothing changed",
+    ]);
     expect(everything("p-01")).toEqual(before);
   });
 
@@ -84,7 +89,9 @@ describe("sync after a sprint start", () => {
     closedSprintWithDone();
     const before = everything("p-01");
     const result = sync([brief(1, { state: "superseded" }), brief(2)]);
-    expect(result.warnings).toEqual(["p-01 is Done in sprint 2, which is closed, but its brief is in superseded/; nothing changed"]);
+    expect(result.warnings).toEqual([
+      "p-01 is Done in sprint 2, which is closed, but its brief is in superseded/; nothing changed",
+    ]);
     expect(everything("p-01")).toEqual(before);
   });
 

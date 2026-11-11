@@ -20,7 +20,12 @@ export function Card({ ticket, now, onOpen }: { ticket: Ticket; now: Date; onOpe
         ? { text: endedRunLine(ticket.run, now), stale: false }
         : null;
   return (
-    <button type="button" className="card" onClick={() => onOpen(ticket.key)} aria-label={`${ticket.key}: ${ticket.title}`}>
+    <button
+      type="button"
+      className="card"
+      onClick={() => onOpen(ticket.key)}
+      aria-label={`${ticket.key}: ${ticket.title}`}
+    >
       <span className="card-key">{todo ? todo.slug : ticket.key}</span>
       <span className="card-title">{ticket.title}</span>
       {run && <span className={`card-run${run.stale ? " card-run-stale" : ""}`}>{run.text}</span>}

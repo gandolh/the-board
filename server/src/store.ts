@@ -50,7 +50,9 @@ export class SprintClosedError extends Error {
     readonly sprint: number,
     readonly endedOn: string,
   ) {
-    super(`${key} is in sprint ${sprint}, which closed on ${endedOn}; a closed sprint's tickets are frozen and nothing writes to them`);
+    super(
+      `${key} is in sprint ${sprint}, which closed on ${endedOn}; a closed sprint's tickets are frozen and nothing writes to them`,
+    );
   }
 }
 
@@ -142,9 +144,9 @@ export class Store {
   }
 
   private tags(key: string): string[] {
-    return (this.db.prepare("SELECT tag FROM ticket_tags WHERE ticket_key = ? ORDER BY tag").all(key) as { tag: string }[]).map(
-      (row) => row.tag,
-    );
+    return (
+      this.db.prepare("SELECT tag FROM ticket_tags WHERE ticket_key = ? ORDER BY tag").all(key) as { tag: string }[]
+    ).map((row) => row.tag);
   }
 
   private toTicket(row: TicketRow): Ticket {
@@ -164,7 +166,9 @@ export class Store {
       statusChangedAt: row.status_changed_at,
       run: this.latestRun(row.key),
       openQuestions: (
-        this.db.prepare("SELECT COUNT(*) AS n FROM questions WHERE ticket_key = ? AND answered_at IS NULL").get(row.key) as { n: number }
+        this.db
+          .prepare("SELECT COUNT(*) AS n FROM questions WHERE ticket_key = ? AND answered_at IS NULL")
+          .get(row.key) as { n: number }
       ).n,
       blockedBy: row.blocked_by,
       sprint: row.sprint,
@@ -251,8 +255,13 @@ export class Store {
       if (expected !== active.number + 1) return { ok: false as const, active };
       this.db.prepare("UPDATE sprints SET ended_on = ? WHERE number = ?").run(today, active.number);
       this.db.prepare("INSERT INTO sprints (number, started_on) VALUES (?, ?)").run(expected, today);
-      this.db.prepare("UPDATE tickets SET sprint = ? WHERE sprint = ? AND status <> 'done'").run(expected, active.number);
-      const moved = this.db.prepare("SELECT COUNT(*) FROM tickets WHERE sprint = ? AND hidden = 0").pluck().get(expected) as number;
+      this.db
+        .prepare("UPDATE tickets SET sprint = ? WHERE sprint = ? AND status <> 'done'")
+        .run(expected, active.number);
+      const moved = this.db
+        .prepare("SELECT COUNT(*) FROM tickets WHERE sprint = ? AND hidden = 0")
+        .pluck()
+        .get(expected) as number;
       return { ok: true as const, sprint: this.sprint(expected)!, closed: this.sprint(active.number)!, moved };
     })();
   }
@@ -271,9 +280,9 @@ export class Store {
 
   /** Every question on the ticket, by number. */
   questions(key: string): Question[] {
-    return (this.db.prepare("SELECT * FROM questions WHERE ticket_key = ? ORDER BY number").all(key) as QuestionRow[]).map((row) =>
-      this.toQuestion(row),
-    );
+    return (
+      this.db.prepare("SELECT * FROM questions WHERE ticket_key = ? ORDER BY number").all(key) as QuestionRow[]
+    ).map((row) => this.toQuestion(row));
   }
 
   /** Every open question in the active sprint, across projects or in one project, oldest first. */
@@ -285,7 +294,13 @@ export class Store {
          ORDER BY q.asked_at, q.id`,
       )
       .all({ project: project ?? null }) as (QuestionRow & { project: string; title: string; status: Status })[];
-    return rows.map((row) => ({ key: row.ticket_key, project: row.project, title: row.title, status: row.status, question: this.toQuestion(row) }));
+    return rows.map((row) => ({
+      key: row.ticket_key,
+      project: row.project,
+      title: row.title,
+      status: row.status,
+      question: this.toQuestion(row),
+    }));
   }
 
   /**
@@ -350,7 +365,13 @@ export class Store {
             since: row.status_changed_at,
           };
         });
-    return [...questions, ...inColumn("blocked"), ...staleRuns, ...inColumn("ready_for_test"), ...inColumn("ready_for_deploy")];
+    return [
+      ...questions,
+      ...inColumn("blocked"),
+      ...staleRuns,
+      ...inColumn("ready_for_test"),
+      ...inColumn("ready_for_deploy"),
+    ];
   }
 
   /** Ask questions on the ticket, numbered on from its last. */
@@ -358,8 +379,12 @@ export class Store {
     if (!texts?.length) return [];
     this.writable(key);
     const at = this.now();
-    const last = (this.db.prepare("SELECT MAX(number) AS n FROM questions WHERE ticket_key = ?").get(key) as { n: number | null }).n ?? 0;
-    const insert = this.db.prepare("INSERT INTO questions (ticket_key, number, text, author, asked_at) VALUES (?, ?, ?, ?, ?)");
+    const last =
+      (this.db.prepare("SELECT MAX(number) AS n FROM questions WHERE ticket_key = ?").get(key) as { n: number | null })
+        .n ?? 0;
+    const insert = this.db.prepare(
+      "INSERT INTO questions (ticket_key, number, text, author, asked_at) VALUES (?, ?, ?, ?, ?)",
+    );
     return texts.map((text, index) => {
       const number = last + index + 1;
       insert.run(key, number, text.trim(), author, at);
@@ -382,7 +407,9 @@ export class Store {
       this.writable(key);
       const at = this.now();
       const updated = this.db
-        .prepare("UPDATE questions SET answer = ?, answered_by = ?, answered_at = ? WHERE ticket_key = ? AND number = ? AND answered_at IS NULL")
+        .prepare(
+          "UPDATE questions SET answer = ?, answered_by = ?, answered_at = ? WHERE ticket_key = ? AND number = ? AND answered_at IS NULL",
+        )
         .run(answer.trim(), author, at, key, number);
       if (updated.changes === 0) {
         const open = this.questions(key).filter((question) => question.answeredAt === null);
@@ -417,19 +444,23 @@ export class Store {
 
   /** The ticket's latest run, open or ended. */
   private latestRun(key: string): Run | null {
-    const row = this.db.prepare("SELECT * FROM runs WHERE ticket_key = ? ORDER BY id DESC LIMIT 1").get(key) as RunRow | undefined;
+    const row = this.db.prepare("SELECT * FROM runs WHERE ticket_key = ? ORDER BY id DESC LIMIT 1").get(key) as
+      RunRow | undefined;
     return row ? this.toRun(row) : null;
   }
 
   /** The ticket's open run, if it has one. */
   openRun(key: string): Run | null {
-    const row = this.db.prepare("SELECT * FROM runs WHERE ticket_key = ? AND ended_at IS NULL").get(key) as RunRow | undefined;
+    const row = this.db.prepare("SELECT * FROM runs WHERE ticket_key = ? AND ended_at IS NULL").get(key) as
+      RunRow | undefined;
     return row ? this.toRun(row) : null;
   }
 
   /** What run `id` holds, or held when it ended, in the order it took them. */
   private holds(id: number): Hold[] {
-    return (this.db.prepare("SELECT kind, value, held_at FROM holds WHERE run_id = ? ORDER BY id").all(id) as HoldRow[]).map((row) => ({
+    return (
+      this.db.prepare("SELECT kind, value, held_at FROM holds WHERE run_id = ? ORDER BY id").all(id) as HoldRow[]
+    ).map((row) => ({
       kind: row.kind,
       value: row.value,
       heldAt: row.held_at,
@@ -465,8 +496,16 @@ export class Store {
            AND (@kind IS NULL OR EXISTS (SELECT 1 FROM holds h WHERE h.run_id = r.id AND h.kind = @kind AND h.value = @value))
          ORDER BY r.last_heard_at, r.id`,
       )
-      .all({ kind: holding?.kind ?? null, value: holding?.value ?? null }) as (RunRow & { project: string; title: string })[];
-    return rows.map((row) => ({ key: row.ticket_key, project: row.project, title: row.title, run: this.toRunWithHolds(row) }));
+      .all({ kind: holding?.kind ?? null, value: holding?.value ?? null }) as (RunRow & {
+      project: string;
+      title: string;
+    })[];
+    return rows.map((row) => ({
+      key: row.ticket_key,
+      project: row.project,
+      title: row.title,
+      run: this.toRunWithHolds(row),
+    }));
   }
 
   /**
@@ -475,7 +514,11 @@ export class Store {
    * open runs holding the same, as they stood before this write; the hold
    * goes ahead regardless. Null when the ticket has no open run.
    */
-  hold(key: string, kind: HoldKind, value: string): { held: boolean; run: RunWithHolds; clashes: OpenRunEntry[] } | null {
+  hold(
+    key: string,
+    kind: HoldKind,
+    value: string,
+  ): { held: boolean; run: RunWithHolds; clashes: OpenRunEntry[] } | null {
     return this.db.transaction(() => {
       this.writable(key);
       const open = this.openRun(key);
@@ -498,12 +541,17 @@ export class Store {
     key: string,
     kind: HoldKind,
     value: string,
-  ): { ok: true; run: RunWithHolds } | { ok: false; reason: "no_open_run" } | { ok: false; reason: "not_held"; holds: Hold[] } {
+  ):
+    | { ok: true; run: RunWithHolds }
+    | { ok: false; reason: "no_open_run" }
+    | { ok: false; reason: "not_held"; holds: Hold[] } {
     return this.db.transaction(() => {
       this.writable(key);
       const open = this.openRun(key);
       if (!open) return { ok: false as const, reason: "no_open_run" as const };
-      const deleted = this.db.prepare("DELETE FROM holds WHERE run_id = ? AND kind = ? AND value = ?").run(open.id, kind, value);
+      const deleted = this.db
+        .prepare("DELETE FROM holds WHERE run_id = ? AND kind = ? AND value = ?")
+        .run(open.id, kind, value);
       if (deleted.changes === 0) return { ok: false as const, reason: "not_held" as const, holds: this.holds(open.id) };
       this.touchRun(key);
       return { ok: true as const, run: this.runById(open.id) };
@@ -528,7 +576,9 @@ export class Store {
   /** The open run passes to `author`, as a new session resumes the work. */
   passRun(key: string, author: string): void {
     this.writable(key);
-    this.db.prepare("UPDATE runs SET author = ?, last_heard_at = ? WHERE ticket_key = ? AND ended_at IS NULL").run(author, this.now(), key);
+    this.db
+      .prepare("UPDATE runs SET author = ?, last_heard_at = ? WHERE ticket_key = ? AND ended_at IS NULL")
+      .run(author, this.now(), key);
   }
 
   /** End the open run, if any. A `moved` run keeps the column its ticket went to. */
@@ -550,9 +600,9 @@ export class Store {
    * active sprint's only, and needs the rest to leave them be.
    */
   projectTickets(project: string): Ticket[] {
-    return (this.db.prepare("SELECT * FROM tickets WHERE project = ? ORDER BY number, key").all(project) as TicketRow[]).map((row) =>
-      this.toTicket(row),
-    );
+    return (
+      this.db.prepare("SELECT * FROM tickets WHERE project = ? ORDER BY number, key").all(project) as TicketRow[]
+    ).map((row) => this.toTicket(row));
   }
 
   /** Replace a ticket's labels. The project is its project tag, never a label. */
@@ -590,7 +640,20 @@ export class Store {
         `INSERT INTO tickets (key, project, number, title, summary, summary_source, brief_path, status, hidden, created_at, updated_at, status_changed_at, blocked_by, sprint)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ${ACTIVE_SPRINT})`,
       )
-      .run(fields.key, fields.project, fields.number, fields.title, fields.summary, fields.summarySource, fields.briefPath, status, at, at, at, blockedBy);
+      .run(
+        fields.key,
+        fields.project,
+        fields.number,
+        fields.title,
+        fields.summary,
+        fields.summarySource,
+        fields.briefPath,
+        status,
+        at,
+        at,
+        at,
+        blockedBy,
+      );
     this.addHistory(fields.key, null, status, fields.author, fields.via);
   }
 
@@ -603,7 +666,14 @@ export class Store {
   /** Update the fields given; bumps `updated_at`. A `blockedBy` of null clears the condition. */
   updateTicket(
     key: string,
-    fields: Partial<{ title: string; summary: string; summarySource: SummarySource; briefPath: string; hidden: boolean; blockedBy: string | null }>,
+    fields: Partial<{
+      title: string;
+      summary: string;
+      summarySource: SummarySource;
+      briefPath: string;
+      hidden: boolean;
+      blockedBy: string | null;
+    }>,
   ): void {
     this.writable(key);
     const columns: [string, string | number | null | undefined][] = [
@@ -625,7 +695,9 @@ export class Store {
   setStatus(key: string, from: Status, to: Status, author: string, via: "move" | "sync"): void {
     this.writable(key);
     const at = this.now();
-    this.db.prepare("UPDATE tickets SET status = ?, status_changed_at = ?, updated_at = ? WHERE key = ?").run(to, at, at, key);
+    this.db
+      .prepare("UPDATE tickets SET status = ?, status_changed_at = ?, updated_at = ? WHERE key = ?")
+      .run(to, at, at, key);
     this.addHistory(key, from, to, author, via);
   }
 
@@ -642,30 +714,36 @@ export class Store {
     this.writable(key);
     const createdAt = this.now();
     const result = this.db
-      .prepare("INSERT INTO comments (ticket_key, author, body, role, move_from, move_to, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
+      .prepare(
+        "INSERT INTO comments (ticket_key, author, body, role, move_from, move_to, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      )
       .run(key, fields.author, fields.body, fields.role, fields.move?.from ?? null, fields.move?.to ?? null, createdAt);
     return { id: Number(result.lastInsertRowid), ...fields, createdAt };
   }
 
   comments(key: string): Comment[] {
-    return (this.db.prepare("SELECT * FROM comments WHERE ticket_key = ? ORDER BY id").all(key) as CommentRow[]).map((row) => ({
-      id: row.id,
-      author: row.author,
-      body: row.body,
-      role: row.role,
-      move: row.move_from && row.move_to ? { from: row.move_from, to: row.move_to } : null,
-      createdAt: row.created_at,
-    }));
+    return (this.db.prepare("SELECT * FROM comments WHERE ticket_key = ? ORDER BY id").all(key) as CommentRow[]).map(
+      (row) => ({
+        id: row.id,
+        author: row.author,
+        body: row.body,
+        role: row.role,
+        move: row.move_from && row.move_to ? { from: row.move_from, to: row.move_to } : null,
+        createdAt: row.created_at,
+      }),
+    );
   }
 
   history(key: string): HistoryEvent[] {
-    return (this.db.prepare("SELECT * FROM history WHERE ticket_key = ? ORDER BY id").all(key) as HistoryRow[]).map((row) => ({
-      from: row.from_status,
-      to: row.to_status,
-      author: row.author,
-      via: row.via,
-      at: row.at,
-    }));
+    return (this.db.prepare("SELECT * FROM history WHERE ticket_key = ? ORDER BY id").all(key) as HistoryRow[]).map(
+      (row) => ({
+        from: row.from_status,
+        to: row.to_status,
+        author: row.author,
+        via: row.via,
+        at: row.at,
+      }),
+    );
   }
 
   /**
@@ -702,7 +780,13 @@ export class Store {
         ? this.addComment(key, { author, body, role: check.rule.role, move: { from: ticket.status, to } })
         : null;
       const asked = this.ask(key, questions, author);
-      return { ok: true as const, ticket: this.getTicket(key)!, comment, questions: asked, endedRun: open && this.runById(open.id) };
+      return {
+        ok: true as const,
+        ticket: this.getTicket(key)!,
+        comment,
+        questions: asked,
+        endedRun: open && this.runById(open.id),
+      };
     })();
   }
 
@@ -718,7 +802,14 @@ export class Store {
     author: string,
     questions?: readonly string[],
   ):
-    | { ok: true; ticket: Ticket; resumed: boolean; comment: Comment | null; passedFrom: Run | null; questions: Question[] }
+    | {
+        ok: true;
+        ticket: Ticket;
+        resumed: boolean;
+        comment: Comment | null;
+        passedFrom: Run | null;
+        questions: Question[];
+      }
     | { ok: false; check: Extract<MoveCheck, { ok: false }> }
     | null {
     return this.db.transaction(() => {
@@ -728,7 +819,14 @@ export class Store {
       if (ticket.status !== "in_progress") {
         const moved = this.move(key, "in_progress", message, author, questions);
         if (!moved?.ok) return moved;
-        return { ok: true as const, ticket: moved.ticket, resumed: false, comment: moved.comment, passedFrom: null, questions: moved.questions };
+        return {
+          ok: true as const,
+          ticket: moved.ticket,
+          resumed: false,
+          comment: moved.comment,
+          passedFrom: null,
+          questions: moved.questions,
+        };
       }
       const note = message?.trim() || "Resumed in a new session.";
       const open = this.openRun(key);
@@ -755,7 +853,11 @@ export class Store {
    * unfinished and why. The run comes back with what it still held. Null
    * when the ticket has no open run.
    */
-  release(key: string, message: string, author: string): { ticket: Ticket; run: RunWithHolds; comment: Comment } | null {
+  release(
+    key: string,
+    message: string,
+    author: string,
+  ): { ticket: Ticket; run: RunWithHolds; comment: Comment } | null {
     return this.db.transaction(() => {
       this.writable(key);
       const open = this.openRun(key);

@@ -16,5 +16,7 @@ export function needCountText(kind: NeedKind, count: number): string {
 
 /** The kinds with anything in them, in the owner's order, each with its needs. */
 export function groupNeeds(needs: readonly Need[]): { kind: NeedKind; needs: Need[] }[] {
-  return NEED_KINDS.map((kind) => ({ kind, needs: needs.filter((need) => need.kind === kind) })).filter((group) => group.needs.length > 0);
+  return NEED_KINDS.map((kind) => ({ kind, needs: needs.filter((need) => need.kind === kind) })).filter(
+    (group) => group.needs.length > 0,
+  );
 }

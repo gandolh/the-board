@@ -19,7 +19,11 @@ function ago(iso: string, now: Date): string {
  */
 export function runLine(run: Run | null, now: Date): { text: string; stale: boolean } {
   if (!run) return { text: "no run", stale: false };
-  if (run.stale) return { text: `${run.author} · stale run, heard ${ago(run.lastHeardAt, now)} · ${runDurationText(run, now)}`, stale: true };
+  if (run.stale)
+    return {
+      text: `${run.author} · stale run, heard ${ago(run.lastHeardAt, now)} · ${runDurationText(run, now)}`,
+      stale: true,
+    };
   return { text: `${run.author} · ${runDurationText(run, now)} · heard ${ago(run.lastHeardAt, now)}`, stale: false };
 }
 

@@ -33,7 +33,8 @@ export async function create(rt: Runtime, args: string[]): Promise<void> {
     brief: { type: "string" },
   });
   const raw = positionals[0];
-  if (!raw || !/^\d+$/.test(raw)) throw new UsageError("create takes the brief number: create <number> --title <t> --summary <s>");
+  if (!raw || !/^\d+$/.test(raw))
+    throw new UsageError("create takes the brief number: create <number> --title <t> --summary <s>");
   if (!values.title) throw new UsageError("create needs --title");
   if (values.summary === undefined) throw new UsageError("create needs --summary");
   const number = Number.parseInt(raw, 10);
@@ -44,7 +45,10 @@ export async function create(rt: Runtime, args: string[]): Promise<void> {
     const dir = rt.corpusDir();
     if (!dir) throw new UsageError("not inside a git repo: pass --brief <path>");
     briefPath = findBrief(dir, number) ?? undefined;
-    if (!briefPath) throw new UsageError(`no brief numbered ${number} in corpus/briefs/: file the brief first, or pass --brief <path>`);
+    if (!briefPath)
+      throw new UsageError(
+        `no brief numbered ${number} in corpus/briefs/: file the brief first, or pass --brief <path>`,
+      );
   }
 
   // The contract's PUT carries no author: a ticket's creation is recorded as

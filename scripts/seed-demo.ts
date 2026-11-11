@@ -59,21 +59,30 @@ const DEMOS: Demo[] = [
     title: "Pick a map provider",
     summary: "Two candidates, different licences.",
     tags: ["infra"],
-    steps: [["in_progress"], ["blocked", "The owner decides between the two licences; both are summarised in the brief."]],
+    steps: [
+      ["in_progress"],
+      ["blocked", "The owner decides between the two licences; both are summarised in the brief."],
+    ],
   },
   {
     key: "lighthouse-04",
     title: "Search by place name",
     summary: "A search box with suggestions as you type.",
     tags: ["ui"],
-    steps: [["in_progress"], ["ready_for_test", "Open `/map`, type *Constan*, and pick a suggestion: the map should fly there."]],
+    steps: [
+      ["in_progress"],
+      ["ready_for_test", "Open `/map`, type *Constan*, and pick a suggestion: the map should fly there."],
+    ],
   },
   {
     key: "lighthouse-05",
     title: "Weekly backup of the database",
     summary: "A cron entry and a retention of eight copies.",
     tags: ["infra"],
-    steps: [["in_progress"], ["ready_for_deploy", "```\nnode cli.ts lighthouse deploy\nssh vps crontab -l | grep backup\n```"]],
+    steps: [
+      ["in_progress"],
+      ["ready_for_deploy", "```\nnode cli.ts lighthouse deploy\nssh vps crontab -l | grep backup\n```"],
+    ],
   },
   {
     key: "lighthouse-06",
@@ -130,7 +139,11 @@ const DEMOS: Demo[] = [
     title: "Translate the settings page",
     summary: "Romanian first.",
     tags: ["ui", "i18n"],
-    steps: [["in_progress"], ["ready_for_test", "Switch the language and read Settings."], ["done", "Tested by the owner."]],
+    steps: [
+      ["in_progress"],
+      ["ready_for_test", "Switch the language and read Settings."],
+      ["done", "Tested by the owner."],
+    ],
   },
 ];
 
@@ -153,11 +166,18 @@ for (const demo of DEMOS) {
   }
   const number = Number(demo.key.slice(demo.key.lastIndexOf("-") + 1));
   const brief = `corpus/briefs/${demo.steps.at(-1)?.[0] === "done" ? "done" : "todo"}/${String(number).padStart(2, "0")}-demo.md`;
-  await call("PUT", `/api/tickets/${demo.key}`, { title: demo.title, summary: demo.summary, briefPath: brief, tags: demo.tags });
+  await call("PUT", `/api/tickets/${demo.key}`, {
+    title: demo.title,
+    summary: demo.summary,
+    briefPath: brief,
+    tags: demo.tags,
+  });
   for (const [index, [to, message]] of demo.steps.entries()) {
     const move: MoveRequest = { to, message, author: index % 2 ? "claude" : "agent" };
     await call("POST", `/api/tickets/${demo.key}/moves`, move);
-    if (index === 0) for (const body of demo.comments ?? []) await call("POST", `/api/tickets/${demo.key}/comments`, { body, author: "owner" });
+    if (index === 0)
+      for (const body of demo.comments ?? [])
+        await call("POST", `/api/tickets/${demo.key}/comments`, { body, author: "owner" });
   }
   console.log(`seeded ${demo.key}`);
 }
