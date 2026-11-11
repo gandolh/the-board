@@ -9,6 +9,8 @@ export default [
   ...houseStyle({
     root: import.meta.dirname,
     web: "web/src",
+    // Class order and unknown classes are errors: the one stylesheet is the entry.
+    tailwind: { css: "web/src/styles/index.css", order: true },
     server: "server/src",
     // Scripts run by hand: the demo seeder prints and reads the environment.
     scripts: ["scripts"],
