@@ -2,5 +2,6 @@
   "$schema": "../vendor/house-style/conventions.schema.json",
   "web": ["web/src"],
   "server": ["server/src"],
-  "shared": ["shared/src"]
+  "shared": ["shared/src"],
+  "env": ["**/config.ts", "cli/src/index.ts"]
 }
