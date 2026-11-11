@@ -3,5 +3,14 @@
   "web": ["web/src"],
   "server": ["server/src"],
   "shared": ["shared/src"],
-  "env": ["**/config.ts", "cli/src/index.ts"]
+  "env": ["**/config.ts", "cli/src/index.ts"],
+  "exceptions": [
+    {
+      "check": "structure",
+      "rule": 6,
+      "path": "server/src/app.ts",
+      "match": "GET /",
+      "reason": "`GET /` redirects the bare origin to the board and takes no input and sends no JSON, so it has no schema to declare."
+    }
+  ]
 }
