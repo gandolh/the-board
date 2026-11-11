@@ -526,7 +526,7 @@ describe("runs", () => {
     later(1000);
     expect((await detail("p-01")).ticket.run?.stale).toBe(true);
     const [lane] = (await board()).lanes;
-    expect(lane!.tickets[0]!.run?.stale).toBe(true);
+    expect(lane?.tickets[0]?.run?.stale).toBe(true);
     await comment("p-01", "still here", "ana");
     expect((await detail("p-01")).ticket.run?.stale).toBe(false);
   });
@@ -565,7 +565,7 @@ describe("runs", () => {
       ["q-01", "q", "bo", true],
       ["p-01", "p", "ana", false],
     ]);
-    expect(open[0]!.title).toBe("A brief");
+    expect(open[0]?.title).toBe("A brief");
   });
 
   it("sync leaves an In Progress ticket with a fresh run, and warns", async () => {
@@ -648,7 +648,7 @@ describe("holds", () => {
     expect(ticket.run?.lastHeardAt).toBe(clock.toISOString());
     expect(holdsOf(runs[0]!.holds)).toEqual(["container vite-dev"]);
     // The board's tickets carry the plain run.
-    expect((await board()).lanes[0]!.tickets[0]!.run).not.toHaveProperty("holds");
+    expect((await board()).lanes[0]?.tickets[0]?.run).not.toHaveProperty("holds");
   });
 
   it("drop of something the run doesn't hold is 400 not_held, naming what it holds", async () => {
@@ -933,8 +933,8 @@ describe("what needs the owner", () => {
     ]);
     const [question, blocked, stale] = await needs();
     expect(question).toMatchObject({ since: asked, status: "ready_for_deploy", project: "p", title: "A brief" });
-    expect(blocked!.since).toBe(blockedAt);
-    expect(stale!.since).toBe(heard);
+    expect(blocked?.since).toBe(blockedAt);
+    expect(stale?.since).toBe(heard);
   });
 
   it("puts a ticket that is Blocked and has an open question under each, oldest first in each kind", async () => {
@@ -1022,7 +1022,7 @@ describe("todos and Backlog", () => {
     });
     expect(history).toMatchObject([{ from: null, to: "backlog", via: "sync" }]);
     const [lane] = (await board()).lanes;
-    expect(lane!.tickets.map((t) => t.key)).toEqual(["p:walls-step-2"]);
+    expect(lane?.tickets.map((t) => t.key)).toEqual(["p:walls-step-2"]);
   });
 
   it("keeps a todo's ticket to its title, summary and path", async () => {
@@ -1045,7 +1045,7 @@ describe("todos and Backlog", () => {
     expect((await call({ url: "/api/tickets/p:night-mode" })).statusCode).toBe(404);
     expect((await detail("p-03")).ticket.status).toBe("todo");
     const [lane] = (await board()).lanes;
-    expect(lane!.tickets.map((t) => [t.key, t.status])).toEqual([
+    expect(lane?.tickets.map((t) => [t.key, t.status])).toEqual([
       ["p:stays", "backlog"],
       ["p-03", "todo"],
     ]);

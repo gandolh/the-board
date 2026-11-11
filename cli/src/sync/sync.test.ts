@@ -106,8 +106,8 @@ describe("reading the corpora", () => {
       [7, "No heading here", "todo"],
       [10, "Scaffold the long one", "done"],
     ]);
-    expect(beta.briefs[0]!.summary).toBe("Just a paragraph with no heading at all.");
-    expect(beta.briefs[1]!.summary.length).toBeLessThanOrEqual(SUMMARY_MAX);
+    expect(beta.briefs[0]?.summary).toBe("Just a paragraph with no heading at all.");
+    expect(beta.briefs[1]?.summary.length).toBeLessThanOrEqual(SUMMARY_MAX);
   });
 
   it("limits the run to one project", () => {
@@ -167,7 +167,7 @@ describe("todos", () => {
   });
 
   it("finds none in a project with no corpus/todos/, and stops on a file name a key cannot hold", () => {
-    expect(readProjects(FIXTURES, "beta")[0]!.todos).toEqual([]);
+    expect(readProjects(FIXTURES, "beta")[0]?.todos).toEqual([]);
     const dir = mkdtempSync(join(tmpdir(), "brief-board-todos-"));
     try {
       mkdirSync(join(dir, "corpus", "todos"), { recursive: true });
@@ -193,11 +193,11 @@ describe("group folders", () => {
 
   it("files a corpus inside a project under its board-name, and the project keeps its own", () => {
     const [inner] = readProjects(GROUPED, "inner-site");
-    expect(inner!.briefs.map((b) => [b.number, b.title, b.briefPath])).toEqual([
+    expect(inner?.briefs.map((b) => [b.number, b.title, b.briefPath])).toEqual([
       [1, "A corpus inside a repo", "corpus/briefs/todo/01-inner.md"],
     ]);
     const [parent] = readProjects(GROUPED, "sites-repo");
-    expect(parent!.briefs.map((b) => b.title)).toEqual(["The repo around a nested corpus"]);
+    expect(parent?.briefs.map((b) => b.title)).toEqual(["The repo around a nested corpus"]);
     expect(readProjects(GROUPED, "inner")).toEqual([]);
   });
 
@@ -223,8 +223,8 @@ describe("group folders", () => {
 
   it("names a grouped project by its own directory, not group/name", () => {
     const [epsilon] = readProjects(GROUPED, "epsilon");
-    expect(epsilon!.project).toBe("epsilon");
-    expect(epsilon!.briefs.map((b) => [b.number, b.title, b.briefPath])).toEqual([
+    expect(epsilon?.project).toBe("epsilon");
+    expect(epsilon?.briefs.map((b) => [b.number, b.title, b.briefPath])).toEqual([
       [4, "A project one group folder down", "corpus/briefs/todo/04-grouped.md"],
     ]);
   });
@@ -328,8 +328,8 @@ describe("blocked briefs and todos", () => {
         [2, "blocked", "a stronger machine"],
         [3, "blocked", "not given"],
       ]);
-      expect(read.briefs[1]!.summary).toBe("Why.");
-      expect(read.todos!.map((t) => [t.slug, t.path, t.blockedBy])).toEqual([
+      expect(read.briefs[1]?.summary).toBe("Why.");
+      expect(read.todos?.map((t) => [t.slug, t.path, t.blockedBy])).toEqual([
         ["open", "corpus/todos/open.md", null],
         ["sonarqube", "corpus/todos/blocked/sonarqube.md", "a stronger machine"],
       ]);

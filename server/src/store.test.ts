@@ -82,7 +82,7 @@ describe("starting a sprint", () => {
       comments: store.comments(key),
     });
     const before = { "p-03": children("p-03"), "p-07": children("p-07") };
-    const updatedAt = store.getTicket("p-02")!.updatedAt;
+    const updatedAt = store.getTicket("p-02")?.updatedAt;
     const events = historyCount();
 
     const started = store.startSprint(3, today);
@@ -101,10 +101,10 @@ describe("starting a sprint", () => {
     // What hangs off a ticket goes with it, untouched: the open run and its hold, questions, comments.
     for (const key of ["p-03", "p-07"] as const) expect(children(key), key).toEqual(before[key]);
     expect(store.openRun("p-03")).not.toBeNull();
-    expect(store.runs("p-03")[0]!.holds).toMatchObject([{ kind: "port", value: "5173" }]);
+    expect(store.runs("p-03")[0]?.holds).toMatchObject([{ kind: "port", value: "5173" }]);
     // The sprint is a column, not an event.
     expect(historyCount()).toBe(events);
-    expect(store.getTicket("p-02")!.updatedAt).toBe(updatedAt);
+    expect(store.getTicket("p-02")?.updatedAt).toBe(updatedAt);
 
     expect(store.sprints().map((sprint) => [sprint.number, sprint.endedOn])).toEqual([
       [3, null],

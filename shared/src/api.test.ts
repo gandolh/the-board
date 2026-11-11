@@ -127,7 +127,7 @@ describe("the API contract", () => {
     const blocked = syncRequestSchema.parse({
       projects: [{ project: "p", briefs: [{ ...brief, blockedBy: "a stronger machine" }] }],
     });
-    expect(blocked.projects[0]!.briefs[0]!.blockedBy).toBe("a stronger machine");
+    expect(blocked.projects[0]?.briefs[0]?.blockedBy).toBe("a stronger machine");
     const todo = {
       slug: "sonarqube",
       title: "SonarQube",
