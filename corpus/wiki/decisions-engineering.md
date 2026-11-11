@@ -114,7 +114,7 @@ settings file in the repo (the hooks live in the plugin).
 _2026-11-11_. `server/src/` is `server.ts` (listens), `app.ts` (`buildApp`),
 `config.ts` (the one reader of the environment), `plugins/` (`errors.ts`,
 `auth/`), `features/<name>/` (health, board, runs, questions, sprints,
-tickets, sync) and `db/store.ts`. Every route declares `params`,
+tickets, sync) and `server/src/db/store.ts`. Every route declares `params`,
 `querystring`, `body` and `response` from `shared/` through the zod type
 provider, so nothing validates by hand and nothing leaves that a schema does
 not list. `Store` stays one class (the owner's call, Q54): the features are

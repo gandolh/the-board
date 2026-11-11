@@ -1,5 +1,5 @@
 ---
-summary: Snapshot as of 2026-11-03, per area. Live on the VPS since 2026-11-03; first sync 2026-11-03 (23 projects, 30 tickets in To Do). The board, CLI, sync and guide built 2026-10-09 and rolled out to every project's CLAUDE.md but vps-deploy's; Base UI under the panel and lanes 2026-10-23. Down since 2026-10-13; briefs 01-05 (2026-11-02) built it for the VPS behind sign-in (sync in group folders, the sub-path, the CLI's token, sign-in, the container and the vps-deploy stack), not deployed, with the owner's steps, which vps-deploy's npm run setup:brief-board runs (2026-11-03); ward-auth 0.7.0 with its rename route off (2026-11-03); the numbering question after the estate restarted brief numbering, closed 2026-11-03; Backlog for open todos (brief 06) and nested corpora naming themselves (brief 07, churchix and scoala-ramna-theme) built 2026-11-03, not deployed; brief 08 (runs: a run on each ticket kept fresh by its writes, release, brief-board runs, sync waiting for a fresh run, the guide's end-move order and its section for a session that runs other agents) built 2026-11-06, not deployed; brief 09 (questions for the owner on the ticket, a badge, brief-board answer and questions, the report lines in the guide) built 2026-11-06, not deployed; brief 10 (each run's duration, worked out from its times, one shared formatter) built 2026-11-06, not deployed; brief 11 (one derived list of what needs the owner: brief-board needs and a strip above the lanes) built 2026-11-06, not deployed; brief 12 (a run lists what it holds: brief-board hold and drop, the leftovers printed when a run ends, holds in show and runs) built 2026-11-06, not deployed; brief 13 (@fastify/static 10.1.10, the glob advisory gone) built 2026-11-07, not deployed; brief 14 (blocked/ folders: a blocked brief's or todo's ticket waits in Backlog with its condition, brief-board blocked, a badge) built 2026-11-07; briefs 08-14 deployed (the owner confirmed 2026-11-09); brief 15 (a cell past five cards scrolls inside, GET /api/done and an Older Done page for Done past 14 days) built 2026-11-09, not deployed; npm audit's new zod (high) and fast-uri findings open; scripts/seed-demo.ts sends no token; the estate's conventions (house style, Base UI rules, Tailwind, the server structure) filed as briefs 16-19 on 2026-11-10 (16, 17 and 18 built 2026-11-11, not deployed); brief 21 (sprints: every ticket in one, Sprint 1 closed with the Done tickets and Sprint 2 active by migration 7, brief-board sprint and sprint start, list --sprint, a frozen closed sprint, the header's sprint and a Sprints page) built 2026-11-10, not deployed, the migration waiting for the owner's deploy.
+summary: Snapshot as of 2026-11-03, per area. Live on the VPS since 2026-11-03; first sync 2026-11-03 (23 projects, 30 tickets in To Do). The board, CLI, sync and guide built 2026-10-09 and rolled out to every project's CLAUDE.md but vps-deploy's; Base UI under the panel and lanes 2026-10-23. Down since 2026-10-13; briefs 01-05 (2026-11-02) built it for the VPS behind sign-in (sync in group folders, the sub-path, the CLI's token, sign-in, the container and the vps-deploy stack), not deployed, with the owner's steps, which vps-deploy's npm run setup:brief-board runs (2026-11-03); ward-auth 0.7.0 with its rename route off (2026-11-03); the numbering question after the estate restarted brief numbering, closed 2026-11-03; Backlog for open todos (brief 06) and nested corpora naming themselves (brief 07, churchix and scoala-ramna-theme) built 2026-11-03, not deployed; brief 08 (runs: a run on each ticket kept fresh by its writes, release, brief-board runs, sync waiting for a fresh run, the guide's end-move order and its section for a session that runs other agents) built 2026-11-06, not deployed; brief 09 (questions for the owner on the ticket, a badge, brief-board answer and questions, the report lines in the guide) built 2026-11-06, not deployed; brief 10 (each run's duration, worked out from its times, one shared formatter) built 2026-11-06, not deployed; brief 11 (one derived list of what needs the owner: brief-board needs and a strip above the lanes) built 2026-11-06, not deployed; brief 12 (a run lists what it holds: brief-board hold and drop, the leftovers printed when a run ends, holds in show and runs) built 2026-11-06, not deployed; brief 13 (@fastify/static 10.1.10, the glob advisory gone) built 2026-11-07, not deployed; brief 14 (blocked/ folders: a blocked brief's or todo's ticket waits in Backlog with its condition, brief-board blocked, a badge) built 2026-11-07; briefs 08-14 deployed (the owner confirmed 2026-11-09); brief 15 (a cell past five cards scrolls inside, GET /api/done and an Older Done page for Done past 14 days) built 2026-11-09, not deployed; npm audit's fast-uri finding open (the zod one closed with brief 19); scripts/seed-demo.ts sends no token; the estate's conventions (house style, Base UI rules, Tailwind, the server structure) filed as briefs 16-19 on 2026-11-10 (16, 17, 18 and 19 built 2026-11-11, not deployed); brief 21 (sprints: every ticket in one, Sprint 1 closed with the Done tickets and Sprint 2 active by migration 7, brief-board sprint and sprint start, list --sprint, a frozen closed sprint, the header's sprint and a Sprints page) built 2026-11-10, not deployed, the migration waiting for the owner's deploy.
 updated: 2026-11-11
 ---
 
@@ -134,10 +134,9 @@ from 2026-10-13. Brief numbering restarted at 01 on 2026-11-02 (see
 - `scripts/seed-demo.ts` sends no `Authorization` header, so since the
   CLI's token (2026-11-02) the board refuses it with a 401. Found while
   walking brief 15 on 2026-11-09; that walk used a scratch seed instead.
-- `npm audit` (2026-11-07) still lists `zod` below 4.6.6 (high,
-  GHSA-mrhx-c7xc-m3w5; direct in `shared` and `server`), `fast-uri` under
-  Fastify (moderate) and `minimatch` through eslint (moderate, dev only).
-  No todo yet; see brief 13's outcome.
+- `npm audit` lists `fast-uri` under Fastify (moderate) and `minimatch`
+  through eslint (moderate, dev only). The zod finding closed on 2026-11-11
+  with zod 4.6.7 (brief 19). No todo yet; see brief 13's outcome.
 
 ## First sync
 
@@ -152,7 +151,7 @@ brief.
 ## Open briefs
 
 [21, sprints](../briefs/done/21-sprints.md) is built (2026-11-10), not
-deployed; it ran before 19, whose move map gains a `sprints` feature.
+deployed; it ran before 19, which gave it a `sprints` feature.
 [16, the house style and the quality harness](../briefs/done/16-the-house-style-and-the-quality-harness.md)
 is built (2026-11-11), not deployed: vendored house-style 1.1.0, Prettier at 120, typed lint, knip,
 dependency-cruiser, `npm run check`. Filed 2026-11-10 from the owner's calls of 2026-11-09, in run order:
@@ -160,8 +159,10 @@ dependency-cruiser, `npm run check`. Filed 2026-11-10 from the owner's calls of 
 is built (2026-11-11), not deployed: the wrappers in `web/src/components/ui/`, the needs strip a
 `RadioGroup`.
 [18, the web app to Tailwind](../briefs/done/18-the-web-app-to-tailwind.md) is built (2026-11-11), not
-deployed: one Tailwind stylesheet, the Light / Dark / System switch, `check-base-ui` strict. Not built:
-[19, the server in the code structure](../briefs/todo/19-the-server-in-the-code-structure.md).
+deployed: one Tailwind stylesheet, the Light / Dark / System switch, `check-base-ui` strict. And:
+[19, the server in the code structure](../briefs/done/19-the-server-in-the-code-structure.md)
+is built (2026-11-11), not deployed: features and plugins with a schema on every route, `server.ts` as the entry
+(the container's `CMD` changes), one zod copy, `check-structure` strict.
 No bump brief: `@base-ui/react` is pinned at 1.9.0 and the lockfile resolves it.
 The rest of this list is built: [08, a ticket knows the run that works it](../briefs/done/08-a-ticket-knows-the-run-that-works-it.md),
 [09, the hand-back goes on the board](../briefs/done/09-the-hand-back-goes-on-the-board.md),

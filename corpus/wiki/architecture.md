@@ -7,7 +7,7 @@ updated: 2026-11-10
 
 Built on 2026-10-09. Code: `shared/src/` (statuses, the
 move table, keys, the API contract), `server/src/` (`server.ts`, `app.ts`, `features/`,
-`plugins/`, `db/store.ts`), `cli/src/` (`main.ts`, `commands/`, `sync/`, `guide.md`) and
+`plugins/`, `server/src/db/store.ts`), `cli/src/` (`main.ts`, `commands/`, `sync/`, `guide.md`) and
 `web/src/`.
 
 ## Pieces
@@ -104,9 +104,9 @@ corpus. The author is `--author`, else `BRIEF_BOARD_AUTHOR`, else `agent`.
 
 `server/src/`: `server.ts` (the only file that listens: config, `buildApp`,
 close-with-grace), `app.ts` (`buildApp({ dbPath })`, which tests call with
-`:memory:`, through `testing/buildTestApp.ts`), `config.ts`, `db.ts` (schema,
-`user_version` migrations), `db/store.ts` (the whole `Store`),
-`plugins/errors.ts` and `plugins/auth/` (the guard and the accounts), and one
+`:memory:`, through `server/src/testing/buildTestApp.ts`), `config.ts`, `db.ts` (schema,
+`user_version` migrations), `server/src/db/store.ts` (the whole `Store`),
+`server/src/plugins/errors.ts` and `server/src/plugins/auth/` (the guard and the accounts), and one
 folder per feature in `features/`: `health`, `board`, `runs`, `questions`,
 `sprints`, `tickets` and `sync` (whose `service.ts` is `runSync`). `app.ts`
 registers the error handler, the zod compilers, the guard, then the features.

@@ -11,7 +11,7 @@ Half of the second idea is already built. The board shows Done tickets only
 for `doneDays` after they got there (`DEFAULT_DONE_DAYS = 14` in
 [shared/src/api.ts](../../../shared/src/api.ts), the cutoff on
 `status_changed_at` in `Store.board`,
-[server/src/store.ts](../../../server/src/store.ts)). The web app never
+[server/src/store.ts](../../../server/src/db/store.ts)). The web app never
 passes `doneDays`, so it always gets the default. What's missing is any way
 to see a ticket once it has fallen out of those 14 days.
 

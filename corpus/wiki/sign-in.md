@@ -44,7 +44,7 @@ the React hooks.
 
 ## Accounts and Ward
 
-`plugins/auth/accounts.ts` opens the accounts on the board's own SQLite file; the library
+`server/src/plugins/auth/accounts.ts` opens the accounts on the board's own SQLite file; the library
 keeps its tables (`auth_*`) and never touches the board's `user_version`.
 There is one role, `user`, and nothing checks it: every signed-in user sees
 the whole board. There is no sign-up route. `npm run seed -w
