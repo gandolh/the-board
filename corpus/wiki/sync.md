@@ -69,7 +69,7 @@ The decision that sync runs only by hand, and why the corpus wins, is in
 
 ## The server half
 
-`server/src/sync.ts`, one transaction per run, touching only the projects in
+`server/src/features/sync/service.ts`, one transaction per run, touching only the projects in
 the payload. Sync is the one writer that skips the move table.
 
 | Brief in | Ticket | Sync does |

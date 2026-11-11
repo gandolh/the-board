@@ -1,5 +1,5 @@
 ---
-summary: Locked engineering calls for brief-board, each with date, rejected alternative and reason. One CLI on PATH that other repos name without a path; a down board never stops work (revisited 2026-11-02: the container now runs always, agents still carry on without it); Base UI for the UI's widgets, styled with Tailwind (revisited 2026-11-11); the CLI authenticates with one shared token; the board on the VPS behind sign-in (2026-11-02); and the house style, vendored from the skills library, Prettier at width 120, npm run check as the gate (2026-11-11). Split out of decisions.md on 2026-11-11. Read before proposing to change any of these.
+summary: Locked engineering calls for brief-board, each with date, rejected alternative and reason. One CLI on PATH that other repos name without a path; a down board never stops work (revisited 2026-11-02: the container now runs always, agents still carry on without it); Base UI for the UI's widgets, styled with Tailwind (revisited 2026-11-11); the CLI authenticates with one shared token; the board on the VPS behind sign-in (2026-11-02); the house style, vendored from the skills library, Prettier at width 120, npm run check as the gate (2026-11-11); and the server in the house code structure, features and plugins with a schema on every route, the store whole (2026-11-11). Split out of decisions.md on 2026-11-11. Read before proposing to change any of these.
 updated: 2026-11-11
 ---
 
@@ -109,3 +109,24 @@ package (the Docker `deps` stage has no `git`, and the Dockerfile stays as it
 is); extending the vendored `tsconfig.base.json` (the image copies only the
 repo's own base, so the house flags are written into it); one `.claude/`
 settings file in the repo (the hooks live in the plugin).
+
+## The server in the house code structure, the store kept whole
+_2026-11-11_. `server/src/` is `server.ts` (listens), `app.ts` (`buildApp`),
+`config.ts` (the one reader of the environment), `plugins/` (`errors.ts`,
+`auth/`), `features/<name>/` (health, board, runs, questions, sprints,
+tickets, sync) and `db/store.ts`. Every route declares `params`,
+`querystring`, `body` and `response` from `shared/` through the zod type
+provider, so nothing validates by hand and nothing leaves that a schema does
+not list. `Store` stays one class (the owner's call, Q54): the features are
+route groups over it, so none imports another and dependency-cruiser's
+`no-circular` has nothing to find. The error body stays the flat
+`{ code, message, allowed? }` the CLI and the board parse; refusals are an
+`ApiError` thrown from a handler. One zod copy (4.6.7) through a root
+`overrides` entry, since the provider otherwise resolved a second one beside
+`shared`'s. Rejected: the flat layout `store.ts` grew in (a 685-line store
+beside a 539-line `app.ts` and a 1,336-line test file); autoload (a route
+file's place decided by a folder scan, not by `app.ts`); TypeBox (the contract
+is already zod, and the CLI and the board share it); splitting `store.ts` by
+feature (the tickets, runs and questions stores would import each other). The
+earlier decision "Sprints, and only the CLI starts one" is untouched:
+the sprint routes got a feature of their own, `sprints`.

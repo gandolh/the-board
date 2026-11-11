@@ -12,7 +12,7 @@ it disagree.
 
 ## The guard
 
-`server/src/app.ts` registers the vendored `wardAuth` plugin
+`server/src/plugins/auth/index.ts` (registered first by `app.ts`) registers the vendored `wardAuth` plugin
 (`server/vendor/ward/`, ward-auth 0.7.0, vendored from `wzd_auth` on
 2026-11-03; it was 0.3.1, copied from almanac) before any
 route, so no route authenticates itself:
@@ -44,7 +44,7 @@ the React hooks.
 
 ## Accounts and Ward
 
-`accounts.ts` opens the accounts on the board's own SQLite file; the library
+`plugins/auth/accounts.ts` opens the accounts on the board's own SQLite file; the library
 keeps its tables (`auth_*`) and never touches the board's `user_version`.
 There is one role, `user`, and nothing checks it: every signed-in user sees
 the whole board. There is no sign-up route. `npm run seed -w
@@ -58,7 +58,7 @@ only local accounts work and the login page has no Ward button.
 
 ## Settings
 
-`config.ts` reads the environment, after `index.ts` (and `seed.ts`) load the
+`config.ts` reads the environment, after `server.ts` (and `seed.ts`, through `loadEnvFile`) load the
 repo root's `.env` for whatever the environment leaves unset; `.env.example`
 lists every variable. A bad value stops the start with a message naming each
 variable at fault: a `PUBLIC_ORIGIN` with a path, a token under 32

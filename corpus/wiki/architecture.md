@@ -6,8 +6,8 @@ updated: 2026-11-10
 # Architecture
 
 Built on 2026-10-09. Code: `shared/src/` (statuses, the
-move table, keys, the API contract), `server/src/` (`app.ts`, `store.ts`,
-`sync.ts`), `cli/src/` (`main.ts`, `commands/`, `sync/`, `guide.md`) and
+move table, keys, the API contract), `server/src/` (`server.ts`, `app.ts`, `features/`,
+`plugins/`, `db/store.ts`), `cli/src/` (`main.ts`, `commands/`, `sync/`, `guide.md`) and
 `web/src/`.
 
 ## Pieces
@@ -102,9 +102,15 @@ corpus. The author is `--author`, else `BRIEF_BOARD_AUTHOR`, else `agent`.
 
 ## Server
 
-`server/src/`: `db.ts` (schema, `user_version` migrations), `store.ts`,
-`sync.ts` and `app.ts` (`buildApp({ dbPath })`, which tests call with
-`:memory:`). Author defaults to `agent`; tags are replaced on every `PUT`,
+`server/src/`: `server.ts` (the only file that listens: config, `buildApp`,
+close-with-grace), `app.ts` (`buildApp({ dbPath })`, which tests call with
+`:memory:`, through `testing/buildTestApp.ts`), `config.ts`, `db.ts` (schema,
+`user_version` migrations), `db/store.ts` (the whole `Store`),
+`plugins/errors.ts` and `plugins/auth/` (the guard and the accounts), and one
+folder per feature in `features/`: `health`, `board`, `runs`, `questions`,
+`sprints`, `tickets` and `sync` (whose `service.ts` is `runSync`). `app.ts`
+registers the error handler, the zod compilers, the guard, then the features.
+Every route declares its schemas from `shared/`, replies included. Author defaults to `agent`; tags are replaced on every `PUT`,
 deduplicated, and never include the project. A `PUT` that creates answers
 201. Error codes: `invalid_request`, `invalid_key`, `not_found`,
 `move_not_allowed`, `message_required`, `sync_owned` (a write on a todo's
