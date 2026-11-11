@@ -69,6 +69,9 @@
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --default-mono-font-family: monospace;
 
+  /* The header's height: the family's name (wicket, lantern), `min-h-top`. */
+  --height-top: 56px;
+
   --radius-chip: 3px;
   --radius-box: 4px;
   --radius-gate: 8px;
@@ -89,7 +92,6 @@
   /* Light on a first visit; the switch sets data-theme. */
   :root {
     color-scheme: light;
-    --top-h: 56px;
     /*
      * A long cell's height: five Done cards (key, a title of a line or two, the run, the
      * footer: 100 to 140 px each) and their gaps. On a wide screen the top of a sixth shows,

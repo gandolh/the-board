@@ -81,7 +81,7 @@ export function Board({
   return (
     <div>
       <div
-        className="sticky top-(--top-h) z-columns grid grid-cols-7 gap-2 bg-page py-2 narrow:hidden"
+        className="sticky top-(--height-top) z-columns grid grid-cols-7 gap-2 bg-page py-2 narrow:hidden"
         aria-hidden="true"
       >
         {STATUSES.map((status) => (

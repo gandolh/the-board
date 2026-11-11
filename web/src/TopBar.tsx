@@ -25,7 +25,7 @@ export function TopBar({
 }) {
   return (
     <>
-      <header className="sticky top-0 z-top flex min-h-(--top-h) flex-wrap items-center gap-x-5 gap-y-2 border-b border-line bg-surface px-6 py-2.5 narrow:px-4">
+      <header className="sticky top-0 z-top flex min-h-top flex-wrap items-center gap-x-5 gap-y-2 border-b border-line bg-surface px-6 py-2.5 narrow:px-4">
         <h1 className={cn("mr-2", BRAND)}>brief-board</h1>
         {sprint && <SprintName sprint={sprint} />}
         {children}

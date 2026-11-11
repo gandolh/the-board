@@ -292,7 +292,7 @@ wrapper, no `@tailwindcss/typography`).
   `radiogroup "Needs you"` with its four radios.
 - **Tokens beyond the brief's list:** `surface-hover` (the card's 8% accent tint, a `color-mix` of two tokens),
   `shadow-panel`, `font-strong` (650), the radii `chip` / `box` / `gate`, the z scale `cell` / `columns` / `top` /
-  `panel`, `--default-mono-font-family: monospace`. `--top-h` and `--cell-cap` stay plain custom properties in `:root`.
+  `panel`, `--default-mono-font-family: monospace`. `--height-top` (`min-h-top`, the family's name) is in `@theme`; `--cell-cap` stays a plain custom property in `:root`.
 - **The data-driven colours are utilities in a `Record`, not a local `--col` property:** `border-t-in_progress`,
   `bg-done/14 text-done`. Opacity tints use `color-mix` in oklab where the old CSS used srgb: no visible difference.
 - **A disabled select** keeps the browser's 0.7 opacity (`disabled:opacity-70`), because the reset sets it to 1.
