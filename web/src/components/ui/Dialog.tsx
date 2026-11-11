@@ -28,11 +28,20 @@ export function Panel({ label, top, onClose, children }: PanelProps) {
       }}
     >
       <BaseDialog.Portal>
-        <BaseDialog.Popup className="panel" aria-label={label} initialFocus={closeRef} render={<aside />}>
-          <div className="panel-top">
+        <BaseDialog.Popup
+          className="fixed inset-y-0 right-0 z-panel w-full max-w-120 overflow-y-auto border-l border-line bg-surface px-5 pt-4 pb-10 shadow-panel"
+          aria-label={label}
+          initialFocus={closeRef}
+          render={<aside />}
+        >
+          <div className="flex items-center justify-between gap-2">
             {top}
-            <BaseDialog.Close ref={closeRef} className="icon-button" aria-label="Close">
-              <svg viewBox="0 0 16 16" aria-hidden="true">
+            <BaseDialog.Close
+              ref={closeRef}
+              className="grid size-8 cursor-pointer place-items-center rounded-box hover:bg-surface-sunk"
+              aria-label="Close"
+            >
+              <svg className="size-4" viewBox="0 0 16 16" aria-hidden="true">
                 <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
               </svg>
             </BaseDialog.Close>
