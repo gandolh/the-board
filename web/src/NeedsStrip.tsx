@@ -1,6 +1,20 @@
 import { RadioGroup } from "./components/ui/RadioGroup";
 import { groupNeeds, needCountText, type Need, type NeedKind } from "@brief-board/shared";
 
+/** Each kind's colour, as whole class strings so Tailwind sees them: its text, and its tint when under the pointer or chosen. */
+const KIND_LOOK: Record<NeedKind, string> = {
+  question:
+    "text-accent hover:bg-accent/15 data-checked:bg-accent/15 data-checked:inset-ring-1 data-checked:inset-ring-accent",
+  blocked:
+    "text-danger hover:bg-danger/15 data-checked:bg-danger/15 data-checked:inset-ring-1 data-checked:inset-ring-danger",
+  stale_run:
+    "text-warn hover:bg-warn/15 data-checked:bg-warn/15 data-checked:inset-ring-1 data-checked:inset-ring-warn",
+  ready_for_test:
+    "text-ready_for_test hover:bg-ready_for_test/15 data-checked:bg-ready_for_test/15 data-checked:inset-ring-1 data-checked:inset-ring-ready_for_test",
+  ready_for_deploy:
+    "text-ready_for_deploy hover:bg-ready_for_deploy/15 data-checked:bg-ready_for_deploy/15 data-checked:inset-ring-1 data-checked:inset-ring-ready_for_deploy",
+};
+
 /**
  * What waits on the owner, above the lanes: one count per kind, in the order
  * the owner reads them ("3 questions · 1 blocked · 2 to test · 7 to deploy").
@@ -20,31 +34,35 @@ export function NeedsStrip({
   const groups = groupNeeds(needs);
   if (groups.length === 0) return null;
   return (
-    <div className="needs">
+    <div className="mx-6 mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-box bg-surface px-3 py-1.5 shadow-card">
       <RadioGroup<NeedKind>
         label="Needs you"
-        className="needs-group"
-        optionClassName="needs-kind"
+        className="flex flex-wrap items-center gap-x-2 gap-y-1"
+        optionClassName="cursor-pointer rounded-chip px-1.5 py-0.5 font-semibold tabular-nums"
         prefix={
-          <span className="needs-label" aria-hidden="true">
+          <span className="mr-1 font-strong" aria-hidden="true">
             Needs you
           </span>
         }
         separator={
-          <span className="needs-sep" aria-hidden="true">
+          <span className="text-ink-muted" aria-hidden="true">
             ·
           </span>
         }
         options={groups.map((group) => ({
           value: group.kind,
           label: needCountText(group.kind, group.needs.length),
-          className: `needs-${group.kind}`,
+          className: KIND_LOOK[group.kind],
         }))}
         value={selected}
         onValueChange={onSelect}
       />
       {selected && (
-        <button type="button" className="needs-clear" onClick={() => onSelect(null)}>
+        <button
+          type="button"
+          className="ml-auto cursor-pointer rounded-chip px-1.5 py-0.5 text-ink-muted tabular-nums underline"
+          onClick={() => onSelect(null)}
+        >
           Show all
         </button>
       )}

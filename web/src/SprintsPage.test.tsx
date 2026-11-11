@@ -37,9 +37,7 @@ const writeControls = /<(form|input|textarea|select)\b/;
 describe("the header", () => {
   it("names the active sprint and the day it started, as stored", () => {
     const html = renderToStaticMarkup(<SprintName sprint={{ number: 2, startedOn: "2026-11-10" }} />);
-    expect(html).toBe(
-      '<span class="sprint-name">Sprint 2 · since <time dateTime="2026-11-10">2026-11-10</time></span>',
-    );
+    expect(html).toContain('<time dateTime="2026-11-10">2026-11-10</time>');
     expect(html.replace(/<[^>]+>/g, "")).toBe("Sprint 2 · since 2026-11-10");
   });
 });

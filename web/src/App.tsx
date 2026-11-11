@@ -5,6 +5,8 @@ import { fetchBoard, fetchNeeds } from "./api";
 import { Board, orderLanes } from "./Board";
 import { DetailPanel } from "./DetailPanel";
 import { DonePage } from "./DonePage";
+import { cn } from "./lib/cn";
+import { EMPTY, NAV_LINK } from "./looks";
 import { needKeys, NeedsStrip } from "./NeedsStrip";
 import { usePage } from "./route";
 import { SprintsPage } from "./SprintsPage";
@@ -70,23 +72,30 @@ function BoardPage({ tag, onTag }: { tag: string; onTag: (tag: string) => void }
   const close = useCallback(() => setOpenKey(null), []);
 
   return (
-    <div className="app">
+    <div>
       <TopBar polled={board} sprint={board.data?.sprint}>
         <TagFilter tags={tags} value={tag} onChange={onTag} />
-        <PageLink page="done" className="nav-link">
+        <PageLink page="done" className={NAV_LINK}>
           Older Done
         </PageLink>
-        <PageLink page="sprints" className="nav-link">
+        <PageLink page="sprints" className={NAV_LINK}>
           Sprints
         </PageLink>
-        <span className={`blocked-count${blocked > 0 ? " has-blocked" : ""}`}>{blocked} blocked</span>
+        <span
+          className={cn(
+            "rounded-box px-2 py-0.5 tabular-nums",
+            blocked > 0 ? "bg-danger/15 font-semibold text-danger" : "bg-surface-sunk text-ink-muted",
+          )}
+        >
+          {blocked} blocked
+        </span>
       </TopBar>
 
       <NeedsStrip needs={allNeeds} selected={needFilter ? needKind : null} onSelect={setNeedKind} />
 
-      <main>
+      <main className="px-6 pt-3 pb-12 narrow:px-4 narrow:pt-2 narrow:pb-10">
         {board.data && lanes.length === 0 ? (
-          <p className="empty">
+          <p className={EMPTY}>
             {needFilter
               ? "None of these tickets are on the board with this filter."
               : tag

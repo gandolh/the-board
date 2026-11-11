@@ -1,6 +1,7 @@
 import { Radio } from "@base-ui/react/radio";
 import { RadioGroup as BaseRadioGroup } from "@base-ui/react/radio-group";
 import { Fragment, type ReactNode } from "react";
+import { cn } from "../../lib/cn";
 
 export interface RadioOption<Value extends string> {
   value: Value;
@@ -50,7 +51,7 @@ export function RadioGroup<Value extends string>({
       {options.map((option, index) => (
         <Fragment key={option.value}>
           {index > 0 && separator}
-          <Radio.Root value={option.value} className={`${optionClassName ?? ""} ${option.className ?? ""}`.trim()}>
+          <Radio.Root value={option.value} className={cn(optionClassName, option.className)}>
             {option.label}
           </Radio.Root>
         </Fragment>

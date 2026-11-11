@@ -14,10 +14,9 @@ const need = (kind: Need["kind"], key: string): Need => ({
   since: "2026-11-06T10:00:00.000Z",
 });
 
-/** The strip's radios in order: their kind class, text and `aria-checked`. */
+/** The strip's radios in order: their text and `aria-checked`. */
 const radios = (html: string) =>
   [...html.matchAll(/<span ([^>]*role="radio"[^>]*)>([^<]+)<\/span>/g)].map((m) => ({
-    kind: /class="needs-kind needs-([a-z_]+)"/.exec(m[1] ?? "")?.[1],
     text: m[2],
     checked: /aria-checked="(true|false)"/.exec(m[1] ?? "")?.[1],
   }));
@@ -38,12 +37,12 @@ describe("the needs strip", () => {
       need("question", "p-02"),
       need("blocked", "p-02"),
     ]);
-    const counts = radios(html).map((radio) => [radio.kind, radio.text, radio.checked]);
+    const counts = radios(html).map((radio) => [radio.text, radio.checked]);
     expect(counts).toEqual([
-      ["question", "2 questions", "false"],
-      ["blocked", "1 blocked", "false"],
-      ["ready_for_test", "1 to test", "false"],
-      ["ready_for_deploy", "1 to deploy", "false"],
+      ["2 questions", "false"],
+      ["1 blocked", "false"],
+      ["1 to test", "false"],
+      ["1 to deploy", "false"],
     ]);
     expect(html).not.toContain("stale");
     expect(html).not.toContain("Show all");
@@ -56,8 +55,8 @@ describe("the needs strip", () => {
   it("marks the chosen kind and offers to show all again", () => {
     const html = strip([need("question", "p-01"), need("stale_run", "p-03")], "stale_run");
     expect(radios(html)).toEqual([
-      { kind: "question", text: "1 question", checked: "false" },
-      { kind: "stale_run", text: "1 stale run", checked: "true" },
+      { text: "1 question", checked: "false" },
+      { text: "1 stale run", checked: "true" },
     ]);
     expect(html.match(/aria-checked="true"/g)).toHaveLength(1);
     expect(html).toContain("Show all");
