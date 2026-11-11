@@ -1,7 +1,7 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { existsSync } from "node:fs";
 import fastifyStatic from "@fastify/static";
-import Fastify, { type FastifyInstance, type FastifyReply } from "fastify";
+import Fastify, { type FastifyInstance, type FastifyReply, type FastifyServerOptions } from "fastify";
 import {
   answerRequestSchema,
   boardQuerySchema,
@@ -54,9 +54,9 @@ import {
 import type { z } from "zod";
 import { createWardClient, wardAuth, type Accounts, type WardClientOptions } from "../vendor/ward/ward-auth.js";
 import { openAccounts, USER_ROLE } from "./accounts.js";
-import { AUTH_ROUTE_PREFIX } from "./config.js";
+import { AUTH_ROUTE_PREFIX, DEFAULT_STALE_HOURS } from "./config.js";
 import { openDatabase } from "./db.js";
-import { DEFAULT_STALE_HOURS, SprintClosedError, Store } from "./store.js";
+import { SprintClosedError, Store } from "./store.js";
 import { runSync } from "./sync.js";
 
 /**
@@ -103,6 +103,12 @@ export function stripApiPrefix(url: string, prefix: string = API_PREFIX): string
   return url;
 }
 
+/** Fastify's options that belong to the process. `server.ts` sets them; a test leaves them out. */
+export type ServerOptions = Pick<
+  FastifyServerOptions,
+  "trustProxy" | "connectionTimeout" | "requestTimeout" | "keepAliveTimeout"
+>;
+
 export interface AppOptions {
   /** A file path, or `:memory:` for tests. */
   dbPath: string;
@@ -128,6 +134,8 @@ export interface AppOptions {
   /** The clock, for tests. */
   now?: () => Date;
   logger?: boolean;
+  /** The process's timeouts and proxy trust, from `server.ts`. */
+  server?: ServerOptions;
 }
 
 declare module "fastify" {
@@ -192,6 +200,7 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
   const apiPrefix = options.apiPrefix ?? API_PREFIX;
   const webBase = options.webBase ?? BOARD_PATH;
   const app = Fastify({
+    ...options.server,
     logger: options.logger ?? false,
     rewriteUrl: (request) => stripApiPrefix(request.url ?? "/", apiPrefix),
   });

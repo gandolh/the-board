@@ -4,11 +4,11 @@
   "description": "The brief-board API (Fastify + SQLite), which also serves the built board.",
   "private": true,
   "type": "module",
-  "main": "./dist/index.js",
+  "main": "./dist/server.js",
   "scripts": {
     "build": "tsc -b",
-    "dev": "tsx watch src/index.ts",
-    "start": "node dist/index.js",
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
     "seed": "tsx src/seed.ts"
   },
   "dependencies": {

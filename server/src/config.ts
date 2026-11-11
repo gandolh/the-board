@@ -1,6 +1,13 @@
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import { wardClientOptionsFromEnv, type WardClientOptions } from "../vendor/ward/ward-auth.js";
-import { DEFAULT_STALE_HOURS } from "./store.js";
+
+/** The repo root. `src/` (tsx in dev) and `dist/` (built) sit at the same depth, so this resolves the same from both. */
+const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
+
+/** Hours without a write on its ticket before a run reads as stale. */
+export const DEFAULT_STALE_HOURS = 4;
 
 /** Where the auth plugin's routes sit as Fastify sees them; the browser reaches them under the API prefix. */
 export const AUTH_ROUTE_PREFIX = "/auth";
@@ -140,7 +147,7 @@ function trustedProxies(value: string | undefined): string[] {
  * The settings from `env`, or a `ConfigError` naming every variable that is
  * wrong. Nothing here talks to Ward: the server starts while Ward is down.
  */
-export function loadConfig(env: NodeJS.ProcessEnv): Config {
+export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const problems: string[] = [];
   const parsed = envSchema.safeParse(env);
   if (!parsed.success) problems.push(...parsed.error.issues.map(describe));
@@ -159,5 +166,42 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
     trustedProxies: trustedProxies(env.AUTH_TRUSTED_PROXIES),
     token: values.BRIEF_BOARD_TOKEN,
     staleHours: values.BRIEF_BOARD_STALE_HOURS,
+  };
+}
+
+/** The built board, at the repo root's `web/dist`. */
+export const WEB_DIST = resolve(REPO_ROOT, "web/dist");
+
+/**
+ * Load the repo root's `.env` into the environment, for what the environment
+ * leaves unset (Ward's local seed writes its `WARD_OIDC_*` values there). No
+ * file is fine: on the VPS the container's environment is the settings.
+ */
+export function loadEnvFile(): void {
+  try {
+    process.loadEnvFile(`${REPO_ROOT}.env`);
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== "ENOENT") throw err;
+  }
+}
+
+/** The database file: `BRIEF_BOARD_DB`, else `data/brief-board.sqlite` under the repo root. One rule for the server and the seed. */
+export function resolveDbPath(configured: string | undefined): string {
+  return configured ? resolve(configured) : resolve(REPO_ROOT, "data/brief-board.sqlite");
+}
+
+/** The seed command's settings: the username and password it was given, either of which may be empty (a terminal is asked then). */
+export interface SeedConfig {
+  username: string;
+  password: string;
+  dbPath: string;
+}
+
+/** `SEED_USERNAME`, `SEED_PASSWORD` and the database path, from `env`. A password is taken as typed, spaces and all. */
+export function loadSeedConfig(env: NodeJS.ProcessEnv = process.env): SeedConfig {
+  return {
+    username: env.SEED_USERNAME?.trim() ?? "",
+    password: env.SEED_PASSWORD ?? "",
+    dbPath: resolveDbPath(env.BRIEF_BOARD_DB?.trim()),
   };
 }

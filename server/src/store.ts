@@ -20,6 +20,7 @@ import {
   type SummarySource,
   type Ticket,
 } from "@brief-board/shared";
+import { DEFAULT_STALE_HOURS } from "./config.js";
 import type { Db } from "./db.js";
 
 /**
@@ -58,9 +59,6 @@ export class SprintClosedError extends Error {
     this.endedOn = endedOn;
   }
 }
-
-/** How long a run may go without a write on its ticket before it reads as stale. */
-export const DEFAULT_STALE_HOURS = 4;
 
 interface TicketRow {
   key: string;
