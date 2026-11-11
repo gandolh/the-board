@@ -40,7 +40,7 @@ export function usePolling<T>(load: (signal: AbortSignal) => Promise<T>): Polled
         const name = (err as Error).name;
         if (!stopped && name !== "AbortError" && name !== "Unauthorized") setState((s) => ({ ...s, failing: true }));
       }
-      if (!stopped && !document.hidden) timer = setTimeout(tick, POLL_MS);
+      if (!stopped && !document.hidden) timer = setTimeout(() => void tick(), POLL_MS);
     };
 
     const onVisibility = () => {
