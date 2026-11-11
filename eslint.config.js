@@ -28,10 +28,4 @@ export default [
     files: ["server/src/index.ts", "server/src/seed.ts"],
     rules: { "n/no-process-env": "warn" },
   },
-  {
-    // The CommonJS dependency-cruiser config needs Node's globals.
-    name: "brief-board/cjs-globals",
-    files: ["**/*.cjs"],
-    languageOptions: { sourceType: "commonjs", globals: { module: "readonly", require: "readonly" } },
-  },
 ];
