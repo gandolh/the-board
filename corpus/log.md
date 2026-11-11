@@ -533,3 +533,19 @@ calls; [decisions.md](wiki/decisions.md) is now at the 200-line cap, so the
 next entry needs a split. Walked on a synthetic version-6 scratch board.
 311 tests. Not deployed: the migration runs on the live database at the
 first start after the owner's deploy, so the SQLite file is backed up first.
+
+## [2026-11-11] done | Brief 16, the house style and the quality harness
+
+[Brief 16](briefs/done/16-the-house-style-and-the-quality-harness.md): the
+house-style harness at `house-style-v1.1.0`, vendored in `vendor/house-style/`
+with `npm run house-style:sync`. Prettier at width 120 reformatted 50 files
+(1,208 lines) in one commit, listed in `.git-blame-ignore-revs`; the esbuild
+bundle compare found no difference in 94 files. `verbatimModuleSyntax` and
+`erasableSyntaxOnly` on (10 parameter properties became declared fields), the
+house ESLint with typed rules, knip, dependency-cruiser (clean), and the two
+convention checkers, both `--warn-only`. 33 `!` in source fixed by narrowing,
+43 in tests down to 20 warnings. `pretest` builds `shared`. `check` runs in
+30 s warm, `check:fast` in 6 s. A root `CLAUDE.md` and `.claude/rules/` carry
+the commands and the area rules; the hard rules moved out of this corpus's
+CLAUDE.md. `wiki/decisions.md` was split: the CLI, token, deploy, Base UI and
+house-style entries are in `wiki/decisions-engineering.md`. Not deployed.

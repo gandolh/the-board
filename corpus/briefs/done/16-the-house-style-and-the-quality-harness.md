@@ -287,3 +287,48 @@ One commit per step, each with `npm run typecheck`, `npm test`, `npm run lint` a
 
 - Brief 17 adds nothing to the gate. Brief 18 adds `better-tailwindcss`, deletes the `web/src/styles.css` line from `.prettierignore` and drops `check-base-ui`'s `--warn-only`. Brief 19 adds dependency-cruiser, drops `check-structure`'s `--warn-only`, and turns `no-process-env` (from `eslint-plugin-n`) into an error.
 - The 21 unused exports knip reports are not this brief's work. Several (`COMMON_OPTIONS`, `slugWords`, `frontmatter`) may be exported for tests that knip counts as entries, so each needs a look before it is un-exported or deleted.
+
+## Outcome (2026-11-11)
+
+Built on main, house-style 1.1.0 (the brief named 1.0.0). Not deployed.
+
+**Counts.** Before the fixes, with the house config on the code: `no-non-null-assertion` 33 in source and 43 in
+tests (the brief counted 30 and 35; briefs 20-21 added more), `no-misused-promises` 1, `n/no-process-env` 4, nothing
+else (`switch-exhaustiveness-check` 0 with `considerDefaultExhaustiveForUnions`; the package turns
+`vitest/no-conditional-expect` off, so the four it would have found are not findings). After: `!` 0 in source, 20
+warnings in tests; `no-misused-promises` 0 (`setTimeout(() => void tick(), POLL_MS)`); `n/no-process-env` 4 warnings
+(`server/src/index.ts`, `server/src/seed.ts`), dated in `eslint.config.js`. `erasableSyntaxOnly`: 12 errors (the
+brief counted 9; `SprintClosedError` and two others are newer), all parameter properties, now declared fields.
+`verbatimModuleSyntax`: 0. knip: 22 unused exports (warnings; the brief counted 21), no unused files or
+dependencies. dependency-cruiser: no violations (97 modules). `check-base-ui --warn-only`: 4 errors (rule 3 x3: Base UI
+imported in `Board.tsx`, `DetailPanel.tsx`, `SprintsPage.tsx`; rule 5 x1: `styles.css`). `check-structure
+--warn-only`: 41 errors and 3 warnings (rule 1 x1, rule 3 x4, rule 6 x36, rule 11 x3).
+
+**The 20 test `!` left** (warnings): `cli/src/cli.test.ts:837` (2), `cli/src/sync/sync.test.ts` `find()` results
+used by later lines (80, 104), `server/src/app.test.ts` `holdsOf(x.holds)` arguments whose
+parameter is not optional (649, 717, 734, 743) and `1595` (2), `server/src/db.test.ts:15, 291`, `store.test.ts:37`,
+`shared/src/api.test.ts` 146 and 147 (6; `toBeUndefined` checks: a `?.` would pass on a missing item), and
+`web/src/SprintsPage.test.tsx:63`. The other 23 became `?.`.
+
+**The reformat** (`ed06faa`): 50 files, 1,208 lines. The esbuild bundle compare (94 files: TypeScript, JavaScript,
+CSS through the `css` loader, JSON parsed) found no difference. `docker-compose.yml`'s healthcheck was requoted
+(same value). `git diff -w` is not empty, as Prettier rejoins and splits lines.
+
+**Timings** (warm): `check:fast` 5.7 s with nothing changed, 6.6 s with one server file; `check` 30 s;
+`eslint .` about 11 s.
+
+**Checks run:** `npm run check` (exit 0, 311 tests), `npm run build` (0), `npx prettier --check .` (0),
+`npm run house-style:sync -- --check` (0), `rm -rf shared/dist && npm test` (0), `bash corpus/lint.sh`, a deliberate
+`enum`, `!`, `console.log`, `// TODO` and `export default` each exit 1 under ESLint and were reverted, and the
+plugin's hooks run by hand with event JSON: the formatter hook formatted a messy file, the Stop hook exited 2 on a type
+error and 0 after it was removed.
+
+**Checks skipped:** `docker build` (no docker builds here; `npx tsc -b server` passes, and the image copies only the
+repo's own `tsconfig.base.json`, which holds the flags); the live-session hook check waits for the plugin update.
+
+**Deviations:** `tsconfig.base.json` keeps the house flags itself instead of extending the vendored base (the image's
+`deps` stage copies only that file). Measured in the checkout, not a scratch copy. dependency-cruiser joined
+`check:conventions` here (the controller's ruling), so brief 19 only keeps its cross-feature check. Store gained
+`requireTicket` and a private `requireSprint`, which throw, to replace the `!` after a write. `cli/src/index.ts` goes
+in ESLint's `env` option (the CLI's one environment read) rather than a block. `docs/images/shots.md` is the only
+screenshot recipe the root CLAUDE.md names. The split todo was deleted, as `decisions.md` is split.

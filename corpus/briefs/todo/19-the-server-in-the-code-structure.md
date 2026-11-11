@@ -199,6 +199,7 @@ The 404 handler stays in `app.ts`.
 - `shared/src/**`, only to add a sample-encode test for the response schemas. No schema changes.
 - `infrastructure/Dockerfile`: the `CMD` line and the zod comment.
 - `.dependency-cruiser.cjs` (new, from the skill's preset).
+  *Update 2026-11-11: it landed with brief 16, and dependency-cruiser is already in `check:conventions`, passing with no lowered rule. This brief keeps the cross-feature check and its deliberate-violation test.*
 - `eslint.config.js`: `no-process-env` (from `eslint-plugin-n`), from warning to error.
 - `scripts/conventions.json`, for the roots (`server/src`, `shared/src`) and any exception the checker needs.
 - `.claude/rules/server.md`: the structure lines.
@@ -240,7 +241,7 @@ Follow `migrating-a-server.md`. One commit per step; after each, `npm run check`
 
    `FeatureContext` is new here (brief-board has none): the `Store`, the clock and the config a feature needs, built once in `app.ts`.
 7. **After.** Save the same JSON again and diff it against step 1's. A field that disappeared is a leak (keep it dropped and list it) or a missing schema field (add it). Put the diff's summary in the `log.md` entry. Also run the CLI against the new server (`brief-board list`, `show`, `needs`, a `start` and a `move`) and the board in a browser.
-8. **Strict.** Drop `check-structure`'s `--warn-only` and make dependency-cruiser part of `check:conventions`.
+8. **Strict.** Drop `check-structure`'s `--warn-only`. (Dependency-cruiser joined `check:conventions` in brief 16, 2026-11-11.)
 9. **Corpus.**
    - In [wiki/decisions.md](../../wiki/decisions.md), add an entry adopting the structure, with what was rejected (the flat layout `store.ts` grew in, autoload, TypeBox) and why. If an earlier entry names the flat layout, revisit it by heading.
    - Update the pages listed under Files you OWN, `.claude/rules/server.md`, [wiki/status.md](../../wiki/status.md) and [log.md](../../log.md).
