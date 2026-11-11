@@ -1,7 +1,7 @@
-import { Collapsible } from "@base-ui/react/collapsible";
 import { useCallback, useEffect, useState } from "react";
 import type { Sprint, Ticket } from "@brief-board/shared";
 import { fetchSprint, fetchSprints } from "./api";
+import { Collapsible } from "./components/ui/Collapsible";
 import { DetailPanel } from "./DetailPanel";
 import { DoneList } from "./DonePage";
 import { PageLink, TopBar } from "./TopBar";
@@ -124,42 +124,33 @@ function SprintSection({
   }, [needed, sprint.number]);
 
   return (
-    <Collapsible.Root
+    <Collapsible
       open={open}
       onOpenChange={() => onToggle(sprint.number)}
-      render={<section className="sprint" aria-label={`Sprint ${sprint.number}`} />}
-    >
-      <h3 className="sprint-heading">
-        <Collapsible.Trigger className="sprint-head">
-          <svg className="chevron" viewBox="0 0 16 16" aria-hidden="true">
-            <path
-              d="M6 4l4 4-4 4"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.75"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+      label={`Sprint ${sprint.number}`}
+      className="sprint"
+      heading="h3"
+      headingClassName="sprint-heading"
+      triggerClassName="sprint-head"
+      panelClassName="sprint-panel"
+      trigger={
+        <>
           <span className="sprint-number">Sprint {sprint.number}</span>
           <span className="sprint-dates">{sprintDates(sprint)}</span>
           <span className="count">{sprint.doneCount} Done</span>
-        </Collapsible.Trigger>
-      </h3>
-      <Collapsible.Panel className="sprint-panel">
-        {sprint.doneCount === 0 ? (
-          <SprintTickets tickets={[]} onOpen={onOpen} />
-        ) : tickets ? (
-          <SprintTickets tickets={tickets} onOpen={onOpen} />
-        ) : (
-          <p className="empty">
-            {failed
-              ? "The board's API didn't answer for this sprint. Close it and open it again to retry."
-              : "Loading…"}
-          </p>
-        )}
-      </Collapsible.Panel>
-    </Collapsible.Root>
+        </>
+      }
+    >
+      {sprint.doneCount === 0 ? (
+        <SprintTickets tickets={[]} onOpen={onOpen} />
+      ) : tickets ? (
+        <SprintTickets tickets={tickets} onOpen={onOpen} />
+      ) : (
+        <p className="empty">
+          {failed ? "The board's API didn't answer for this sprint. Close it and open it again to retry." : "Loading…"}
+        </p>
+      )}
+    </Collapsible>
   );
 }
 

@@ -1,6 +1,6 @@
-import { Collapsible } from "@base-ui/react/collapsible";
 import { STATUS_LABELS, STATUSES, type Lane as LaneData, type Ticket } from "@brief-board/shared";
 import { Card } from "./Card";
+import { Collapsible } from "./components/ui/Collapsible";
 
 /**
  * The board: the column headers once at the top, sticky, Backlog first, and a
@@ -87,43 +87,36 @@ function Lane({
   const open = lane.tickets.filter(isOpen).length;
   const done = lane.tickets.length - open;
   return (
-    <Collapsible.Root
+    <Collapsible
       open={expanded}
       onOpenChange={() => onToggle(lane.project)}
-      render={<section className="lane" aria-label={`Project ${lane.project}`} />}
+      label={`Project ${lane.project}`}
+      className="lane"
+      triggerClassName="lane-head"
+      panelClassName="lane-scroll"
+      trigger={
+        <>
+          <span className="lane-name">{lane.project}</span>
+          <span className="lane-meta">
+            {open > 0 ? `${open} open · ` : ""}
+            {done} done
+          </span>
+        </>
+      }
     >
-      <Collapsible.Trigger className="lane-head">
-        <svg className="chevron" viewBox="0 0 16 16" aria-hidden="true">
-          <path
-            d="M6 4l4 4-4 4"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.75"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-        <span className="lane-name">{lane.project}</span>
-        <span className="lane-meta">
-          {open > 0 ? `${open} open · ` : ""}
-          {done} done
-        </span>
-      </Collapsible.Trigger>
-      <Collapsible.Panel className="lane-scroll">
-        <div className="lane-cols">
-          {STATUSES.map((status) => {
-            const cards = cellTickets(lane.tickets, status);
-            return (
-              <div key={status} className={`cell col-${status}${cards.length > CELL_CARDS ? " cell-long" : ""}`}>
-                <div className="cell-head">{STATUS_LABELS[status]}</div>
-                {cards.map((ticket) => (
-                  <Card key={ticket.key} ticket={ticket} now={now} onOpen={onOpen} />
-                ))}
-              </div>
-            );
-          })}
-        </div>
-      </Collapsible.Panel>
-    </Collapsible.Root>
+      <div className="lane-cols">
+        {STATUSES.map((status) => {
+          const cards = cellTickets(lane.tickets, status);
+          return (
+            <div key={status} className={`cell col-${status}${cards.length > CELL_CARDS ? " cell-long" : ""}`}>
+              <div className="cell-head">{STATUS_LABELS[status]}</div>
+              {cards.map((ticket) => (
+                <Card key={ticket.key} ticket={ticket} now={now} onOpen={onOpen} />
+              ))}
+            </div>
+          );
+        })}
+      </div>
+    </Collapsible>
   );
 }
