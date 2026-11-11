@@ -4,6 +4,7 @@ import { BUTTON, FACTS, NOTICE } from "./looks";
 import { cn } from "./lib/cn";
 import { accountMessage } from "./messages";
 import { navigate } from "./route";
+import { ThemeSwitch } from "./ThemeSwitch";
 
 /**
  * The account page: who is signed in and how, "Link Ward" when the server
@@ -53,6 +54,10 @@ export function AccountPage() {
             <dd>{ward.linked || link.linked || result.result === "linked" ? "Linked" : "Not linked"}</dd>
           </>
         )}
+        <dt className="pt-1.5">Theme</dt>
+        <dd>
+          <ThemeSwitch />
+        </dd>
       </dl>
 
       {result.result === "linked" && (
