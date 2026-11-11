@@ -2,9 +2,6 @@
 # done briefs are immutable.
 *.md
 
-# The old stylesheet goes when the Tailwind migration deletes it.
-web/src/styles.css
-
 # Generated or vendored copies.
 server/vendor/
 web/vendor/

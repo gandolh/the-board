@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 import type { Sprint } from "@brief-board/shared";
 import { useSession } from "../vendor/ward/ward-auth-react.js";
-import { NAV_LINK } from "./looks";
+import { cn } from "./lib/cn";
+import { BRAND, NAV_LINK } from "./looks";
 import { navigate, pathOf, type Page } from "./route";
 import { clock } from "./time";
 import type { Polled } from "./usePolling";
@@ -25,7 +26,7 @@ export function TopBar({
   return (
     <>
       <header className="sticky top-0 z-top flex min-h-(--top-h) flex-wrap items-center gap-x-5 gap-y-2 border-b border-line bg-surface px-6 py-2.5 narrow:px-4">
-        <h1 className="mr-2 text-title font-strong">brief-board</h1>
+        <h1 className={cn("mr-2", BRAND)}>brief-board</h1>
         {sprint && <SprintName sprint={sprint} />}
         {children}
         <span className="ml-auto text-ink-muted tabular-nums">
@@ -75,7 +76,7 @@ export function TagFilter({
     <label className="flex items-center gap-2 text-ink-muted">
       <span>Tag</span>
       <select
-        className="max-w-[50vw] rounded-box border border-line bg-surface px-2 py-1 text-ink"
+        className="max-w-[50vw] rounded-box border border-line bg-surface px-2 py-1 text-ink disabled:opacity-70"
         value={value}
         onChange={(event) => onChange(event.target.value)}
         disabled={options.length === 0}

@@ -6,7 +6,7 @@ import { Board, orderLanes } from "./Board";
 import { DetailPanel } from "./DetailPanel";
 import { DonePage } from "./DonePage";
 import { cn } from "./lib/cn";
-import { EMPTY, NAV_LINK } from "./looks";
+import { EMPTY, MAIN, NAV_LINK } from "./looks";
 import { needKeys, NeedsStrip } from "./NeedsStrip";
 import { usePage } from "./route";
 import { SprintsPage } from "./SprintsPage";
@@ -93,7 +93,7 @@ function BoardPage({ tag, onTag }: { tag: string; onTag: (tag: string) => void }
 
       <NeedsStrip needs={allNeeds} selected={needFilter ? needKind : null} onSelect={setNeedKind} />
 
-      <main className="px-6 pt-3 pb-12 narrow:px-4 narrow:pt-2 narrow:pb-10">
+      <main className={MAIN}>
         {board.data && lanes.length === 0 ? (
           <p className={EMPTY}>
             {needFilter

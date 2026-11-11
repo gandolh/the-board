@@ -1,10 +1,8 @@
 /* The app's one stylesheet (base-ui rule 5). The layer order comes first: the first @layer
-   statement fixes it for the whole page. `legacy` holds the old stylesheet while it is
-   migrated, below the utilities, so a rule left in it always loses. */
-@layer theme, base, vendor, legacy, components, utilities;
+   statement fixes it for the whole page. */
+@layer theme, base, vendor, components, utilities;
 
 @import "tailwindcss";
-@import "../styles.css" layer(legacy);
 
 /* The vendored copies aren't the app's, and Tailwind would otherwise scan them for class names. */
 @source not "../../vendor";

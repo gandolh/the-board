@@ -37,7 +37,7 @@ export function NeedsStrip({
     <div className="mx-6 mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-box bg-surface px-3 py-1.5 shadow-card">
       <RadioGroup<NeedKind>
         label="Needs you"
-        className="flex flex-wrap items-center gap-x-2 gap-y-1"
+        className="contents"
         optionClassName="cursor-pointer rounded-chip px-1.5 py-0.5 font-semibold tabular-nums"
         prefix={
           <span className="mr-1 font-strong" aria-hidden="true">
