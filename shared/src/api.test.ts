@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import * as api from "./api.js";
 import {
   boardQuerySchema,
   commentRequestSchema,
@@ -145,5 +146,44 @@ describe("the API contract", () => {
     });
     expect(older.projects[0]!.briefs[0]!.blockedBy).toBeUndefined();
     expect(older.projects[0]!.todos![0]!.blockedBy).toBeUndefined();
+  });
+});
+
+/** The kinds of node that make a schema run one way only, which the server's reply encoding cannot undo. */
+const ONE_WAY = new Set(["transform", "pipe", "default", "prefault", "catch"]);
+
+/** Every one-way node under a zod schema, by walking its definition. */
+function oneWayNodes(schema: unknown, seen = new Set<unknown>()): string[] {
+  const def = (schema as { _zod?: { def?: Record<string, unknown> } } | null)?._zod?.def;
+  if (def === undefined || seen.has(schema)) return [];
+  seen.add(schema);
+  const found = ONE_WAY.has(String(def.type)) ? [String(def.type)] : [];
+  const children = [
+    ...Object.values((def.shape as Record<string, unknown> | undefined) ?? {}),
+    ...((def.options as unknown[] | undefined) ?? []),
+    ...((def.items as unknown[] | undefined) ?? []),
+    def.element,
+    def.innerType,
+    def.in,
+    def.out,
+    def.keyType,
+    def.valueType,
+    def.left,
+    def.right,
+  ];
+  return [...found, ...children.flatMap((child) => oneWayNodes(child, seen))];
+}
+
+describe("the response schemas", () => {
+  const responses = Object.entries(api).filter(([name]) => name.endsWith("ResponseSchema"));
+
+  it("covers every route's reply", () => {
+    expect(responses.length).toBeGreaterThanOrEqual(16);
+  });
+
+  // The server's type provider encodes each reply with its schema, and throws on a transform or a
+  // default there: a `.transform()` here would turn every reply into a 500.
+  it.each(responses)("%s holds nothing that only decodes", (_name, schema) => {
+    expect(oneWayNodes(schema)).toEqual([]);
   });
 });

@@ -9,7 +9,7 @@ import {
   type SyncTodo,
   type Ticket,
 } from "@brief-board/shared";
-import type { Store } from "./store.js";
+import type { Store } from "../../db/store.js";
 
 /**
  * `POST /api/sync`. The corpus wins and the board is a view of it

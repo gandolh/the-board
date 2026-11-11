@@ -20,8 +20,8 @@ import {
   type SummarySource,
   type Ticket,
 } from "@brief-board/shared";
-import { DEFAULT_STALE_HOURS } from "./config.js";
-import type { Db } from "./db.js";
+import { DEFAULT_STALE_HOURS } from "../config.js";
+import type { Db } from "../db.js";
 
 /**
  * Reads and writes for tickets, comments, history, runs, holds and questions.

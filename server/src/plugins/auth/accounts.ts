@@ -1,10 +1,10 @@
-import { createAccounts, createSqliteStore, seedUsers, type Accounts } from "../vendor/ward/ward-auth.js";
-import type { Db } from "./db.js";
+import { createAccounts, createSqliteStore, seedUsers, type Accounts } from "../../../vendor/ward/ward-auth.js";
+import type { Db } from "../../db.js";
 
 /**
  * The board's local accounts, on the vendored ward-auth library. Every
  * signed-in user sees the whole board, so there is one role and nothing checks
- * it; a user made by a first "Sign in with Ward" gets it too (`app.ts`).
+ * it; a user made by a first "Sign in with Ward" gets it too (`plugins/auth`).
  */
 export const USER_ROLE = "user";
 

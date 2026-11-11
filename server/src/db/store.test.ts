@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { Status } from "@brief-board/shared";
-import { openDatabase, type Db } from "./db.js";
+import { openDatabase, type Db } from "../db.js";
 import { SprintClosedError, Store } from "./store.js";
 
 /**

@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { SyncBrief, SyncTodo } from "@brief-board/shared";
-import { openDatabase, type Db } from "./db.js";
-import { Store } from "./store.js";
-import { runSync } from "./sync.js";
+import { openDatabase, type Db } from "../../db.js";
+import { Store } from "../../db/store.js";
+import { runSync } from "./service.js";
 
 /**
  * Sync and sprints: sync acts on the active sprint's tickets only, and a
