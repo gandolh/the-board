@@ -30,13 +30,13 @@ const list = (tickets: Ticket[], tag = "") =>
 
 describe("older Done", () => {
   it("says so when nothing is older than 14 days yet", () => {
-    expect(list([])).toBe('<p class="empty">Nothing older than 14 days yet.</p>');
+    expect(list([])).toMatch(/^<p[^>]*>Nothing older than 14 days yet\.<\/p>$/);
     expect(list([], "ui")).toContain("Nothing older than 14 days yet.");
   });
 
   it("says when no older ticket carries the tag", () => {
-    expect(list([ticket({ tags: ["api"] })], "ui")).toBe(
-      '<p class="empty">No ticket older than 14 days carries the tag &quot;ui&quot;.</p>',
+    expect(list([ticket({ tags: ["api"] })], "ui")).toMatch(
+      /^<p[^>]*>No ticket older than 14 days carries the tag &quot;ui&quot;\.<\/p>$/,
     );
   });
 
@@ -46,17 +46,13 @@ describe("older Done", () => {
       ticket({ key: "alpha-03", project: "alpha", title: "Third", statusChangedAt: "2026-10-12T09:00:00.000Z" }),
       ticket({ key: "beta-01", project: "beta", title: "First", statusChangedAt: "2026-10-15T09:00:00.000Z" }),
     ]);
-    const groups = [...html.matchAll(/<section class="done-group" aria-label="Project ([^"]+)">/g)].map(
-      (match) => match[1],
-    );
+    const groups = [...html.matchAll(/<section[^>]*aria-label="Project ([^"]+)"/g)].map((match) => match[1]);
     expect(groups).toEqual(["alpha", "beta"]);
-    expect(html).toContain('<h3 class="done-project">alpha <span class="count">2</span></h3>');
-    const rows = [...html.matchAll(/<button type="button" class="done-row" aria-label="([^"]+)">/g)].map(
-      (match) => match[1],
-    );
+    expect(html).toMatch(/<h3[^>]*>alpha <span[^>]*>2<\/span><\/h3>/);
+    const rows = [...html.matchAll(/<li[^>]*><button[^>]*aria-label="([^"]+)"/g)].map((match) => match[1]);
     expect(rows).toEqual(["alpha-07: Seventh", "alpha-03: Third", "beta-01: First"]);
-    expect(html).toContain('<span class="done-key">alpha-07</span><span class="done-title">Seventh</span>');
-    expect(html).toMatch(/<time class="done-date" datetime="2026-10-22T09:00:00.000Z"/i);
+    expect(html).toMatch(/>alpha-07<\/span><span[^>]*>Seventh<\/span>/);
+    expect(html).toMatch(/<time[^>]*datetime="2026-10-22T09:00:00.000Z"/i);
     expect(html).toContain(`>${day("2026-10-22T09:00:00.000Z")}</time>`);
   });
 

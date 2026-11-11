@@ -4,6 +4,8 @@ import { fetchSprint, fetchSprints } from "./api";
 import { Collapsible } from "./components/ui/Collapsible";
 import { DetailPanel } from "./DetailPanel";
 import { DoneList } from "./DonePage";
+import { cn } from "./lib/cn";
+import { COUNT, EMPTY, MAIN, NAV_LINK } from "./looks";
 import { PageLink, TopBar } from "./TopBar";
 import { usePolling } from "./usePolling";
 
@@ -34,19 +36,19 @@ export function SprintsPage() {
   const close = useCallback(() => setOpenKey(null), []);
 
   return (
-    <div className="app">
+    <div>
       <TopBar polled={sprints} sprint={sprints.data?.active}>
-        <PageLink page="board" className="nav-link">
+        <PageLink page="board" className={NAV_LINK}>
           Board
         </PageLink>
-        <PageLink page="done" className="nav-link">
+        <PageLink page="done" className={NAV_LINK}>
           Older Done
         </PageLink>
       </TopBar>
 
-      <main className="sprints">
-        <h2 className="page-title">Sprints</h2>
-        <p className="page-intro">
+      <main className={cn(MAIN, "max-w-250")}>
+        <h2 className="mt-2 mb-1 text-title font-bold">Sprints</h2>
+        <p className="mb-2 text-ink-muted">
           The closed sprints, newest first, each with the tickets that were Done when it closed.
         </p>
         {sprints.data && (
@@ -74,7 +76,7 @@ export function SprintList({
   onToggle: (number: number) => void;
   onOpen: (key: string) => void;
 }) {
-  if (closed.length === 0) return <p className="empty">No sprint has closed yet.</p>;
+  if (closed.length === 0) return <p className={EMPTY}>No sprint has closed yet.</p>;
   const newestFirst = [...closed].sort((a, b) => b.number - a.number);
   return (
     <>
@@ -128,16 +130,16 @@ function SprintSection({
       open={open}
       onOpenChange={() => onToggle(sprint.number)}
       label={`Sprint ${sprint.number}`}
-      className="sprint"
+      className="mt-3"
       heading="h3"
-      headingClassName="sprint-heading"
-      triggerClassName="sprint-head"
-      panelClassName="sprint-panel"
+      headingClassName="text-heading font-bold"
+      triggerClassName="flex w-full cursor-pointer flex-wrap items-center gap-x-3 gap-y-1 px-1 py-2 text-left"
+      panelClassName="[&>section:first-child]:mt-1"
       trigger={
         <>
-          <span className="sprint-number">Sprint {sprint.number}</span>
-          <span className="sprint-dates">{sprintDates(sprint)}</span>
-          <span className="count">{sprint.doneCount} Done</span>
+          <span className="font-strong">Sprint {sprint.number}</span>
+          <span className="font-normal text-ink-muted tabular-nums">{sprintDates(sprint)}</span>
+          <span className={COUNT}>{sprint.doneCount} Done</span>
         </>
       }
     >
@@ -146,7 +148,7 @@ function SprintSection({
       ) : tickets ? (
         <SprintTickets tickets={tickets} onOpen={onOpen} />
       ) : (
-        <p className="empty">
+        <p className={EMPTY}>
           {failed ? "The board's API didn't answer for this sprint. Close it and open it again to retry." : "Loading…"}
         </p>
       )}
@@ -156,6 +158,6 @@ function SprintSection({
 
 /** A sprint's Done tickets by project, as the older Done page lists them; an empty sprint says so. */
 export function SprintTickets({ tickets, onOpen }: { tickets: readonly Ticket[]; onOpen: (key: string) => void }) {
-  if (tickets.length === 0) return <p className="empty">No Done tickets.</p>;
+  if (tickets.length === 0) return <p className={EMPTY}>No Done tickets.</p>;
   return <DoneList tickets={tickets} tag="" onOpen={onOpen} projectHeading="h4" />;
 }

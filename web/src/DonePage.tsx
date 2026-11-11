@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { DEFAULT_DONE_DAYS, type Ticket } from "@brief-board/shared";
 import { fetchDone } from "./api";
 import { DetailPanel } from "./DetailPanel";
+import { cn } from "./lib/cn";
+import { COUNT, EMPTY, MAIN, NAV_LINK } from "./looks";
 import { PageLink, TagFilter, TopBar } from "./TopBar";
 import { day, when } from "./time";
 import { usePolling } from "./usePolling";
@@ -26,20 +28,20 @@ export function DonePage({ tag, onTag }: { tag: string; onTag: (tag: string) => 
   const close = useCallback(() => setOpenKey(null), []);
 
   return (
-    <div className="app">
+    <div>
       <TopBar polled={done}>
         <TagFilter tags={tags} value={tag} onChange={onTag} />
-        <PageLink page="board" className="nav-link">
+        <PageLink page="board" className={NAV_LINK}>
           Board
         </PageLink>
-        <PageLink page="sprints" className="nav-link">
+        <PageLink page="sprints" className={NAV_LINK}>
           Sprints
         </PageLink>
       </TopBar>
 
-      <main className="older-done">
-        <h2 className="page-title">Older Done</h2>
-        <p className="page-intro">
+      <main className={cn(MAIN, "max-w-250")}>
+        <h2 className="mt-2 mb-1 text-title font-bold">Older Done</h2>
+        <p className="mb-2 text-ink-muted">
           Tickets that reached Done more than {DEFAULT_DONE_DAYS} days ago, by project, newest first.
         </p>
         {done.data && <DoneList tickets={all} tag={tag} onOpen={setOpenKey} />}
@@ -72,7 +74,7 @@ export function DoneList({
   const tickets = tag ? all.filter((ticket) => ticket.tags.includes(tag)) : all;
   if (tickets.length === 0) {
     return (
-      <p className="empty">
+      <p className={EMPTY}>
         {all.length > 0
           ? `No ticket older than ${DEFAULT_DONE_DAYS} days carries the tag "${tag}".`
           : `Nothing older than ${DEFAULT_DONE_DAYS} days yet.`}
@@ -88,23 +90,28 @@ export function DoneList({
   return (
     <>
       {[...groups].map(([project, inProject]) => (
-        <section key={project} className="done-group" aria-label={`Project ${project}`}>
-          <Heading className="done-project">
-            {project} <span className="count">{inProject.length}</span>
+        <section key={project} className="mt-5" aria-label={`Project ${project}`}>
+          <Heading className="mb-1.5 text-body font-strong">
+            {project} <span className={COUNT}>{inProject.length}</span>
           </Heading>
-          <ul className="done-list">
+          <ul className="grid grid-cols-[max-content_minmax(0,1fr)_max-content] rounded-box bg-surface shadow-card phone:grid-cols-[minmax(0,1fr)_max-content]">
             {inProject.map((ticket) => (
-              <li key={ticket.key}>
+              <li
+                key={ticket.key}
+                className="col-span-full grid grid-cols-subgrid not-first:border-t not-first:border-line first:*:rounded-t-box last:*:rounded-b-box"
+              >
                 <button
                   type="button"
-                  className="done-row"
+                  className="col-span-full grid cursor-pointer grid-cols-subgrid items-baseline gap-x-4 gap-y-0.5 px-3 py-2 text-left hover:bg-surface-hover"
                   onClick={() => onOpen(ticket.key)}
                   aria-label={`${ticket.key}: ${ticket.title}`}
                 >
-                  <span className="done-key">{ticket.key}</span>
-                  <span className="done-title">{ticket.title}</span>
+                  <span className="text-meta whitespace-nowrap text-ink-muted tabular-nums phone:overflow-hidden phone:text-ellipsis">
+                    {ticket.key}
+                  </span>
+                  <span className="wrap-anywhere phone:col-span-full phone:row-start-2">{ticket.title}</span>
                   <time
-                    className="done-date"
+                    className="justify-self-end text-meta whitespace-nowrap text-ink-muted tabular-nums"
                     dateTime={ticket.statusChangedAt}
                     title={`Done since ${when(ticket.statusChangedAt)}`}
                   >

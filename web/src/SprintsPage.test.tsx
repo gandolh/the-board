@@ -53,10 +53,10 @@ describe("the Sprints page", () => {
 
   it("lists the closed sprints newest first, each a heading with its dates and Done count", () => {
     const html = list(closed);
-    const sections = [...html.matchAll(/<section class="sprint" aria-label="Sprint (\d+)"/g)].map((match) => match[1]);
+    const sections = [...html.matchAll(/<section[^>]*aria-label="Sprint (\d+)"/g)].map((match) => match[1]);
     expect(sections).toEqual(["3", "2", "1"]);
     expect(html).toMatch(
-      /<h3 class="sprint-heading"><button[^>]*class="sprint-head"[^>]*>.*<span class="sprint-number">Sprint 3<\/span><span class="sprint-dates">2026-11-24 to 2026-12-08<\/span><span class="count">4 Done<\/span><\/button><\/h3>/,
+      /<h3[^>]*><button[^>]*>.*Sprint 3<\/span><span[^>]*>2026-11-24 to 2026-12-08<\/span><span[^>]*>4 Done<\/span><\/button><\/h3>/,
     );
     expect(sprintDates(closed[2]!)).toBe("2026-11-10 to 2026-11-24");
   });
@@ -65,16 +65,16 @@ describe("the Sprints page", () => {
     expect(list(closed)).toContain("Loading…");
     const html = list(closed, new Set([3, 1]));
     expect(html).not.toContain("Loading…");
-    expect(html).toContain('<p class="empty">No Done tickets.</p>');
+    expect(html).toMatch(/<p[^>]*>No Done tickets\.<\/p>/);
   });
 
   it("says so when no sprint has closed", () => {
-    expect(list([])).toBe('<p class="empty">No sprint has closed yet.</p>');
+    expect(list([])).toMatch(/^<p[^>]*>No sprint has closed yet\.<\/p>$/);
   });
 
   it("lists a sprint's Done tickets by project, as older Done does, and an empty one says so", () => {
-    expect(renderToStaticMarkup(<SprintTickets tickets={[]} onOpen={() => {}} />)).toBe(
-      '<p class="empty">No Done tickets.</p>',
+    expect(renderToStaticMarkup(<SprintTickets tickets={[]} onOpen={() => {}} />)).toMatch(
+      /^<p[^>]*>No Done tickets\.<\/p>$/,
     );
     const html = renderToStaticMarkup(
       <SprintTickets
@@ -88,8 +88,8 @@ describe("the Sprints page", () => {
     );
     expect([...html.matchAll(/aria-label="Project ([^"]+)"/g)].map((match) => match[1])).toEqual(["alpha", "beta"]);
     // Under the sprint's own heading.
-    expect(html).toContain('<h4 class="done-project">alpha <span class="count">2</span></h4>');
-    expect([...html.matchAll(/class="done-row" aria-label="([^"]+)"/g)].map((match) => match[1])).toEqual([
+    expect(html).toMatch(/<h4[^>]*>alpha <span[^>]*>2<\/span><\/h4>/);
+    expect([...html.matchAll(/<li[^>]*><button[^>]*aria-label="([^"]+)"/g)].map((match) => match[1])).toEqual([
       "alpha-07: Seventh",
       "alpha-03: Third",
       "beta-01: First",
@@ -101,6 +101,6 @@ describe("the Sprints page", () => {
     const html = list(closed, new Set([1]));
     expect(html).not.toMatch(writeControls);
     // The only buttons open a sprint or a ticket.
-    for (const button of html.match(/<button[^>]*>/g) ?? []) expect(button).toMatch(/class="(sprint-head|done-row)"/);
+    for (const button of html.match(/<button[^>]*>/g) ?? []) expect(button).toMatch(/aria-expanded|aria-label=/);
   });
 });
