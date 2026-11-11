@@ -16,16 +16,26 @@ paths:
 - Native controls that are already accessible, such as the tag filter's
   `<select>`, stay native
   ([corpus/wiki/decisions-engineering.md](../../corpus/wiki/decisions-engineering.md),
-  "Base UI for the UI's widgets, styled by our own CSS").
-- Light / Dark / System, light on a first visit, is planned with the Tailwind
-  migration. Until then dark follows the system, and colours come from the
-  custom properties in `web/src/styles.css`, never a hex or `rgb()` in a
-  component.
+  "Base UI for the UI's widgets, styled with Tailwind").
+- The one stylesheet is `web/src/styles/index.css`. Tokens come only from its `@theme`
+  (`bg-surface`, `text-ink`); no arbitrary colours (`bg-[#fff]`), no `text-[13px]`: type sizes
+  come from the named scale (`text-body`, `text-meta`). A new token's name also goes in
+  `web/src/lib/cn.ts`'s lists.
+- A class chosen by data is a whole string in a `Record` (see `STATUS_BADGE`), never built by
+  concatenation: Tailwind reads source text, so a class built from `status` would produce no CSS.
+- `narrow:` and `phone:` are the two breakpoints, and they match the old `max-width: 1100px` and
+  `600px` queries, edge included. Don't use `max-sm:` or `max-lg:`: they are one pixel off.
+- Light, Dark and System (light on a first visit) set `data-theme` on `<html>`, from
+  `lib/theme.ts` and the boot script in `web/index.html`. Colour tokens are `light-dark()` pairs, so
+  both themes change when a token changes; no `dark:` class is needed. `prefers-color-scheme`
+  appears only in the stylesheet's `dark` variant.
+- `hover:` applies only where the device hovers, so nothing is revealed by hover alone.
 - Words in the UI follow [corpus/wiki/glossary.md](../../corpus/wiki/glossary.md):
   "ticket" in copy, "card" only for its drawing, "lane".
 - Components use named exports. Default exports are for config files only.
-- Tests render to static markup (`renderToStaticMarkup`), so assert on roles and
-  text, never on class names.
+- Tests render to static markup (`renderToStaticMarkup`), so assert on roles, text and
+  `data-` attributes, never on class names.
 - `web/vendor/` is Ward's generated client. Never edit it.
-- `npm run check:conventions` runs `check-base-ui` over this folder,
-  `--warn-only` until the Base UI and Tailwind migration lands.
+- `npm run check:conventions` runs `check-base-ui` over this folder, strict. ESLint's
+  `better-tailwindcss` rules (unknown classes, class order) are errors; `npx eslint --fix web/src`
+  sorts the classes.
