@@ -47,6 +47,12 @@ such as shadcn, which would bring Tailwind into a board that has none. Native
 controls that are already accessible, such as the tag filter's `<select>`,
 stay native.
 
+_2026-11-09, built 2026-11-11_. The estate's Base UI conventions apply: Base UI
+is imported only under `web/src/components/ui/` (`Dialog`, `Collapsible`,
+`RadioGroup` wrappers), the panel has a `Dialog.Title`, and the needs strip,
+a filter, is a `RadioGroup` (arrow keys, one Tab stop) with "Show all" beside
+it, not a row of toggle buttons.
+
 ## The CLI authenticates with one shared token
 _2026-11-02_. Before the board leaves the owner's machine, the API gets one
 shared secret: the server reads `BRIEF_BOARD_TOKEN`, and the CLI sends it as

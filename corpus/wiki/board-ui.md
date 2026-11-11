@@ -1,6 +1,6 @@
 ---
-summary: How the read-only board in the browser is built, as of 2026-11-10. Its GETs and where the API is, polling every 10 s and the banner when the API is down, the tag filter (in the browser, carried between pages), lanes that scroll sideways below 1100 px, cells past five cards that stop at 600px and scroll (2026-11-09), the Older Done page for Done past the board's 14 days and how a ticket is on exactly one of the two (2026-11-09), the shared header and the active sprint in it, the Sprints page of closed sprints (2026-11-10), the non-modal Base UI detail panel, and the demo seed script.
-updated: 2026-11-10
+summary: How the read-only board in the browser is built, as of 2026-11-10. Its GETs and where the API is, polling every 10 s and the banner when the API is down, the tag filter (in the browser, carried between pages), lanes that scroll sideways below 1100 px, cells past five cards that stop at 600px and scroll (2026-11-09), the Older Done page for Done past the board's 14 days and how a ticket is on exactly one of the two (2026-11-09), the shared header and the active sprint in it, the Sprints page of closed sprints (2026-11-10), the non-modal Base UI detail panel and the wrappers Base UI sits behind (2026-11-11), and the demo seed script.
+updated: 2026-11-11
 ---
 
 # Board UI
@@ -52,9 +52,20 @@ panel. Nothing on it writes: starting a sprint is the CLI's
 Since 2026-10-23 the detail panel is a non-modal Base UI `Dialog` with
 `disablePointerDismissal`, so clicking another card switches the ticket
 instead of closing the panel. `App.tsx` keys it by ticket, so focus lands on
-Close and Escape returns it to the card that opened it. The panel is named by
-`aria-label="Ticket <key>"`, not `Dialog.Title`, so its name doesn't change
-when the detail loads. Lanes are `Collapsible`s.
+Close and Escape returns it to the card that opened it. Since 2026-11-11 the
+panel's heading is the `Dialog.Title`; until the ticket loads the panel is
+named by `aria-label="Ticket <key>"`. Lanes and sprints are `Collapsible`s.
+
+Since 2026-11-11 Base UI is imported only under `web/src/components/ui/`:
+`Dialog.tsx` (`Panel` and `PanelTitle`, the side panel `DetailPanel` fills),
+`Collapsible.tsx` (the lane and the sprint, with the chevron and an optional
+`h3` around the trigger) and `RadioGroup.tsx`. The needs strip is a
+`RadioGroup` named "Needs you": one Tab stop, the arrow keys move and choose,
+nothing is chosen while the filter is off, and "Show all" beside it clears the
+choice (a chosen radio can't be unchecked, so a second click no longer clears
+it). The group is `display: contents` (`.needs-group`), so its radios lay out
+in the strip's own row. The classes are still `styles.css`'s, passed in as
+props; moving them to Tailwind is brief 18.
 
 `scripts/seed-demo.ts` (plain `node`) fills a scratch board with three
 made-up projects. It refuses a board holding any other project. No one ticket

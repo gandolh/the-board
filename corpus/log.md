@@ -549,3 +549,11 @@ convention checkers, both `--warn-only`. 33 `!` in source fixed by narrowing,
 the commands and the area rules; the hard rules moved out of this corpus's
 CLAUDE.md. `wiki/decisions.md` was split: the CLI, token, deploy, Base UI and
 house-style entries are in `wiki/decisions-engineering.md`. Not deployed.
+
+## [2026-11-11] done | Brief 17, Base UI by the conventions
+
+[Brief 17](briefs/done/17-base-ui-by-the-conventions.md): Base UI is imported only under `web/src/components/ui/`.
+`Panel` and `PanelTitle` (the detail panel, now with a `Dialog.Title`), `Collapsible` (lanes, and the sprints on the
+Sprints page, which the audit missed) and `RadioGroup`, which the needs strip became: one Tab stop, arrow keys, "Show
+all" clears. `check-base-ui` strict reads 0 except rule 5 (the stylesheet's place), left for brief 18, so it stays
+`--warn-only`. No visible change at 1280 and 390 px, light and dark. Not deployed.

@@ -131,3 +131,16 @@ One commit per numbered step. After each, `npm run check` passes, with `check-ba
 
 - Brief 18 styles `web/src/components/ui/` with Tailwind on the parts, and removes the CSS rules this brief renamed. It also builds the theme switch.
 - The skills library's `check-base-ui` heuristic for rule 9 may flag `Dialog.Close` around an icon. That is a false positive, to report to the skill rather than to except here.
+
+## Outcome (2026-11-11)
+
+Built in three code commits (`1967b32`, `6baba96`, `2447802`), not deployed.
+
+- **Wrappers** in `web/src/components/ui/`: `Dialog.tsx` (`Panel`, `PanelTitle`), `Collapsible.tsx` (the lane and the sprint) and `RadioGroup.tsx` (the needs strip). The panel's heading is the `Dialog.Title`; `aria-label="Ticket <key>"` names the panel until it loads; Close keeps `aria-label="Close"`.
+- **Not in the audit:** `SprintsPage.tsx` is a third Base UI importer (a `Collapsible`, with its trigger inside an `h3`). It moved behind the same wrapper, which takes `heading="h3"`. `Panel` owns its close-button ref, so `initialFocus` is not a prop.
+- **Needs strip:** `<div class="needs">` holding a `role=radiogroup` named "Needs you" and the "Show all" button. The old `<nav>` landmark is gone, since the strip is a filter. The group is `display: contents` (`.needs-group`), because a flex group of its own re-wrapped the strip at 390 px. `.needs-kind[aria-pressed]` became `[data-checked]`.
+- **check-base-ui strict:** rules 1, 2, 3, 9, 10, 11, 12 at 0. Rule 5 reports 1 (`web/src/styles.css`, not `styles/index.css`), left for brief 18, so the checker stays `--warn-only`. Rules 4, 6 and 7 print no findings in this checker version.
+- **Checks:** `npm run check` exit 0 (319 tests, 19 files); `bash corpus/lint.sh` clean.
+- **Screenshots** (made-up board, scratch database, 1280 and 390 px, light and dark; board, collapsed lane, strip with a kind chosen, panel): the only pixels that differ from before are the header clock and the cards' "running 3m" text. The board had no lane with more than five Done tickets: Done tickets in the sprint before the active one don't show on the board.
+- **Keyboard walk** (Playwright against Vite): the panel is unchanged (focus on Close on open, Escape closes and returns focus to the card, a click on another card switches the ticket, Close returns focus to the card). The strip: one Tab stop (was one per count), ArrowRight and ArrowDown move and choose, a chosen count stays chosen on a click and "Show all" clears it, nothing is checked when the filter is off.
+- **For the skill:** the `Dialog` reference's wrapper is modal with a footer; the board's panel is non-modal with no form, so it got its own small wrapper. `RadioGroup` with nothing chosen needs `value=""` to stay controlled. A strip whose radios sit in a row with a label and separators wants `prefix` and `separator` props.

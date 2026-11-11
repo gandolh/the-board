@@ -155,9 +155,10 @@ brief.
 deployed; it ran before 19, whose move map gains a `sprints` feature.
 [16, the house style and the quality harness](../briefs/done/16-the-house-style-and-the-quality-harness.md)
 is built (2026-11-11), not deployed: vendored house-style 1.1.0, Prettier at 120, typed lint, knip,
-dependency-cruiser, `npm run check`. Filed 2026-11-10 from the owner's calls of 2026-11-09, in run order,
-none built: [17, Base UI by the conventions](../briefs/todo/17-base-ui-by-the-conventions.md),
-[18, the web app to Tailwind](../briefs/todo/18-the-web-app-to-tailwind.md) and
+dependency-cruiser, `npm run check`. Filed 2026-11-10 from the owner's calls of 2026-11-09, in run order:
+[17, Base UI by the conventions](../briefs/done/17-base-ui-by-the-conventions.md)
+is built (2026-11-11), not deployed: the wrappers in `web/src/components/ui/`, the needs strip a
+`RadioGroup`. Not built: [18, the web app to Tailwind](../briefs/todo/18-the-web-app-to-tailwind.md) and
 [19, the server in the code structure](../briefs/todo/19-the-server-in-the-code-structure.md).
 No bump brief: `@base-ui/react` is pinned at 1.9.0 and the lockfile resolves it.
 The rest of this list is built: [08, a ticket knows the run that works it](../briefs/done/08-a-ticket-knows-the-run-that-works-it.md),

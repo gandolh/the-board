@@ -9,10 +9,10 @@ paths:
   [corpus/wiki/board-ui.md](../../corpus/wiki/board-ui.md) for UI work.
 - The board is read-only ([corpus/wiki/decisions.md](../../corpus/wiki/decisions.md),
   "The UI is read-only"): no control that writes to the API.
-- Base UI stays in the files that use it today (`Board.tsx`, `DetailPanel.tsx`,
-  `SprintsPage.tsx`) until it moves behind `web/src/components/ui/` wrappers. A
+- Base UI is imported only under `web/src/components/ui/` (`Dialog`,
+  `Collapsible`, `RadioGroup`); everything else uses those wrappers. A
   trigger around one of our components uses `render`, never a wrapping `span` or
-  `div`.
+  `div`. A strip that filters a list is a `RadioGroup`.
 - Native controls that are already accessible, such as the tag filter's
   `<select>`, stay native
   ([corpus/wiki/decisions-engineering.md](../../corpus/wiki/decisions-engineering.md),
