@@ -343,8 +343,11 @@ export const ticketDetailResponseSchema = z.object({
   runs: z.array(runWithHoldsSchema),
   /** Every question on the ticket, by number. */
   questions: z.array(questionSchema),
-  /** Every tag change, oldest first. A board from before tags could change sends none, hence the default. */
-  tagEvents: z.array(tagEventSchema).default([]),
+  /**
+   * Every tag change, oldest first. Optional only so a client reading a board
+   * deployed before tags could change still parses; this server always sends it.
+   */
+  tagEvents: z.array(tagEventSchema).optional(),
 });
 export type TicketDetailResponse = z.infer<typeof ticketDetailResponseSchema>;
 

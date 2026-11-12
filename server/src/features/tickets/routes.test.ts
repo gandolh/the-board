@@ -471,7 +471,7 @@ describe("tags on an existing ticket", () => {
     await tags("p-01", { add: ["ui"] });
     const again = (await tags("p-01", { add: ["ui"], remove: ["api"] })).json<TagsResponse>();
     expect(again).toMatchObject({ added: [], removed: [], ticket: { tags: ["ui"] } });
-    const { tagEvents } = await detail("p-01");
+    const { tagEvents = [] } = await detail("p-01");
     expect(tagEvents.map((event) => [event.tag, event.change, event.author])).toEqual([["ui", "added", "agent"]]);
   });
 

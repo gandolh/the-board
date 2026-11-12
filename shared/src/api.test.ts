@@ -9,6 +9,7 @@ import {
   runSchema,
   startRequestSchema,
   syncRequestSchema,
+  tagsRequestSchema,
   ticketSchema,
   upsertTicketRequestSchema,
 } from "./api.js";
@@ -73,10 +74,18 @@ describe("the API contract", () => {
     expect(boardQuerySchema.parse({ doneDays: "30", tag: "ui" })).toEqual({ doneDays: 30, tag: "ui" });
   });
 
-  it("defaults a ticket's tags to none", () => {
-    expect(
-      upsertTicketRequestSchema.parse({ title: "T", summary: "", briefPath: "corpus/briefs/todo/01-t.md" }).tags,
-    ).toEqual([]);
+  it("leaves a ticket's tags out unless the upsert names them, so an update keeps them", () => {
+    const brief = { title: "T", summary: "", briefPath: "corpus/briefs/todo/01-t.md" };
+    expect(upsertTicketRequestSchema.parse(brief).tags).toBeUndefined();
+    expect(upsertTicketRequestSchema.parse({ ...brief, tags: [] }).tags).toEqual([]);
+  });
+
+  it("takes a tag change: lower-case hyphenated adds, at least one tag, never the same tag both ways", () => {
+    expect(tagsRequestSchema.parse({ add: ["server-structure"] })).toEqual({ add: ["server-structure"], remove: [] });
+    expect(tagsRequestSchema.parse({ remove: ["Odd Tag"] })).toEqual({ add: [], remove: ["Odd Tag"] });
+    for (const bad of [{}, { add: ["Server"] }, { add: ["a b"] }, { add: ["x"], remove: ["x"] }]) {
+      expect(tagsRequestSchema.safeParse(bad).success, JSON.stringify(bad)).toBe(false);
+    }
   });
 
   it("rejects a move to a status that does not exist", () => {
