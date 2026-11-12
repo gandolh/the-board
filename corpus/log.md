@@ -590,3 +590,12 @@ without `--tag` now keeps a ticket's tags. A tag change leaves the open run alon
 unchanged. [wiki/tags.md](wiki/tags.md) holds the taxonomy (one kind per ticket, `skill` added for the skills library,
 optional areas), and `scripts/tag-tickets.mjs` plans a kind for each active-sprint ticket, writing only with `--apply`.
 Not deployed; the linked global CLI already has the commands.
+
+## [2026-11-12] done | Brief 23, tags reach closed sprints and Backlog
+
+[Brief 23](briefs/done/23-tags-reach-closed-sprints-and-backlog.md), the owner's answer to brief 22's question: a tag
+change is the one write a closed sprint's ticket and a Backlog ticket take ("tags are pretty cool to understand how
+they were grouped by features"); every other write keeps 409 `sprint_closed` or 400 `sync_owned`. Sync never sets or
+clears a tag; a promoted todo's ticket still goes with its tags. Revisits in [wiki/decisions.md](wiki/decisions.md)
+(the frozen sprint and the sync-owned Backlog). `scripts/tag-tickets.mjs` covers every sprint and Backlog: 274 tickets
+planned on 2026-11-12. Not deployed; ships with brief 22.
