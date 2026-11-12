@@ -1,5 +1,5 @@
 ---
-summary: Which tags a ticket carries, as agreed 2026-11-12, and how tags change. One kind tag per ticket (feature, fix, redesign, base-ui, tailwind, server-structure, harness, deps, tracker, docs, research, infra, skill) and optional area tags (web, server, corpus, deploy, security), lower-case and hyphenated; create --tag, tag, untag and list --tag; the tags route, its tag events and refusals, why it leaves the run alone, what the CLI says to an older board; the script that tagged the existing tickets.
+summary: Which tags a ticket carries, as agreed 2026-11-12, and how tags change. One kind tag per ticket (feature, fix, redesign, base-ui, tailwind, server-structure, harness, deps, tracker, docs, research, infra, skill) and optional area tags (web, server, corpus, deploy, security), lower-case and hyphenated; create --tag, tag, untag and list --tag; the tags route, its tag events and refusals, why it leaves the run alone, what the CLI says to an older board; the script that tags every existing ticket; since 2026-11-12 tags reach Backlog and closed sprints.
 updated: 2026-11-12
 ---
 
@@ -48,9 +48,12 @@ use, whatever its kind.
 - Later: `brief-board tag <ticket> <tag>...` and `brief-board untag <ticket> <tag>...`.
   Both are idempotent, and the ticket's History records each real change with
   its author. Filing a ticket again without `--tag` keeps its tags.
-- A Backlog ticket belongs to sync and takes no tags; a closed sprint's tickets
-  are frozen and keep the tags they had ([decisions.md](decisions.md),
-  "Sprints, and only the CLI starts one").
+- Tags reach every ticket (2026-11-12, the owner): a Backlog ticket, though
+  sync owns the rest of it, and a closed sprint's Done ticket, though nothing
+  else writes to it ([decisions.md](decisions.md), both revisits). Sync never
+  sets or clears a tag. A promoted todo's ticket goes with its tags, since the
+  corpus deletes the todo's file and nothing links it to the brief's ticket:
+  tag the brief when filing it.
 - `brief-board list --tag <tag>` and the board's tag filter find them.
 
 ## How it is built
@@ -61,9 +64,9 @@ use, whatever its kind.
   `Store.changeTags`). Each change is a row in `tag_events` (migration 8 in
   [db.ts](../../server/src/db.ts)), and the detail reply carries `tagEvents`,
   optional in the schema so a client reading an older board still parses.
-  It refuses a Backlog ticket (400 `sync_owned`), a closed sprint's (409
-  `sprint_closed`), an unknown one (404) and a 21st tag (400
-  `too_many_tags`). Unlike every other write it leaves the open run as it
+  It refuses an unknown ticket (404) and a 21st tag (400 `too_many_tags`).
+  It is the one write a Backlog ticket and a closed sprint's ticket take
+  (2026-11-12), and, unlike every other write, it leaves the open run as it
   was, so a pass that tags many tickets can't make a stale run look fresh.
 - **PUT:** naming `tags` replaces them, as before; leaving them out keeps
   them on an update. Old clients always name them, so they behave as before.
@@ -77,11 +80,15 @@ use, whatever its kind.
 
 ## Tagging the existing tickets
 
-[`scripts/tag-tickets.mjs`](../../scripts/tag-tickets.mjs) reads the active
-sprint's tickets from the board `brief-board` reaches and picks a kind for
-each from its project, title and brief file name, by the table above. It skips
-Backlog and any ticket that already carries a kind. It prints the plan as a
+[`scripts/tag-tickets.mjs`](../../scripts/tag-tickets.mjs) reads every
+sprint's tickets (Backlog included) from the board `brief-board` reaches and
+picks a kind for each from its project, title and brief file name, by the
+table above, with two project defaults: the skills library's are `skill`, and
+the deploy repo's (`vps-deploy`) `infra`. It skips any ticket that already
+carries a kind. It prints the plan as a
 table and writes nothing unless given `--apply`; the rows marked `default`
-got `feature` because no rule matched, so read them before applying. Run once
+got `feature` because no rule matched, so read them before applying. On
+2026-11-12 the live dry run planned 274 (132 in sprint 2, 12 of them in
+Backlog, and 142 in sprint 1), 102 of them by default. Run once
 by the owner after the deploy of 2026-11-12's tags work; agents tag new
 tickets as they file them.

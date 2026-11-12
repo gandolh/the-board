@@ -1,6 +1,6 @@
 ---
-summary: Locked calls for brief-board's board model, each with date, rejected alternative and reason. One ticket per brief keyed <project>-<NN> with no hand-made tickets (revisited 2026-11-03: open todos get sync-owned tickets in a Backlog column; 2026-11-07: so do briefs in blocked/); Blocked only by agreement with the owner, apart from a blocked/ folder's Blocked by; which moves are allowed and which need a message; six columns with Ready for test and Ready for deploy as the owner's; the corpus wins over the board (revisited 2026-11-06: sync waits for a fresh run); a read-only UI; one project tag per ticket decides its lane; sync only by hand; a corpus nested deeper names itself, as churchix and scoala-ramna-theme do (2026-11-03); sprints, one active, the CLI starting the next on the owner's ask (2026-11-10). The CLI, the token, the VPS, Base UI and the house style are in decisions-engineering.md. Read before proposing to change any of these.
-updated: 2026-11-11
+summary: Locked calls for brief-board's board model, each with date, rejected alternative and reason. One ticket per brief keyed <project>-<NN> with no hand-made tickets (revisited 2026-11-03: open todos get sync-owned tickets in a Backlog column; 2026-11-07: so do briefs in blocked/); Blocked only by agreement with the owner, apart from a blocked/ folder's Blocked by; which moves are allowed and which need a message; six columns with Ready for test and Ready for deploy as the owner's; the corpus wins over the board (revisited 2026-11-06: sync waits for a fresh run); a read-only UI; one project tag per ticket decides its lane; sync only by hand; a corpus nested deeper names itself, as churchix and scoala-ramna-theme do (2026-11-03); sprints, one active, the CLI starting the next on the owner's ask (2026-11-10); tags the one write a closed sprint's ticket or a Backlog ticket takes (2026-11-12). The CLI, the token, the VPS, Base UI and the house style are in decisions-engineering.md. Read before proposing to change any of these.
+updated: 2026-11-12
 ---
 
 # Decisions
@@ -36,6 +36,12 @@ sync moves it to To Do when the brief is back in `todo/`. Rejected: To Do
 with a badge and a refusing `start` (a new refusal, on a card where agents
 look for work), sync setting the Blocked status (it changes what Blocked means
 and fills the needs list), an eighth column (a status, move rows, a lane).
+
+**Revisited 2026-11-12** (brief 23), the owner's answer: an agent may tag and
+untag a Backlog ticket. Tags only group tickets, and sync never sets or clears
+one, so they can't fight. Every other write stays sync's (400 `sync_owned`). A
+promoted todo's ticket still goes with its tags: nothing links it to the
+brief's. Rejected: Backlog refusing tags too, which left the todos ungrouped.
 
 ## Blocked happens by agreement, so nothing notifies the owner
 _2026-10-08_. An agent asks the owner before it moves a ticket to Blocked. Most
@@ -135,7 +141,7 @@ both off the board, which keeps their briefs invisible there.
 ## Sprints, and only the CLI starts one
 _2026-11-10_, the owner's call, as Jira and Linear work. Every ticket is in one
 numbered sprint; the board shows the one active sprint, and a closed sprint's
-Done tickets are frozen (409 `sprint_closed`). `brief-board sprint start <N>`, a
+Done tickets are frozen (409 `sprint_closed`), but for their tags (below). `brief-board sprint start <N>`, a
 token write run only on the owner's ask like sync, closes it and moves the rest
 into N, the active number plus one (else 409 `sprint_changed`); the UI only
 reads. A deploy or a migration never starts a sprint (the owner, 2026-11-12): the
@@ -143,3 +149,9 @@ one that did was the sprints migration itself, which closed Sprint 1 and opened
 Sprint 2 on 2026-11-11, once. A later migration that touches sprints only reshapes
 rows. Rejected: auto-archiving Done after N days (work moves by age, not by a
 call); a sprint per project (no board-wide number); a column, no table (no dates).
+
+**Revisited 2026-11-12** (brief 23), the owner: a tag change is the one write a
+closed sprint's ticket takes, because "tags are pretty cool to understand how
+they were grouped by features", and the old work is most of the board. It
+changes no column of the ticket, only its tags and their events. Rejected:
+freezing tags too (brief 22's first build), which left Sprint 1 ungrouped.

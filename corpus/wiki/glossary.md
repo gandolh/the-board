@@ -103,7 +103,8 @@ _Avoid_: current, open (for a sprint)
 
 **Closed** (of a sprint):
 A sprint that has ended: it keeps the tickets that were Done when it closed,
-frozen, and no write reaches them. Listed on the Sprints page.
+frozen: no write reaches them but a tag change (2026-11-12). Listed on the
+Sprints page.
 _Avoid_: archived, finished, past; Done (that is a status)
 
 **Stale** (of a run):
