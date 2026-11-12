@@ -117,3 +117,49 @@ describe("sync after a sprint start", () => {
     expect(everything("p:kept")).toEqual(before);
   });
 });
+
+describe("sync and tags", () => {
+  const tag = (key: string, ...add: string[]) =>
+    store.changeTags(key, "p", { add, remove: [], author: "ana", max: 20 });
+  const tags = (key: string) => store.getTicket(key)?.tags;
+
+  it("never sets or clears a tag: an updated brief, a todo's ticket, a blocked brief back in todo/, a brief closed by sync", () => {
+    sync([brief(1), brief(2, { state: "blocked", blockedBy: "a stronger machine" }), brief(3)], [todo("night-mode")]);
+    tag("p-01", "feature");
+    tag("p-02", "infra");
+    tag("p-03", "fix");
+    tag("p:night-mode", "redesign");
+    expect(store.getTicket("p-02")?.status).toBe("backlog");
+
+    const result = sync(
+      [brief(1, { title: "Renamed", summary: "New" }), brief(2), brief(3, { state: "done" })],
+      [{ ...todo("night-mode"), title: "Night mode, renamed" }],
+    );
+    expect(result.updated).toBeGreaterThan(0);
+    expect(store.getTicket("p-02")?.status).toBe("todo");
+    expect(store.getTicket("p-03")?.status).toBe("done");
+    expect(store.getTicket("p:night-mode")?.title).toBe("Night mode, renamed");
+    expect([tags("p-01"), tags("p-02"), tags("p-03"), tags("p:night-mode")]).toEqual([
+      ["feature"],
+      ["infra"],
+      ["fix"],
+      ["redesign"],
+    ]);
+  });
+
+  it("keeps the tags of a closed sprint's ticket, which it never writes", () => {
+    closedSprintWithDone();
+    tag("p-01", "feature");
+    sync([brief(1, { state: "done", title: "Renamed" }), brief(2)]);
+    expect(tags("p-01")).toEqual(["feature"]);
+  });
+
+  it("deletes a promoted todo's ticket with its tags: nothing links it to the brief's new ticket", () => {
+    sync([], [todo("night-mode")]);
+    tag("p:night-mode", "feature");
+    sync([brief(4)], []);
+    expect(store.getTicket("p:night-mode")).toBeNull();
+    expect(tags("p-04")).toEqual([]);
+    expect(db.prepare("SELECT COUNT(*) FROM tag_events WHERE ticket_key = 'p:night-mode'").pluck().get()).toBe(0);
+  });
+});

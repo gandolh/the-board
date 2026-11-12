@@ -511,22 +511,54 @@ describe("tags on an existing ticket", () => {
     expect((await tags("p-01", { add: ["a", "b"], remove: ["t0"] })).statusCode).toBe(200);
   });
 
-  it("answers an unknown ticket 404, a bad key 400, and a Backlog ticket sync_owned", async () => {
+  it("answers an unknown ticket 404 and a bad key 400", async () => {
     expect((await tags("p-09", { add: ["ui"] })).json<ErrorBody>().code).toBe("not_found");
     expect((await tags("not a key", { add: ["ui"] })).json<ErrorBody>().code).toBe("invalid_key");
+  });
+
+  it("tags a Backlog ticket, a todo's and a blocked brief's, while every other write on them stays sync_owned", async () => {
     await call({
       method: "POST",
       url: "/api/sync",
       payload: {
         projects: [
-          { project: "p", briefs: [], todos: [{ slug: "x", title: "X", summary: "", path: "corpus/todos/x.md" }] },
+          {
+            project: "p",
+            briefs: [
+              {
+                number: 4,
+                title: "Blocked",
+                summary: "",
+                briefPath: "corpus/briefs/blocked/04-x.md",
+                state: "blocked",
+                blockedBy: "a stronger machine",
+              },
+            ],
+            todos: [{ slug: "x", title: "X", summary: "", path: "corpus/todos/x.md" }],
+          },
         ],
       },
     });
-    const res = await tags("p:x", { add: ["ui"] });
-    expect(res.statusCode).toBe(400);
-    expect(res.json<ErrorBody>().code).toBe("sync_owned");
-    expect((await detail("p:x")).ticket.tags).toEqual([]);
+    for (const key of ["p:x", "p-04"]) {
+      expect((await detail(key)).ticket.status, key).toBe("backlog");
+      const added = await tags(key, { add: ["fix", "security"], author: "owner" });
+      expect(added.statusCode, key).toBe(200);
+      expect(added.json<TagsResponse>().ticket.tags).toEqual(["fix", "security"]);
+      expect((await tags(key, { remove: ["security"] })).json<TagsResponse>().removed).toEqual(["security"]);
+      const before = await detail(key);
+      for (const write of [
+        { method: "POST" as const, url: `/api/tickets/${key}/moves`, payload: { to: "todo" } },
+        { method: "POST" as const, url: `/api/tickets/${key}/start`, payload: {} },
+        { method: "POST" as const, url: `/api/tickets/${key}/comments`, payload: { body: "a note" } },
+      ]) {
+        const res = await call(write);
+        expect(res.statusCode, `${key} ${write.url}`).toBe(400);
+        expect(res.json<ErrorBody>().code).toBe("sync_owned");
+      }
+      expect(await detail(key)).toEqual(before);
+    }
+    const upsert = await put("p:x", { title: "Mine now" });
+    expect(upsert.json<ErrorBody>().code).toBe("sync_owned");
   });
 
   it("leaves the open run as it was, so a tagging pass cannot make a stale run look fresh", async () => {

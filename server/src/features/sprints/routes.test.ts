@@ -144,7 +144,6 @@ describe("sprints", () => {
       { method: "POST", url: "/api/tickets/p-01/hold", payload: { kind: "port", value: "5173" } },
       { method: "POST", url: "/api/tickets/p-01/drop", payload: { kind: "port", value: "5173" } },
       { method: "POST", url: "/api/tickets/p-01/questions/1/answer", payload: { answer: "yes" } },
-      { method: "POST", url: "/api/tickets/p-01/tags", payload: { add: ["ui"] } },
     ];
     for (const write of writes) {
       const res = await call(write);
@@ -155,5 +154,15 @@ describe("sprints", () => {
       });
     }
     expect(await detail("p-01")).toEqual(before);
+
+    // Tags are the exception: they only group tickets, and nothing else on the ticket changes.
+    const tagged = await call({ method: "POST", url: "/api/tickets/p-01/tags", payload: { add: ["feature"] } });
+    expect(tagged.statusCode).toBe(200);
+    const after = await detail("p-01");
+    expect(after.ticket).toEqual({ ...before.ticket, tags: ["feature"] });
+    expect(after.tagEvents?.map((event) => [event.tag, event.change])).toEqual([["feature", "added"]]);
+    expect(
+      (await call({ method: "POST", url: "/api/tickets/p-01/tags", payload: { remove: ["feature"] } })).statusCode,
+    ).toBe(200);
   });
 });

@@ -148,7 +148,6 @@ describe("a closed sprint", () => {
       ["comment", () => store.addComment("p-07", { author: "ana", body: "late", role: null, move: null })],
       ["upsert", () => store.updateTicket("p-07", { title: "Renamed" })],
       ["tags", () => store.setTags("p-07", "p", ["ui"])],
-      ["tag", () => store.changeTags("p-07", "p", { add: ["ux"], remove: ["ui"], author: "ana", max: 20 })],
       ["touch", () => store.touchRun("p-07")],
       ["status", () => store.setStatus("p-07", "done", "todo", "sync", "sync")],
       ["end run", () => store.endRun("p-07", "stale")],
@@ -160,6 +159,25 @@ describe("a closed sprint", () => {
     }
     expect(row("p-07")).toEqual(frozen);
     expect(store.questions("p-07").filter((question) => question.answeredAt === null)).toHaveLength(1);
+  });
+
+  it("takes a tag change, the one write it takes, and leaves the rest of the ticket as it was", () => {
+    aBoard();
+    store.startSprint(3, store.today());
+    const frozen = row("p-07");
+    expect(store.changeTags("p-07", "p", { add: ["feature"], remove: [], author: "owner", max: 20 })).toEqual({
+      added: ["feature"],
+      removed: [],
+    });
+    expect(store.changeTags("p-07", "p", { add: [], remove: ["feature"], author: "owner", max: 20 })).toEqual({
+      added: [],
+      removed: ["feature"],
+    });
+    expect(row("p-07")).toEqual(frozen);
+    expect(store.tagEvents("p-07").map((event) => [event.tag, event.change])).toEqual([
+      ["feature", "added"],
+      ["feature", "removed"],
+    ]);
   });
 
   it("leaves the board, older Done, needs, runs and questions, and is still found by its key", () => {

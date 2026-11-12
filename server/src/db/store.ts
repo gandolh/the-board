@@ -39,8 +39,9 @@ import type { Db } from "../db.js";
  * Every ticket sits in one sprint. The reads the board, the CLI and the owner
  * work from (the board, older Done, needs, open runs, open questions) cover
  * the active sprint only; a ticket by its key is found in any. A closed
- * sprint's tickets are frozen: every write on one throws `SprintClosedError`,
- * from one check (`writable`), which the API answers as 409 `sprint_closed`.
+ * sprint's tickets are frozen: every write on one but a tag change throws
+ * `SprintClosedError`, from one check (`writable`), which the API answers as
+ * 409 `sprint_closed`.
  */
 
 /** The active sprint's number, as SQL: the one sprint with no end date. */
@@ -649,13 +650,16 @@ export class Store {
    * a tag. It leaves the open run as it was, so a pass that tags many tickets
    * cannot make a stale run look fresh. Null when it would leave the ticket
    * with more than `max` tags, which changes nothing.
+   *
+   * The one write a closed sprint's ticket takes: tags only group tickets,
+   * and the owner wants the old work grouped too. It changes no column of the
+   * ticket, so the frozen record stays as it was.
    */
   changeTags(
     key: string,
     project: string,
     change: { add: readonly string[]; remove: readonly string[]; author: string; max: number },
   ): { added: string[]; removed: string[] } | null {
-    this.writable(key);
     const had = new Set(this.tags(key));
     const added = [...new Set(change.add)].filter((tag) => tag !== project && !had.has(tag));
     const removed = [...new Set(change.remove)].filter((tag) => had.has(tag));

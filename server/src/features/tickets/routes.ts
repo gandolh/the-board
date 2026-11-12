@@ -180,7 +180,7 @@ export const ticketRoutes: FastifyPluginAsyncZod<TicketOptions> = async (app, { 
       const fields = request.body;
       const ticket = store.getTicket(key);
       if (!ticket) throw notFound(key);
-      if (ticket.status === "backlog") throw syncOwned(key, "changes its tags");
+      // Tags are the one write a Backlog ticket (sync's) and a closed sprint's ticket take: sync never sets them.
       const changed = db.transaction(() =>
         store.changeTags(key, ticket.project, {
           add: fields.add,
