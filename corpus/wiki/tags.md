@@ -20,12 +20,12 @@ What the work is. Pick the first that fits, top to bottom.
 | --- | --- |
 | `tracker` | A brief that tracks the same work across repos ("... (tracker)"), or an estate run's board. |
 | `deps` | A dependency bump: "Base UI 1.9.0", "@fastify/static moves to 10.1.9". |
+| `harness` | The house style and the quality harness (lint, format, conventions, checks), the skills library's own included. |
 | `skill` | Work on the skills library (`my-personal-skills`): a skill, a hook, a review of the library. |
 | `redesign` | A visual redesign, such as "A redesign with Hallmark". |
 | `base-ui` | Moving a web app's widgets onto Base UI by the conventions. |
 | `tailwind` | Moving a web app's styles to Tailwind. |
 | `server-structure` | A server moved into the house code structure. |
-| `harness` | The house style and the quality harness (lint, format, conventions, checks). |
 | `infra` | A stack, a container, the VPS or the deploy itself. |
 | `docs` | A README, a docs site, guides. |
 | `research` | A study that ends in findings or briefs, not shipped code. |
@@ -33,7 +33,7 @@ What the work is. Pick the first that fits, top to bottom.
 | `feature` | New behaviour for the people who use the app. The default when nothing else fits. |
 
 `skill` is the one kind beyond the owner's first list: the skills library's
-tickets (17 of the board's 133 on 2026-11-12) are neither features of an
+tickets (16 of sprint 2's 133 on 2026-11-12) are neither features of an
 app nor research, and `feature` would hide them.
 
 ## Area: optional, any number

@@ -30,8 +30,9 @@ import type { Db } from "../db.js";
  * `sync.ts` changes a status without the move table.
  *
  * A run opens with any move into In Progress and ends with any move out of
- * it; `release` and sync end it too. Whether an open run is stale is worked
- * out here on every read, from its last write and `staleMs`. A run's holds
+ * it; `release` and sync end it too. Every write on its ticket but a tag
+ * change keeps it fresh. Whether an open run is stale is worked out here on
+ * every read, from its last write and `staleMs`. A run's holds
  * belong to it: when it ends, what it still holds stays on it as leftovers,
  * and the next run starts with none.
  *
