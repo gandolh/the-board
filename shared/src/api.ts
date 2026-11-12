@@ -180,6 +180,17 @@ export const historyEventSchema = z.object({
 });
 export type HistoryEvent = z.infer<typeof historyEventSchema>;
 
+export const TAG_CHANGES = ["added", "removed"] as const;
+
+/** One tag added to a ticket or taken off it, by `tag` or `untag`. A status change is a `HistoryEvent`. */
+export const tagEventSchema = z.object({
+  tag: z.string(),
+  change: z.enum(TAG_CHANGES),
+  author: z.string(),
+  at: timestamp,
+});
+export type TagEvent = z.infer<typeof tagEventSchema>;
+
 /** Every error body: a code a client can branch on, a sentence it can print. */
 export const moveRuleSchema = z.object({
   from: statusSchema,
@@ -332,17 +343,23 @@ export const ticketDetailResponseSchema = z.object({
   runs: z.array(runWithHoldsSchema),
   /** Every question on the ticket, by number. */
   questions: z.array(questionSchema),
+  /** Every tag change, oldest first. A board from before tags could change sends none, hence the default. */
+  tagEvents: z.array(tagEventSchema).default([]),
 });
 export type TicketDetailResponse = z.infer<typeof ticketDetailResponseSchema>;
 
 // --- PUT /api/tickets/:key -----------------------------------------------------
 
-/** Create the ticket, or update it if the key exists: calling twice makes no duplicate. */
+/**
+ * Create the ticket, or update it if the key exists: calling twice makes no
+ * duplicate. `tags` replaces every tag; left out, an update keeps them and a
+ * new ticket has none.
+ */
 export const upsertTicketRequestSchema = z.object({
   title: z.string().trim().min(1).max(300),
   summary: z.string().max(2000),
   briefPath: z.string().min(1).max(500),
-  tags: z.array(z.string().trim().min(1).max(50)).max(20).default([]),
+  tags: z.array(z.string().trim().min(1).max(50)).max(20).optional(),
 });
 export type UpsertTicketRequest = z.input<typeof upsertTicketRequestSchema>;
 
@@ -411,6 +428,50 @@ export const startResponseSchema = z.object({
   questions: z.array(questionSchema),
 });
 export type StartResponse = z.infer<typeof startResponseSchema>;
+
+// --- POST /api/tickets/:key/tags -------------------------------------------------
+
+/** A tag `tag` may add: lower-case words joined by hyphens, like `server-structure`. */
+export const TAG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+/** The most tags a ticket carries. */
+export const MAX_TAGS = 20;
+
+const tagToAdd = z
+  .string()
+  .trim()
+  .max(50)
+  .regex(TAG_PATTERN, { error: "a tag is lower-case words joined by hyphens, like server-structure" });
+const tagToRemove = z.string().trim().min(1).max(50);
+
+/**
+ * `tag` and `untag`: add tags to a ticket and take tags off it. Adding one it
+ * carries, or removing one it lacks, changes nothing and records nothing. The
+ * project's name is never a tag, so adding it changes nothing either.
+ */
+export const tagsRequestSchema = z
+  .object({
+    add: z.array(tagToAdd).max(MAX_TAGS).default([]),
+    remove: z.array(tagToRemove).max(MAX_TAGS).default([]),
+    author,
+  })
+  .refine((body) => body.add.length + body.remove.length > 0, { error: "name at least one tag" })
+  .refine((body) => !body.add.some((tag) => body.remove.includes(tag)), {
+    error: "a tag cannot be added and removed at once",
+  });
+export type TagsRequest = z.input<typeof tagsRequestSchema>;
+
+export const tagsResponseSchema = z.object({
+  ticket: ticketSchema,
+  /** The tags this call added: the ones the ticket did not carry yet. */
+  added: z.array(z.string()),
+  /** The tags this call took off: the ones the ticket carried. */
+  removed: z.array(z.string()),
+});
+export type TagsResponse = z.infer<typeof tagsResponseSchema>;
+
+/** The code of an add that would leave a ticket with more than `MAX_TAGS` tags. */
+export const TOO_MANY_TAGS = "too_many_tags";
 
 // --- POST /api/tickets/:key/release --------------------------------------------
 

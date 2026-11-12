@@ -10,7 +10,11 @@ import {
   startRequestSchema,
   startResponseSchema,
   STATUS_LABELS,
+  MAX_TAGS,
+  tagsRequestSchema,
+  tagsResponseSchema,
   ticketDetailResponseSchema,
+  TOO_MANY_TAGS,
   ticketParamsSchema,
   upsertTicketRequestSchema,
   upsertTicketResponseSchema,
@@ -29,7 +33,7 @@ interface TicketOptions {
 
 const config = { badParams: BAD_TICKET_KEY };
 
-/** A ticket by its key: read it, file it, move it, start it, release it, comment on it. */
+/** A ticket by its key: read it, file it, move it, start it, release it, tag it, comment on it. */
 export const ticketRoutes: FastifyPluginAsyncZod<TicketOptions> = async (app, { db, store }) => {
   app.get(
     "/api/tickets/:key",
@@ -44,6 +48,7 @@ export const ticketRoutes: FastifyPluginAsyncZod<TicketOptions> = async (app, { 
         history: store.history(key),
         runs: store.runs(key),
         questions: store.questions(key),
+        tagEvents: store.tagEvents(key),
       };
     },
   );
@@ -87,7 +92,8 @@ export const ticketRoutes: FastifyPluginAsyncZod<TicketOptions> = async (app, { 
             via: "move",
           });
         }
-        store.setTags(key, project, fields.tags);
+        // Left out, the tags stay: re-filing a ticket must not undo `tag`.
+        if (fields.tags !== undefined) store.setTags(key, project, fields.tags);
         store.touchRun(key);
         return !existing;
       })();
@@ -160,6 +166,36 @@ export const ticketRoutes: FastifyPluginAsyncZod<TicketOptions> = async (app, { 
         });
       }
       return result;
+    },
+  );
+
+  app.post(
+    "/api/tickets/:key/tags",
+    {
+      config,
+      schema: { params: ticketParamsSchema, body: tagsRequestSchema, response: { 200: tagsResponseSchema } },
+    },
+    (request) => {
+      const { key } = request.params;
+      const fields = request.body;
+      const ticket = store.getTicket(key);
+      if (!ticket) throw notFound(key);
+      if (ticket.status === "backlog") throw syncOwned(key, "changes its tags");
+      const changed = db.transaction(() =>
+        store.changeTags(key, ticket.project, {
+          add: fields.add,
+          remove: fields.remove,
+          author: fields.author ?? DEFAULT_AUTHOR,
+          max: MAX_TAGS,
+        }),
+      )();
+      if (!changed) {
+        throw new ApiError(400, {
+          code: TOO_MANY_TAGS,
+          message: `${key} would carry more than ${MAX_TAGS} tags; untag some first`,
+        });
+      }
+      return { ticket: store.requireTicket(key), ...changed };
     },
   );
 

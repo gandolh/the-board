@@ -144,6 +144,7 @@ describe("sprints", () => {
       { method: "POST", url: "/api/tickets/p-01/hold", payload: { kind: "port", value: "5173" } },
       { method: "POST", url: "/api/tickets/p-01/drop", payload: { kind: "port", value: "5173" } },
       { method: "POST", url: "/api/tickets/p-01/questions/1/answer", payload: { answer: "yes" } },
+      { method: "POST", url: "/api/tickets/p-01/tags", payload: { add: ["ui"] } },
     ];
     for (const write of writes) {
       const res = await call(write);

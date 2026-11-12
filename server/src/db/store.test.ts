@@ -148,6 +148,7 @@ describe("a closed sprint", () => {
       ["comment", () => store.addComment("p-07", { author: "ana", body: "late", role: null, move: null })],
       ["upsert", () => store.updateTicket("p-07", { title: "Renamed" })],
       ["tags", () => store.setTags("p-07", "p", ["ui"])],
+      ["tag", () => store.changeTags("p-07", "p", { add: ["ux"], remove: ["ui"], author: "ana", max: 20 })],
       ["touch", () => store.touchRun("p-07")],
       ["status", () => store.setStatus("p-07", "done", "todo", "sync", "sync")],
       ["end run", () => store.endRun("p-07", "stale")],

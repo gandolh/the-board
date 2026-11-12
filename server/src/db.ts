@@ -13,7 +13,8 @@ import Database from "better-sqlite3";
  * (`atrium:night-mode`) has no number and always sits in Backlog; since
  * 2026-11-07 a brief's ticket sits there too while its brief is in
  * `blocked/`, with `blocked_by` holding what it waits on. Since 2026-11-10
- * every ticket sits in one sprint (`tickets.sprint`, `sprints`).
+ * every ticket sits in one sprint (`tickets.sprint`, `sprints`). Since
+ * 2026-11-12 a tag added or taken off later is a row in `tag_events`.
  */
 export type Db = Database.Database;
 
@@ -180,6 +181,19 @@ export const MIGRATIONS: string[] = [
   ALTER TABLE tickets ADD COLUMN sprint INTEGER NOT NULL DEFAULT 2 REFERENCES sprints(number);
   INSERT INTO sprints (number, started_on, ended_on) VALUES (1, date('now'), date('now')), (2, date('now'), NULL);
   UPDATE tickets SET sprint = 1 WHERE status = 'done';
+  `,
+  // 2026-11-12: tag changes. A tag added to a ticket or taken off it after it
+  // was filed, by whom and when. History stays status changes only.
+  `
+  CREATE TABLE tag_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ticket_key TEXT NOT NULL REFERENCES tickets(key) ON DELETE CASCADE,
+    tag TEXT NOT NULL,
+    change TEXT NOT NULL CHECK (change IN ('added', 'removed')),
+    author TEXT NOT NULL,
+    at TEXT NOT NULL
+  );
+  CREATE INDEX tag_events_by_ticket ON tag_events (ticket_key, id);
   `,
 ];
 

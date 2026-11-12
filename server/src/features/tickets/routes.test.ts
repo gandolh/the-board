@@ -6,6 +6,7 @@ import {
   type NeedsResponse,
   type SyncBrief,
   type SyncResponse,
+  type TagsResponse,
   type TicketDetailResponse,
   type UpsertTicketResponse,
 } from "@brief-board/shared";
@@ -433,5 +434,114 @@ describe("blocked briefs and todos", () => {
   it("keeps blocked briefs and todos off the needs list", async () => {
     await syncWith([blocked(14)], [todo("sonarqube", "a stronger machine")]);
     expect((await call({ url: "/api/needs" })).json<NeedsResponse>().needs).toEqual([]);
+  });
+});
+
+describe("tags on an existing ticket", () => {
+  const tags = (key: string, payload: Record<string, unknown>) =>
+    call({ method: "POST", url: `/api/tickets/${key}/tags`, payload });
+
+  it("adds and removes tags, records who changed what, and leaves the rest of the ticket", async () => {
+    await put("p-01", { tags: ["old"] });
+    const before = (await detail("p-01")).ticket;
+    setClock(new Date(clock.getTime() + 60_000));
+    const res = await tags("p-01", { add: ["ui", "server-structure", "ui"], remove: ["old"], author: "ana" });
+    expect(res.statusCode).toBe(200);
+    expect(res.json<TagsResponse>()).toMatchObject({
+      added: ["server-structure", "ui"],
+      removed: ["old"],
+      ticket: { key: "p-01", tags: ["server-structure", "ui"], updatedAt: before.updatedAt },
+    });
+    const at = clock.toISOString();
+    const { tagEvents, history, comments } = await detail("p-01");
+    expect(tagEvents).toEqual([
+      { tag: "old", change: "removed", author: "ana", at },
+      { tag: "ui", change: "added", author: "ana", at },
+      { tag: "server-structure", change: "added", author: "ana", at },
+    ]);
+    expect(history).toHaveLength(1);
+    expect(comments).toEqual([]);
+    expect((await board("?tag=server-structure")).lanes.flatMap((lane) => lane.tickets.map((t) => t.key))).toEqual([
+      "p-01",
+    ]);
+  });
+
+  it("is idempotent: a tag it carries, or one it lacks, changes and records nothing", async () => {
+    await put("p-01");
+    await tags("p-01", { add: ["ui"] });
+    const again = (await tags("p-01", { add: ["ui"], remove: ["api"] })).json<TagsResponse>();
+    expect(again).toMatchObject({ added: [], removed: [], ticket: { tags: ["ui"] } });
+    const { tagEvents } = await detail("p-01");
+    expect(tagEvents.map((event) => [event.tag, event.change, event.author])).toEqual([["ui", "added", "agent"]]);
+  });
+
+  it("never makes the project a tag", async () => {
+    await put("p-01");
+    expect((await tags("p-01", { add: ["p"] })).json<TagsResponse>()).toMatchObject({
+      added: [],
+      ticket: { tags: [] },
+    });
+  });
+
+  it("removes a tag of any shape the ticket carries, but adds only lower-case hyphenated ones", async () => {
+    await put("p-01", { tags: ["Odd Tag"] });
+    expect((await tags("p-01", { remove: ["Odd Tag"] })).json<TagsResponse>().removed).toEqual(["Odd Tag"]);
+    for (const bad of ["UI", "two words", "-lead", "trail-", "a--b", ""]) {
+      const res = await tags("p-01", { add: [bad] });
+      expect(res.statusCode, bad).toBe(400);
+      expect(res.json<ErrorBody>().code).toBe("invalid_request");
+    }
+  });
+
+  it("refuses an empty request, and a tag added and removed at once", async () => {
+    await put("p-01");
+    for (const payload of [{}, { add: [], remove: [] }, { add: ["ui"], remove: ["ui"] }]) {
+      const res = await tags("p-01", payload);
+      expect(res.statusCode, JSON.stringify(payload)).toBe(400);
+      expect(res.json<ErrorBody>().code).toBe("invalid_request");
+    }
+  });
+
+  it("refuses more than 20 tags on a ticket, changing nothing", async () => {
+    await put("p-01", { tags: Array.from({ length: 19 }, (_, i) => `t${i}`) });
+    const res = await tags("p-01", { add: ["a", "b"] });
+    expect(res.statusCode).toBe(400);
+    expect(res.json<ErrorBody>().code).toBe("too_many_tags");
+    expect((await detail("p-01")).tagEvents).toEqual([]);
+    expect((await tags("p-01", { add: ["a", "b"], remove: ["t0"] })).statusCode).toBe(200);
+  });
+
+  it("answers an unknown ticket 404, a bad key 400, and a Backlog ticket sync_owned", async () => {
+    expect((await tags("p-09", { add: ["ui"] })).json<ErrorBody>().code).toBe("not_found");
+    expect((await tags("not a key", { add: ["ui"] })).json<ErrorBody>().code).toBe("invalid_key");
+    await call({
+      method: "POST",
+      url: "/api/sync",
+      payload: {
+        projects: [
+          { project: "p", briefs: [], todos: [{ slug: "x", title: "X", summary: "", path: "corpus/todos/x.md" }] },
+        ],
+      },
+    });
+    const res = await tags("p:x", { add: ["ui"] });
+    expect(res.statusCode).toBe(400);
+    expect(res.json<ErrorBody>().code).toBe("sync_owned");
+    expect((await detail("p:x")).ticket.tags).toEqual([]);
+  });
+
+  it("leaves the open run as it was, so a tagging pass cannot make a stale run look fresh", async () => {
+    await ticketIn("p-01", "in_progress");
+    const heard = (await detail("p-01")).ticket.run?.lastHeardAt;
+    setClock(new Date(clock.getTime() + 60_000));
+    await tags("p-01", { add: ["ui"] });
+    expect((await detail("p-01")).ticket.run?.lastHeardAt).toBe(heard);
+  });
+
+  it("keeps the tags when a ticket is filed again without them, and replaces them when it names some", async () => {
+    await put("p-01", { tags: ["ui"] });
+    await tags("p-01", { add: ["fix"] });
+    expect((await put("p-01", { title: "Renamed" })).json<UpsertTicketResponse>().ticket.tags).toEqual(["fix", "ui"]);
+    expect((await put("p-01", { tags: [] })).json<UpsertTicketResponse>().ticket.tags).toEqual([]);
+    expect((await put("p-02")).json<UpsertTicketResponse>().ticket.tags).toEqual([]);
   });
 });

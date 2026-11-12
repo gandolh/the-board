@@ -18,13 +18,14 @@ import {
   type Sprint,
   type Status,
   type SummarySource,
+  type TagEvent,
   type Ticket,
 } from "@brief-board/shared";
 import { DEFAULT_STALE_HOURS } from "../config.js";
 import type { Db } from "../db.js";
 
 /**
- * Reads and writes for tickets, comments, history, runs, holds and questions.
+ * Reads and writes for tickets, comments, history, tag changes, runs, holds and questions.
  * Every write that touches more than one row runs in a transaction. Only
  * `sync.ts` changes a status without the move table.
  *
@@ -639,6 +640,47 @@ export class Store {
     this.db.prepare("DELETE FROM ticket_tags WHERE ticket_key = ?").run(key);
     const insert = this.db.prepare("INSERT INTO ticket_tags (ticket_key, tag) VALUES (?, ?)");
     for (const tag of labels) insert.run(key, tag);
+  }
+
+  /**
+   * `tag` and `untag`: add `add` and take off `remove`, recording a tag event
+   * for each one that really changes, by `author`. The project's name is never
+   * a tag. It leaves the open run as it was, so a pass that tags many tickets
+   * cannot make a stale run look fresh. Null when it would leave the ticket
+   * with more than `max` tags, which changes nothing.
+   */
+  changeTags(
+    key: string,
+    project: string,
+    change: { add: readonly string[]; remove: readonly string[]; author: string; max: number },
+  ): { added: string[]; removed: string[] } | null {
+    this.writable(key);
+    const had = new Set(this.tags(key));
+    const added = [...new Set(change.add)].filter((tag) => tag !== project && !had.has(tag));
+    const removed = [...new Set(change.remove)].filter((tag) => had.has(tag));
+    if (had.size + added.length - removed.length > change.max) return null;
+    const at = this.now();
+    const event = this.db.prepare(
+      "INSERT INTO tag_events (ticket_key, tag, change, author, at) VALUES (?, ?, ?, ?, ?)",
+    );
+    const insert = this.db.prepare("INSERT INTO ticket_tags (ticket_key, tag) VALUES (?, ?)");
+    const remove = this.db.prepare("DELETE FROM ticket_tags WHERE ticket_key = ? AND tag = ?");
+    for (const tag of removed) {
+      remove.run(key, tag);
+      event.run(key, tag, "removed", change.author, at);
+    }
+    for (const tag of added) {
+      insert.run(key, tag);
+      event.run(key, tag, "added", change.author, at);
+    }
+    return { added: added.sort(), removed: removed.sort() };
+  }
+
+  /** Every tag change on the ticket, oldest first. */
+  tagEvents(key: string): TagEvent[] {
+    return this.db
+      .prepare("SELECT tag, change, author, at FROM tag_events WHERE ticket_key = ? ORDER BY id")
+      .all(key) as TagEvent[];
   }
 
   /**

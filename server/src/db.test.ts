@@ -234,7 +234,7 @@ describe("the sprints migration", () => {
       const day = db.prepare("SELECT started_on FROM sprints WHERE number = 1").pluck().get() as string;
       expect([dayBefore, utcToday()]).toContain(day);
 
-      expect(db.pragma("user_version", { simple: true })).toBe(7);
+      expect(db.pragma("user_version", { simple: true })).toBe(MIGRATIONS.length);
       expect(db.pragma("foreign_keys", { simple: true })).toBe(1);
       expect(db.pragma("foreign_key_check")).toEqual([]);
       expect(db.prepare("SELECT number, started_on, ended_on FROM sprints ORDER BY number").all()).toEqual([
@@ -271,7 +271,7 @@ describe("the sprints migration", () => {
       const once = snapshot(first);
       first.close();
       const again = openDatabase(path);
-      expect(again.pragma("user_version", { simple: true })).toBe(7);
+      expect(again.pragma("user_version", { simple: true })).toBe(MIGRATIONS.length);
       expect(snapshot(again)).toEqual(once);
       again.close();
     } finally {
@@ -282,7 +282,7 @@ describe("the sprints migration", () => {
   it("gives a fresh board a closed, empty Sprint 1 and an active Sprint 2", () => {
     const dayBefore = utcToday();
     const db = openDatabase(":memory:");
-    expect(db.pragma("user_version", { simple: true })).toBe(7);
+    expect(db.pragma("user_version", { simple: true })).toBe(MIGRATIONS.length);
     const sprints = db.prepare("SELECT number, started_on, ended_on FROM sprints ORDER BY number").all() as {
       number: number;
       started_on: string;
@@ -296,5 +296,43 @@ describe("the sprints migration", () => {
     ]);
     expect(db.prepare("SELECT COUNT(*) FROM tickets").pluck().get()).toBe(0);
     db.close();
+  });
+});
+
+describe("the tag events migration", () => {
+  it("adds an empty tag_events table to a board at version 7, keeps every row, and cascades a ticket's delete", () => {
+    const dir = mkdtempSync(join(tmpdir(), "brief-board-db-"));
+    const path = join(dir, "board.db");
+    try {
+      const old = new Database(path);
+      for (const migration of MIGRATIONS.slice(0, 7)) old.exec(migration);
+      old.pragma("user_version = 7");
+      const at = "2026-11-12T10:00:00.000Z";
+      old
+        .prepare(
+          `INSERT INTO tickets (key, project, number, title, summary, summary_source, brief_path, status, hidden, created_at, updated_at, status_changed_at)
+           VALUES ('p-01', 'p', 1, 'T', '', 'sync', 'corpus/briefs/todo/01-x.md', 'todo', 0, ?, ?, ?)`,
+        )
+        .run(at, at, at);
+      old.prepare("INSERT INTO ticket_tags (ticket_key, tag) VALUES ('p-01', 'ui')").run();
+      const before = old.prepare("SELECT * FROM tickets").all();
+      old.close();
+
+      const db = openDatabase(path);
+      expect(db.pragma("user_version", { simple: true })).toBe(8);
+      expect(db.prepare("SELECT * FROM tickets").all()).toEqual(before);
+      expect(db.prepare("SELECT tag FROM ticket_tags").pluck().all()).toEqual(["ui"]);
+      expect(db.prepare("SELECT COUNT(*) FROM tag_events").pluck().get()).toBe(0);
+      const event = db.prepare(
+        "INSERT INTO tag_events (ticket_key, tag, change, author, at) VALUES ('p-01', 'ui', ?, 'ana', ?)",
+      );
+      event.run("added", at);
+      expect(() => event.run("renamed", at)).toThrow(/CHECK/);
+      db.prepare("DELETE FROM tickets WHERE key = 'p-01'").run();
+      expect(db.prepare("SELECT COUNT(*) FROM tag_events").pluck().get()).toBe(0);
+      db.close();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
