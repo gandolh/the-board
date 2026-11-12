@@ -37,7 +37,7 @@ describe("the guide", () => {
 
   it("says Backlog belongs to sync, holds todos and blocked briefs, and how each leaves", () => {
     expect(guide).toContain("Backlog belongs to sync. It holds open todos' tickets, keyed <project>:<slug>,");
-    expect(guide).toContain("and blocked briefs' tickets: never start, move or comment on one.");
+    expect(guide).toContain("and blocked briefs' tickets: never start, move or comment on one; tag freely.");
     expect(guide).toContain("the todo, or moving the brief back to briefs/todo/, takes it off.");
   });
 
@@ -114,7 +114,7 @@ describe("the guide", () => {
       "It closes the\n  active sprint and moves every ticket that is not Done into the next one,\n  and nothing undoes it.",
     );
     const board = guide.slice(guide.indexOf("## 1."), guide.indexOf("## 2."));
-    expect(board).toContain("A Done\nticket in a closed sprint is frozen: nothing writes to it.");
+    expect(board).toContain("A Done\nticket in a closed sprint is frozen: only its tags change.");
     expect(board).toContain("`brief-board sprint`\nand `brief-board list --sprint <n>` only read.");
   });
 

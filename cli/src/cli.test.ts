@@ -942,7 +942,7 @@ describe("sprints", () => {
     const late = await on(["comment", "3", "-m", "late"]);
     expect(late.code).toBe(2);
     expect(late.err).toBe(
-      `sports-app-03 is in sprint 2, which closed on ${today()}; a closed sprint's tickets are frozen and nothing writes to them`,
+      `sports-app-03 is in sprint 2, which closed on ${today()}; a closed sprint's tickets are frozen and nothing but a tag change writes to them`,
     );
   });
 

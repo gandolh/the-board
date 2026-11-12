@@ -6,10 +6,10 @@ one corpus brief and is keyed <project>-<number>, like atrium-82. The corpus is
 the record. Do the corpus-flow steps every time, board or no board: move the
 brief to done/, write the log entry, update the wiki.
 Backlog belongs to sync. It holds open todos' tickets, keyed <project>:<slug>,
-and blocked briefs' tickets: never start, move or comment on one. Promoting
-the todo, or moving the brief back to briefs/todo/, takes it off.
+and blocked briefs' tickets: never start, move or comment on one; tag freely.
+Promoting the todo, or moving the brief back to briefs/todo/, takes it off.
 Every ticket sits in a sprint, and the board shows the active one. A Done
-ticket in a closed sprint is frozen: nothing writes to it. `brief-board sprint`
+ticket in a closed sprint is frozen: only its tags change. `brief-board sprint`
 and `brief-board list --sprint <n>` only read.
 
 Run commands from inside the project's repo. A corpus whose folder name isn't

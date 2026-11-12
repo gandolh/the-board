@@ -55,7 +55,7 @@ export class SprintClosedError extends Error {
 
   constructor(key: string, sprint: number, endedOn: string) {
     super(
-      `${key} is in sprint ${sprint}, which closed on ${endedOn}; a closed sprint's tickets are frozen and nothing writes to them`,
+      `${key} is in sprint ${sprint}, which closed on ${endedOn}; a closed sprint's tickets are frozen and nothing but a tag change writes to them`,
     );
     this.key = key;
     this.sprint = sprint;

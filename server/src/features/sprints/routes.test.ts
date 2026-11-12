@@ -150,7 +150,7 @@ describe("sprints", () => {
       expect(res.statusCode, `${write.method} ${write.url}`).toBe(409);
       expect(res.json<ErrorBody>()).toEqual({
         code: "sprint_closed",
-        message: `p-01 is in sprint 2, which closed on ${today()}; a closed sprint's tickets are frozen and nothing writes to them`,
+        message: `p-01 is in sprint 2, which closed on ${today()}; a closed sprint's tickets are frozen and nothing but a tag change writes to them`,
       });
     }
     expect(await detail("p-01")).toEqual(before);
