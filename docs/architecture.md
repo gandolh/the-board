@@ -26,6 +26,8 @@ flowchart LR
 5. Everything waiting on the owner (open questions, Blocked tickets, stale runs, Ready for test, Ready for deploy) is gathered by `brief-board needs` and the strip above the lanes, which narrows the board to one kind at a click.
 6. The brief file moving to `done/` stays the record; sync makes the board agree with it, except that it leaves an In Progress ticket whose run is still fresh for that run's end move.
 
+A ticket's tags say what kind of work it is and where it lands. They are set at `brief-board create --tag`, and changed later with `brief-board tag <n> <tag>...` and `untag`; the ticket's History records who changed which. `brief-board list --tag <tag>` and the board's tag filter find them.
+
 Every ticket belongs to a sprint. `brief-board sprint` names the active one and `brief-board list --sprint <n>` lists any. When the owner asks, an agent runs `brief-board sprint start <n>`: the active sprint closes with its Done tickets, frozen from then on, and every other ticket moves to sprint n with its runs, questions and comments. Sync only ever writes the active sprint's tickets.
 
 Before a brief there may be a todo. Each open todo in `corpus/todos/` has a ticket in Backlog, keyed `<project>:<slug>`, which only sync makes, keeps and removes: no agent moves or comments on it. Promoting the todo deletes its file, so the next sync takes that ticket off and files the brief's in To Do.

@@ -1,6 +1,6 @@
 ---
-summary: How brief-board is put together, as built 2026-10-09, with the 2026-11-02 sub-path, token and sign-in, the 2026-11-03 todo keys, the 2026-11-06 runs and their holds, and the 2026-11-10 sprints (every ticket in one, the routes, the frozen closed sprint); the board in the browser is board-ui.md. npm workspaces with a Fastify + SQLite API, a read-only Vite + React board, and the brief-board CLI that agents use; how the CLI finds the board without any repo holding a path; keys, the CLI's exit codes, the server's error codes, build gotchas, and what each project's CLAUDE.md says. The owner starts the server by hand on 127.0.0.1:8806.
-updated: 2026-11-10
+summary: How brief-board is put together, as built 2026-10-09, with the 2026-11-02 sub-path, token and sign-in, the 2026-11-03 todo keys, the 2026-11-06 runs and their holds, and the 2026-11-10 sprints (every ticket in one, the routes, the frozen closed sprint), and the 2026-11-12 tags route, tag events and tag/untag; the board in the browser is board-ui.md. npm workspaces with a Fastify + SQLite API, a read-only Vite + React board, and the brief-board CLI that agents use; how the CLI finds the board without any repo holding a path; keys, the CLI's exit codes, the server's error codes, build gotchas, and what each project's CLAUDE.md says. The owner starts the server by hand on 127.0.0.1:8806.
+updated: 2026-11-12
 ---
 
 # Architecture
@@ -94,6 +94,7 @@ corpus. The author is `--author`, else `BRIEF_BOARD_AUTHOR`, else `agent`.
   or the local check refused (with the allowed moves and their messages), 3
   the board is unreachable, printed as one line. A 4xx that isn't the
   contract's JSON (another service on the port) counts as unreachable.
+- Tags (2026-11-12): `tag`, `untag` and `list --tag`; see [tags.md](tags.md).
 - Sprints (2026-11-10): `sprint` prints the active one; `sprint start <N>`
   starts the next on the owner's ask (a stale N exits 1); `list --sprint
   <n>` lists any sprint, and `list` stays on the board, the active one.
@@ -110,12 +111,12 @@ close-with-grace), `app.ts` (`buildApp({ dbPath })`, which tests call with
 folder per feature in `features/`: `health`, `board`, `runs`, `questions`,
 `sprints`, `tickets` and `sync` (whose `service.ts` is `runSync`). `app.ts`
 registers the error handler, the zod compilers, the guard, then the features.
-Every route declares its schemas from `shared/`, replies included. Author defaults to `agent`; tags are replaced on every `PUT`,
-deduplicated, and never include the project. A `PUT` that creates answers
+Every route declares its schemas from `shared/`, replies included. Author defaults to `agent`; a `PUT` naming `tags` replaces them, deduplicated, never the
+project, and one leaving them out keeps them; `POST .../tags` is in [tags.md](tags.md) (2026-11-12). A `PUT` that creates answers
 201. Error codes: `invalid_request`, `invalid_key`, `not_found`,
 `move_not_allowed`, `message_required`, `sync_owned` (a write on a todo's
 ticket, 2026-11-03), `no_open_run`, `question_not_open` and `not_held` (2026-11-06),
-`sprint_changed` and `sprint_closed` (409s, 2026-11-10), `internal`, and `unauthorized` (a 401 from the sign-in guard,
+`sprint_changed` and `sprint_closed` (409s, 2026-11-10), `too_many_tags` (2026-11-12), `internal`, and `unauthorized` (a 401 from the sign-in guard,
 [sign-in.md](sign-in.md)). Migrations run with foreign keys off, because
 rebuilding `tickets` (copy, drop, rename, as SQLite changes a CHECK) would
 otherwise cascade the drop into every comment and history row; each checks

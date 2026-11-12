@@ -1,6 +1,6 @@
 ---
-summary: The board's vocabulary. Ticket vs brief vs todo, project, lane, project tag and tag, sync, the guide, a run and a stale run, a hold and a leftover, a question, a sprint and an active or closed one (2026-11-10), the statuses (Backlog, To Do, In Progress, Blocked, Ready for test, Ready for deploy, Done) and Blocked by, the condition a file in a blocked/ folder waits on, and the messages a move can carry (conclusion, block reason, confirmation, test notes, deploy steps), each with the words they replace.
-updated: 2026-11-10
+summary: The board's vocabulary. Ticket vs brief vs todo, project, lane, project tag and tag, a tag's kind and a tag event (2026-11-12), sync, the guide, a run and a stale run, a hold and a leftover, a question, a sprint and an active or closed one (2026-11-10), the statuses (Backlog, To Do, In Progress, Blocked, Ready for test, Ready for deploy, Done) and Blocked by, the condition a file in a blocked/ folder waits on, and the messages a move can carry (conclusion, block reason, confirmation, test notes, deploy steps), each with the words they replace.
+updated: 2026-11-12
 ---
 
 # Glossary
@@ -42,8 +42,18 @@ _Avoid_: category, component
 
 **Tag**:
 Any other label on a ticket, shown on the card and usable as a filter. Tags
-never make lanes.
+never make lanes. The list is [tags.md](tags.md).
 _Avoid_: label, category
+
+**Kind** (of a tag):
+The one tag on a ticket that says what the work is (`feature`, `fix`,
+`redesign`...), from [tags.md](tags.md). The other tags are areas.
+_Avoid_: type, category
+
+**Tag event**:
+A tag added to a ticket or taken off it after it was filed, with its author
+and time, shown in the ticket's History. Not a status change.
+_Avoid_: tag history, label change
 
 **Guide**:
 The rules agents follow when they use the board, printed by `brief-board
