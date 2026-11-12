@@ -30,7 +30,7 @@ The ask is the owner's (2026-11-12). These are the defaults this brief builds; t
 3. **Tag changes get their own table**, `tag_events` (migration 8), and the detail reply gets a new `tagEvents` field. `history` stays status-only. `show` prints tag changes in its History section, merged by time.
 4. **Tags are lower-case and hyphenated** on the new route (`^[a-z0-9]+(-[a-z0-9]+)*$`, up to 50 characters, at most 20 tags on a ticket). `PUT` keeps its looser rule, so old clients are unchanged. The project name is dropped as a tag, as `setTags` does. Removing accepts any tag the ticket has, so an old odd one can still go.
 5. **The guards are the existing ones:** an unknown ticket is 404 `not_found`; a Backlog ticket is 400 `sync_owned` (Backlog belongs to sync); a closed sprint's ticket is 409 `sprint_closed`. The freeze stays as recorded in [wiki/decisions.md](../../wiki/decisions.md), so Sprint 1's Done tickets stay untagged.
-6. **A tag change keeps the open run fresh**, like every other write on the ticket.
+6. **A tag change leaves the open run as it was.** Unlike other writes, it does not freshen the run: the tagging script touches every ticket, and must not make a stale run look fresh.
 7. **Re-filing keeps tags.** `PUT` without `tags` leaves the tags alone on an update (none on a new ticket); an explicit list still replaces them, as today. `create` sends `tags` only when `--tag` is given.
 8. **`list --tag <tag>`** keeps the tickets carrying it, with or without `--sprint`.
 9. **The web app** needs no change: its chips and Tags row show added tags at the next poll. The redesign (brief 20) may show tag changes in the panel's history.
@@ -41,7 +41,7 @@ The ask is the owner's (2026-11-12). These are the defaults this brief builds; t
 
 - `shared/src/api.ts`, `shared/src/api.test.ts`.
 - `server/src/db.ts`, `server/src/db.test.ts`, `server/src/db/store.ts`, `server/src/db/store.test.ts`, `server/src/features/tickets/`, `server/src/testing/buildTestApp.ts`.
-- `cli/src/`: a new `commands/tags.ts`, `commands/read.ts`, `commands/create.ts`, `client.ts`, `format.ts`, `main.ts`, `guide.md`, `cli.test.ts`, `errors.ts` if needed.
+- `cli/src/commands/tags.ts` (new), `cli/src/commands/read.ts`, `cli/src/commands/create.ts`, `cli/src/client.ts`, `cli/src/format.ts`, `cli/src/main.ts`, `cli/src/guide.md`, `cli/src/cli.test.ts`, `cli/src/guide.test.ts`.
 - `scripts/tag-tickets.mjs`.
 - Corpus: a new [wiki/tags.md](../../wiki/tags.md), [wiki/architecture.md](../../wiki/architecture.md), [wiki/glossary.md](../../wiki/glossary.md) (tag event), [wiki/status.md](../../wiki/status.md), [log.md](../../log.md); `docs/` pages that list the CLI's commands.
 
@@ -65,9 +65,24 @@ The ask is the owner's (2026-11-12). These are the defaults this brief builds; t
 - A tag added with `brief-board tag` shows in `show` (Tags and History) and on the board's card; a second identical `tag` changes nothing; `untag` removes it; Backlog, closed-sprint and unknown tickets are refused with their codes.
 - `create` on an existing ticket without `--tag` keeps its tags.
 - `node scripts/tag-tickets.mjs` prints the plan and writes nothing; with `--apply` on a scratch board it tags each planned ticket once, and a second run plans nothing.
-- **Owner steps:** from vps-deploy, `node cli.ts brief-board server`; `npm run build -w @brief-board/cli` here (the global CLI is linked to it); `node scripts/tag-tickets.mjs --dry-run`; `node scripts/tag-tickets.mjs --apply`.
+- **Owner steps:** from vps-deploy, `node cli.ts brief-board server`; the global CLI (linked to this checkout's `cli/dist`) rebuilt from main; `node scripts/tag-tickets.mjs --dry-run`; `node scripts/tag-tickets.mjs --apply`.
 
 ## Interplay
 
 - Brief 20 (the redesign) restyles the chips and may show `tagEvents` in the panel. This brief leaves `web/` alone.
 - Agents filing briefs may pick a kind tag at `create`, from [wiki/tags.md](../../wiki/tags.md).
+
+## Outcome (2026-11-12)
+
+Built in six commits (`11f3dde` to `b82ad57`), not deployed. Ready for deploy on the board.
+
+- **Server.** `POST /api/tickets/:key/tags` (`{ add?, remove?, author? }` → `{ ticket, added, removed }`), `Store.changeTags` and `tagEvents`, migration 8 (`tag_events`). The detail reply's `tagEvents` is optional in the schema, not defaulted: the contract's test forbids a one-way `.default()` in a reply schema, and optional still parses an older board. Refusals as decided, plus 400 `too_many_tags` for a 21st tag. Decision 6 changed while building: a tag change leaves the open run alone (unlike every other write), so the tagging pass can't make a stale run look fresh.
+- **CLI.** `tag`, `untag`, `list --tag` (on the client, so with `--sprint` too), `create` without `--tag` sends no tags, `show` merges tag events into History. Against the live, older server every old command works as before, and `tag` and `untag` exit 2 with "the board's server doesn't take tag changes yet". The global CLI is linked to this checkout, so it went live with the build, as did the guide's four new lines (it stays at 130 lines).
+- **Web.** Unchanged: the card's chips and the panel's Tags row show a new tag at the next poll. The panel does not list tag events; brief 20 may.
+- **Taxonomy.** [wiki/tags.md](../../wiki/tags.md), with one kind added to the owner's list: `skill`, for the skills library's 16 tickets in sprint 2 (`feature` would hide them). Areas as asked.
+- **Script.** `scripts/tag-tickets.mjs` reads the active sprint through the sprint route (not `list --all`, which hides Done past 14 days and prints text) with the CLI's own address and token lookups. It writes only with `--apply`; `--dry-run` is the default and both together exit 1. The live dry run of 2026-11-12 plans 120 tickets, 3 by default (`feature`: brief-board-21 Sprints, public-resource-map-01, shelfmark-04), and skips 1 already tagged and 12 in Backlog. Frozen Sprint 1 tickets stay untagged; a question on the ticket asks the owner whether they and Backlog should get tags.
+
+Commits: 11f3dde 1c1bac4 f7fe3df 844a43e bb22fc0 b82ad57
+Checks run: `npm run check` (exit 0, 373 tests); `npm run build -w @brief-board/cli`; corpus lint; the script on a scratch board (dry run, `--apply`, a second run planning nothing, a `too_many_tags` row skipped with exit 0, a closed sprint's ticket refused 409); a dry run against the live board (reads only); `show` and `list --tag` from the rebuilt global CLI against the live server.
+Checks skipped: the card showing a new tag in a browser (headless run, web unchanged); the container build and health check (no docker here); tagging the live board (the server isn't deployed).
+Owner steps: 1) from vps-deploy, back up the SQLite file as for brief 21, then `node cli.ts brief-board server` (migration 8 adds an empty table; the deploy also carries whatever of briefs 16-19 isn't live, including 19's container check). 2) The global CLI is already rebuilt on this machine; after pulling main elsewhere, `npm run build -w @brief-board/cli` here. 3) `node scripts/tag-tickets.mjs --dry-run`, reading the rows marked default. 4) `node scripts/tag-tickets.mjs --apply`.

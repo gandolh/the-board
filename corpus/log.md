@@ -581,3 +581,12 @@ accepted: the `/` redirect). Before and after: 100 replies captured through the 
 same JSON in another key order (`moves`: `endedRun` before `questions`) and 2 with "received null" for "received
 undefined" in a missing body's message; no dropped field. Not deployed; docker was not run.
 
+## [2026-11-12] done | Brief 22, tags on existing tickets
+
+[Brief 22](briefs/done/22-tags-on-existing-tickets.md), from the owner's ask of 2026-11-12 ("could you also add tags?"):
+`brief-board tag` and `untag` change an existing ticket's tags through a new `POST /api/tickets/:key/tags`, idempotent,
+each real change a row in `tag_events` (migration 8) that `show` prints in History. `list --tag` filters, and `create`
+without `--tag` now keeps a ticket's tags. A tag change leaves the open run alone. The web app already showed tags and is
+unchanged. [wiki/tags.md](wiki/tags.md) holds the taxonomy (one kind per ticket, `skill` added for the skills library,
+optional areas), and `scripts/tag-tickets.mjs` plans a kind for each active-sprint ticket, writing only with `--apply`.
+Not deployed; the linked global CLI already has the commands.
