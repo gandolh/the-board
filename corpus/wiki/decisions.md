@@ -138,5 +138,8 @@ numbered sprint; the board shows the one active sprint, and a closed sprint's
 Done tickets are frozen (409 `sprint_closed`). `brief-board sprint start <N>`, a
 token write run only on the owner's ask like sync, closes it and moves the rest
 into N, the active number plus one (else 409 `sprint_changed`); the UI only
-reads. Rejected: auto-archiving Done after N days (work moves by age, not by a
+reads. A deploy or a migration never starts a sprint (the owner, 2026-11-12): the
+one that did was the sprints migration itself, which closed Sprint 1 and opened
+Sprint 2 on 2026-11-11, once. A later migration that touches sprints only reshapes
+rows. Rejected: auto-archiving Done after N days (work moves by age, not by a
 call); a sprint per project (no board-wide number); a column, no table (no dates).
