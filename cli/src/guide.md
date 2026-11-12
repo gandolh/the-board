@@ -22,7 +22,10 @@ refused the token (a 401).
 After you write a brief, put it on the board:
   brief-board create <number> --title "<title>" --summary "<summary>"
 Write the summary in two to four sentences for the owner glancing at the board:
-what the brief does and why. Add --tag <label> for labels.
+what the brief does and why. Add --tag <tag>: one kind (feature, fix, redesign,
+base-ui, tailwind, server-structure, harness, deps, tracker, docs, research,
+infra, skill), and an area if it helps (web, server, corpus, deploy, security).
+Later `brief-board tag <ticket> <tag>...` adds tags, and `untag` takes them off.
 
 ## 3. Starting or resuming
 If the owner named a ticket, run `brief-board show <ticket>` first and read

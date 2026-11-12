@@ -52,12 +52,13 @@ export async function create(rt: Runtime, args: string[]): Promise<void> {
   }
 
   // The contract's PUT carries no author: a ticket's creation is recorded as
-  // the board's default author.
+  // the board's default author. Without --tag it sends no tags, so filing an
+  // existing ticket again keeps the ones `tag` added.
   const { created, ticket } = await rt.client().upsert(key, {
     title: values.title,
     summary: values.summary,
     briefPath,
-    tags: values.tag ?? [],
+    ...(values.tag ? { tags: values.tag } : {}),
   });
   rt.out(`${created ? "Created" : "Updated"} ${ticket.key} (${label(ticket.status)}): ${ticket.title}`);
 }

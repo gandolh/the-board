@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { createServer } from "node:net";
+import { createServer as createHttpServer } from "node:http";
+import { createServer, type AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
@@ -514,6 +515,71 @@ describe("list", () => {
     const inProgress = (await run(["list", "--status", "in_progress"])).out;
     expect(inProgress).toContain(key);
     expect(inProgress).not.toContain("sports-app-07");
+  });
+});
+
+describe("tag and untag", () => {
+  it("adds and removes tags, idempotent, and show records who changed what", async () => {
+    const key = await ticket();
+    const added = await run(["tag", key, "fix", "server", "--author", "ana"]);
+    expect(added).toMatchObject({ code: 0, out: `${key}: tagged fix, server; tags now fix, server` });
+    expect((await run(["tag", key, "fix"])).out).toBe(`${key}: already tagged; tags fix, server`);
+    expect((await run(["untag", key, "server", "--author", "bo"])).out).toBe(`${key}: untagged server; tags now fix`);
+    expect((await run(["untag", key, "server"])).out).toBe(`${key}: carries none of those; tags fix`);
+    const show = (await run(["show", key])).out;
+    expect(show).toContain("Tags:    fix");
+    expect(show).toMatch(/\] tagged fix by ana\n.*\] tagged server by ana\n.*\] untagged server by bo/);
+  });
+
+  it("refuses a tag that is not lower-case and hyphenated, and needs a ticket and a tag", async () => {
+    const key = await ticket();
+    const bad = await run(["tag", key, "Server Structure"]);
+    expect(bad.code).toBe(1);
+    expect(bad.err).toContain("lower-case words joined by hyphens");
+    expect((await run(["tag", key])).code).toBe(1);
+    expect((await run(["untag"])).code).toBe(1);
+    expect((await run(["tag", "sports-app-998", "fix"])).code).toBe(2);
+  });
+
+  it("keeps added tags when the ticket is filed again without --tag", async () => {
+    const key = await ticket();
+    await run(["tag", key, "fix"]);
+    const number = key.replace("sports-app-", "");
+    expect((await run(["create", number, "--title", "Renamed", "--summary", "s"])).code).toBe(0);
+    expect((await run(["show", key])).out).toContain("Tags:    fix");
+  });
+
+  it("lists only the tickets carrying --tag", async () => {
+    const tagged = await ticket();
+    const other = await ticket();
+    await run(["tag", tagged, "redesign"]);
+    const list = (await run(["list", "--tag", "redesign"])).out;
+    expect(list).toContain(tagged);
+    expect(list).not.toContain(other);
+    expect((await run(["list", "--tag", "nothing-carries-it"])).out).toBe(
+      "No tickets for sports-app tagged nothing-carries-it.",
+    );
+    expect((await run(["list", "--tag", "redesign", "--sprint", "2"])).out).toContain(tagged);
+  });
+
+  it("says plainly when the board's server is older than tags, and exits 2", async () => {
+    const old = createHttpServer((req, res) => {
+      res.writeHead(404, { "content-type": "application/json" });
+      res.end(JSON.stringify({ code: "not_found", message: `no route ${req.method} ${req.url}` }));
+    });
+    await new Promise<void>((resolve) => old.listen(0, "127.0.0.1", resolve));
+    const { port } = old.address() as AddressInfo;
+    try {
+      const res = await run(["tag", "sports-app-07", "fix"], {
+        env: { BRIEF_BOARD_URL: `http://127.0.0.1:${port}`, BRIEF_BOARD_TOKEN: TOKEN },
+      });
+      expect(res.code).toBe(2);
+      expect(res.err).toBe(
+        "brief-board: the board's server doesn't take tag changes yet; sports-app-07 is unchanged. Tell the owner it needs a deploy.",
+      );
+    } finally {
+      await new Promise((resolve) => old.close(resolve));
+    }
   });
 });
 

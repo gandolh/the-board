@@ -22,6 +22,8 @@ import {
   type StartSprintResponse,
   type SyncRequest,
   type SyncResponse,
+  type TagsRequest,
+  type TagsResponse,
   type TicketDetailResponse,
   type UpsertTicketRequest,
   type UpsertTicketResponse,
@@ -119,6 +121,10 @@ export class BoardClient {
 
   upsert(key: string, body: UpsertTicketRequest): Promise<UpsertTicketResponse> {
     return this.call("PUT", `/api/tickets/${encodeURIComponent(key)}`, body);
+  }
+
+  tags(key: string, body: TagsRequest): Promise<TagsResponse> {
+    return this.call("POST", `/api/tickets/${encodeURIComponent(key)}/tags`, body);
   }
 
   move(key: string, body: MoveRequest): Promise<MoveResponse> {

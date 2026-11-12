@@ -11,11 +11,11 @@ export async function show(rt: Runtime, args: string[]): Promise<void> {
   for (const line of ticketDetail(await rt.client().ticket(key))) rt.out(line);
 }
 
-const LIST_USAGE = "list [--status <s>] [--all] [--sprint <n>]";
+const LIST_USAGE = "list [--status <s>] [--tag <tag>] [--all] [--sprint <n>]";
 
 /**
- * `list [--status <s>] [--all] [--sprint <n>]`: this project's tickets, or
- * every project's. Without `--sprint` it is the board, which shows the active
+ * `list [--status <s>] [--tag <tag>] [--all] [--sprint <n>]`: this project's
+ * tickets, or every project's; with `--tag`, only those carrying it. Without `--sprint` it is the board, which shows the active
  * sprint; with it, every ticket in sprint n that is not hidden, a closed
  * sprint's included. A sprint that does not exist is a usage mistake, exit 1.
  */
@@ -24,18 +24,22 @@ export async function list(rt: Runtime, args: string[]): Promise<void> {
     status: { type: "string" },
     all: { type: "boolean" },
     sprint: { type: "string" },
+    tag: { type: "string" },
   });
   if (positionals.length > 0) throw new UsageError(`list takes no arguments: ${LIST_USAGE}`);
   const status = values.status === undefined ? undefined : statusArg(values.status);
   if (values.sprint !== undefined && !/^\d+$/.test(values.sprint.trim()))
     throw new UsageError(`--sprint takes a sprint's number: ${LIST_USAGE}`);
   const sprint = values.sprint === undefined ? undefined : Number.parseInt(values.sprint.trim(), 10);
+  const tag = values.tag?.trim() || undefined;
   const project = values.all ? null : rt.project(values.project);
   const lanes = sprint === undefined ? (await rt.client().board()).lanes : await sprintLanes(rt, sprint);
   let shown = 0;
   for (const lane of lanes) {
     if (project !== null && lane.project !== project) continue;
-    const tickets = lane.tickets.filter((ticket) => !status || ticket.status === status);
+    const tickets = lane.tickets.filter(
+      (ticket) => (!status || ticket.status === status) && (!tag || ticket.tags.includes(tag)),
+    );
     // Board order: by column, then number, and a todo's tickets (no number) by key.
     tickets.sort(
       (a, b) =>
@@ -50,8 +54,11 @@ export async function list(rt: Runtime, args: string[]): Promise<void> {
   }
   if (shown === 0) {
     const inSprint = sprint === undefined ? "" : ` in sprint ${sprint}`;
+    const tagged = tag ? ` tagged ${tag}` : "";
     rt.out(
-      project ? `No tickets for ${project}${status ? ` in ${status}` : ""}${inSprint}.` : `No tickets${inSprint}.`,
+      project
+        ? `No tickets for ${project}${tagged}${status ? ` in ${status}` : ""}${inSprint}.`
+        : `No tickets${tagged}${inSprint}.`,
     );
   }
 }

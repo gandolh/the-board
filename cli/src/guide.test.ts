@@ -29,6 +29,12 @@ describe("the guide", () => {
     }
   });
 
+  it("names tag and untag, and the kinds, where it says how to file a brief", () => {
+    const filing = guide.slice(guide.indexOf("## 2. Filing a brief"), guide.indexOf("## 3."));
+    expect(filing).toContain("`brief-board tag <ticket> <tag>...` adds tags, and `untag` takes them off.");
+    expect(filing).toContain("server-structure");
+  });
+
   it("says Backlog belongs to sync, holds todos and blocked briefs, and how each leaves", () => {
     expect(guide).toContain("Backlog belongs to sync. It holds open todos' tickets, keyed <project>:<slug>,");
     expect(guide).toContain("and blocked briefs' tickets: never start, move or comment on one.");

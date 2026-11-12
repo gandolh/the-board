@@ -126,7 +126,7 @@ export function openQuestionLine({ key, question }: OpenQuestionEntry, now: Date
 
 /** `show`: everything about one ticket, oldest first. */
 export function ticketDetail(
-  { ticket, comments, history, runs = [], questions = [] }: TicketDetailResponse,
+  { ticket, comments, history, runs = [], questions = [], tagEvents = [] }: TicketDetailResponse,
   now: Date = new Date(),
 ): string[] {
   const open = openRun(ticket);
@@ -181,11 +181,19 @@ export function ticketDetail(
   }
   if (comments.length === 0) lines.push("  (none)");
   lines.push("", "History:");
-  for (const event of history) {
-    const from = event.from ? label(event.from) : "created";
-    lines.push(
-      `  [${event.at}] ${from} → ${label(event.to)} by ${event.author}${event.via === "sync" ? " (sync)" : ""}`,
-    );
-  }
+  // Status changes and tag changes, merged by time; at the same instant the status change leads.
+  const events = [
+    ...history.map((event) => ({
+      at: event.at,
+      line: `${event.from ? label(event.from) : "created"} → ${label(event.to)} by ${event.author}${event.via === "sync" ? " (sync)" : ""}`,
+    })),
+    ...tagEvents.map((event) => ({
+      at: event.at,
+      line: `${event.change === "added" ? "tagged" : "untagged"} ${event.tag} by ${event.author}`,
+    })),
+  ];
+  // A stable sort keeps each list's own order within the same instant.
+  events.sort((a, b) => a.at.localeCompare(b.at));
+  for (const event of events) lines.push(`  [${event.at}] ${event.line}`);
   return lines;
 }

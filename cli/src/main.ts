@@ -10,6 +10,7 @@ import { list, show } from "./commands/read.js";
 import { release, runs } from "./commands/runs.js";
 import { sprint } from "./commands/sprint.js";
 import { sync } from "./commands/sync.js";
+import { tag, untag } from "./commands/tags.js";
 import { TokenRefused } from "./client.js";
 import type { Context } from "./context.js";
 import { Rejected, Unreachable, UsageError } from "./errors.js";
@@ -30,11 +31,13 @@ const USAGE = `brief-board: track corpus briefs on the board.
   move <ticket> <status> [-m <message>]
   comment <ticket> -m <message>
   release <ticket> -m <message>       end the run of an agent that was stopped; the ticket stays In Progress
+  tag <ticket> <tag>...               add tags to a ticket; one it carries changes nothing
+  untag <ticket> <tag>...             take tags off a ticket
   hold <ticket> <kind> <value>        the open run holds a port, pid, container or path it started
   drop <ticket> <kind> <value>        the open run no longer holds it
   answer <ticket> <n> -m <answer>     record the owner's answer to question n
   show <ticket>
-  list [--status <status>] [--all] [--sprint <n>]
+  list [--status <status>] [--tag <tag>] [--all] [--sprint <n>]
                                        the active sprint's, or sprint n's with --sprint
   runs                                 every open run across projects, stalest first, with what each holds
   questions                            every open question across projects, oldest first
@@ -58,6 +61,8 @@ const COMMANDS: Record<string, Command> = {
   move,
   comment,
   release,
+  tag,
+  untag,
   hold,
   drop,
   answer,
