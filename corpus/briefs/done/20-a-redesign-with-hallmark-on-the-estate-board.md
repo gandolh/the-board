@@ -77,3 +77,29 @@ Answered 2026-11-10: Q39 (Hallmark, with taste-skill 2.5's useful parts; approva
 - Brief 18 owns the tokens, the type scale, the two breakpoints (`narrow`, `phone`) and the theme switch; this brief changes their values and the layout on top.
 - Brief 17's wrappers (`Dialog`, `Collapsible`, `RadioGroup`) are restyled, not replaced.
 - Brief 16's formatter and lint run on every redesign commit.
+
+## Outcome (2026-11-13)
+
+Built the approved direction "The queue and the lanes" (the owner's approval is in [log.md](../../log.md)). Commits:
+`e73eddc` approval, `e25e819` tokens and fonts, `e97145b` Playwright, `bf0190d` header, `8339009` Needs you, `f6039b0`
+board and cards, `8de9e75` detail panel, `1904449` Older Done, `665cf4e` Sprints, account, sign-in and the gate,
+`a754c39` unused tokens dropped, `d81e825` floor checks and polish, `0d8841c` and `7884cc5` docs. [web/DESIGN.md](../../../web/DESIGN.md) records the result;
+[wiki/board-ui.md](../../wiki/board-ui.md) and [wiki/decisions.md](../../wiki/decisions.md) ("Nothing on the board scrolls
+sideways") carry the one reopened line.
+
+- **Contrast** (`npm run check:contrast`, 38 pairs per theme): the lowest text pair is 4.58:1 in light and 4.55:1 in dark; the
+  3:1 edges (`outline`, `focus`, a status pill's edge) bottom out at 3.32:1 (outline on a sunk well) in light and 3.75:1
+  (outline on the surface) in dark. Each status colour is measured on the surface and, where it sits on one, on its wash.
+  No status colour is text on a well: the needs pills carry the surface, so a pressed row keeps them readable.
+- **Floor** (Playwright, headless, two workers, light, dark and system): a focus ring (2 px outline) on every Tab stop of nine
+  screens; no running animation or transition under reduced motion; `scrollWidth <= innerWidth` at 390 and 360 px with no
+  exception for lanes; no sideways scroll at 1240, 1100, 1099, 720, 719 and 360; light on a first visit and the switch.
+- **Tests changed:** `cn.test.ts` (the new radius and shadow names, the dropped ones). `NeedsStrip.test.tsx` and the rest stayed green
+  untouched: the totals are the same radios.
+- **Tokens dropped** once nothing used them: `text-micro`, `radius-chip`, `radius-box`, `radius-gate`. `well-edge` is used on the
+  panel's facts well (light only).
+- **Nothing invented:** every ticket, project and figure comes from the comps' data (almanac-6, wicket-15, shelfmark-31...), served
+  by `web/e2e/fixtures.ts`; no real board data.
+- **Not built as drawn:** "Blocked by:" is not bold inside its badge (a test fixes the badge text as one run); the run line reads as
+  one string with dots, as the app words it; the need rows are 36 px (the sheet), the comps 34; lane heads are 38 px with their edge.
+- **knip** reports 25 unused exports in files this brief did not touch; `npm run check`'s conventions step stops there.
