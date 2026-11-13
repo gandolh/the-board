@@ -603,7 +603,7 @@ planned on 2026-11-12. Not deployed; ships with brief 22.
 ## [2026-11-13] decision | Brief 20, the redesign direction approved
 
 The owner approved the redesign direction "The queue and the lanes" on the estate redesign board, with every question on
-the board standing as proposed. [Brief 20](briefs/todo/20-a-redesign-with-hallmark-on-the-estate-board.md) builds it:
+the board standing as proposed. [Brief 20](briefs/done/20-a-redesign-with-hallmark-on-the-estate-board.md) builds it:
 tokens first, then one screen per commit.
 
 ## [2026-11-13] done | Brief 20, the redesign "The queue and the lanes"
