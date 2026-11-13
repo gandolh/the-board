@@ -5,12 +5,11 @@ import { fetchBoard, fetchNeeds } from "./api";
 import { Board, orderLanes } from "./Board";
 import { DetailPanel } from "./DetailPanel";
 import { DonePage } from "./DonePage";
-import { cn } from "./lib/cn";
-import { EMPTY, MAIN, NAV_LINK } from "./looks";
+import { EMPTY, MAIN } from "./looks";
 import { needKeys, NeedsStrip } from "./NeedsStrip";
 import { usePage } from "./route";
 import { SprintsPage } from "./SprintsPage";
-import { PageLink, TagFilter, TopBar } from "./TopBar";
+import { BottomBar, TopBar } from "./TopBar";
 import { usePolling } from "./usePolling";
 
 /**
@@ -73,23 +72,13 @@ function BoardPage({ tag, onTag }: { tag: string; onTag: (tag: string) => void }
 
   return (
     <div>
-      <TopBar polled={board} sprint={board.data?.sprint}>
-        <TagFilter tags={tags} value={tag} onChange={onTag} />
-        <PageLink page="done" className={NAV_LINK}>
-          Older Done
-        </PageLink>
-        <PageLink page="sprints" className={NAV_LINK}>
-          Sprints
-        </PageLink>
-        <span
-          className={cn(
-            "rounded-box px-2 py-0.5 tabular-nums",
-            blocked > 0 ? "bg-danger/15 font-semibold text-danger" : "bg-surface-sunk text-ink-muted",
-          )}
-        >
-          {blocked} blocked
-        </span>
-      </TopBar>
+      <TopBar
+        page="board"
+        polled={board}
+        sprint={board.data?.sprint}
+        blocked={blocked}
+        tag={{ tags, value: tag, onChange: onTag }}
+      />
 
       <NeedsStrip needs={allNeeds} selected={needFilter ? needKind : null} onSelect={setNeedKind} />
 
@@ -113,6 +102,7 @@ function BoardPage({ tag, onTag }: { tag: string; onTag: (tag: string) => void }
         )}
       </main>
 
+      <BottomBar page="board" />
       {openKey && <DetailPanel key={openKey} ticketKey={openKey} refreshedAt={board.fetchedAt} onClose={close} />}
     </div>
   );

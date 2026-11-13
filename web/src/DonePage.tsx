@@ -3,8 +3,8 @@ import { DEFAULT_DONE_DAYS, type Ticket } from "@brief-board/shared";
 import { fetchDone } from "./api";
 import { DetailPanel } from "./DetailPanel";
 import { cn } from "./lib/cn";
-import { COUNT, EMPTY, MAIN, NAV_LINK } from "./looks";
-import { PageLink, TagFilter, TopBar } from "./TopBar";
+import { COUNT, EMPTY, MAIN } from "./looks";
+import { BottomBar, TopBar } from "./TopBar";
 import { day, when } from "./time";
 import { usePolling } from "./usePolling";
 
@@ -29,15 +29,7 @@ export function DonePage({ tag, onTag }: { tag: string; onTag: (tag: string) => 
 
   return (
     <div>
-      <TopBar polled={done}>
-        <TagFilter tags={tags} value={tag} onChange={onTag} />
-        <PageLink page="board" className={NAV_LINK}>
-          Board
-        </PageLink>
-        <PageLink page="sprints" className={NAV_LINK}>
-          Sprints
-        </PageLink>
-      </TopBar>
+      <TopBar page="done" polled={done} tag={{ tags, value: tag, onChange: onTag }} />
 
       <main className={cn(MAIN, "max-w-250")}>
         <h2 className="mt-2 mb-1 text-title font-bold">Older Done</h2>
@@ -47,6 +39,7 @@ export function DonePage({ tag, onTag }: { tag: string; onTag: (tag: string) => 
         {done.data && <DoneList tickets={all} tag={tag} onOpen={setOpenKey} />}
       </main>
 
+      <BottomBar page="done" />
       {openKey && <DetailPanel key={openKey} ticketKey={openKey} refreshedAt={done.fetchedAt} onClose={close} />}
     </div>
   );

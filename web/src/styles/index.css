@@ -31,10 +31,13 @@
   }
 }
 
-/* The two widths the layout changes at. They are today's `max-width` queries, edge included:
-   Tailwind's own `max-*:` variants compile to `width <`, one pixel off. */
-@custom-variant narrow (@media (max-width: 1100px));
-@custom-variant phone (@media (max-width: 600px));
+/* The two widths the layout changes at: the lanes stack below 1100 px (`narrow`), and the phone's
+   bottom bar and sheet start below 720 px (`phone`). A third, 1240 px, puts the tabs in the header's
+   one row (`min-[1240px]:`). Tailwind's own `max-*:` variants compile to `width <`, one pixel off,
+   so these are written out; each stops at the pixel before the edge the design names. */
+@custom-variant mid (@media (max-width: 1239px));
+@custom-variant narrow (@media (max-width: 1099px));
+@custom-variant phone (@media (max-width: 719px));
 
 @theme static {
   --color-*: initial;
@@ -140,6 +143,8 @@
      * so the cell reads as one that scrolls.
      */
     --cell-cap: 600px;
+    /* The select's chevron: a native select draws its own, and this one sits where the design puts it. */
+    --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
   }
   :root[data-theme="dark"] {
     color-scheme: dark;

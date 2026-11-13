@@ -5,8 +5,8 @@ import { Collapsible } from "./components/ui/Collapsible";
 import { DetailPanel } from "./DetailPanel";
 import { DoneList } from "./DonePage";
 import { cn } from "./lib/cn";
-import { COUNT, EMPTY, MAIN, NAV_LINK } from "./looks";
-import { PageLink, TopBar } from "./TopBar";
+import { COUNT, EMPTY, MAIN } from "./looks";
+import { BottomBar, TopBar } from "./TopBar";
 import { usePolling } from "./usePolling";
 
 /**
@@ -37,14 +37,7 @@ export function SprintsPage() {
 
   return (
     <div>
-      <TopBar polled={sprints} sprint={sprints.data?.active}>
-        <PageLink page="board" className={NAV_LINK}>
-          Board
-        </PageLink>
-        <PageLink page="done" className={NAV_LINK}>
-          Older Done
-        </PageLink>
-      </TopBar>
+      <TopBar page="sprints" polled={sprints} sprint={sprints.data?.active} />
 
       <main className={cn(MAIN, "max-w-250")}>
         <h2 className="mt-2 mb-1 text-title font-bold">Sprints</h2>
@@ -56,6 +49,7 @@ export function SprintsPage() {
         )}
       </main>
 
+      <BottomBar page="sprints" />
       {openKey && <DetailPanel key={openKey} ticketKey={openKey} refreshedAt={sprints.fetchedAt} onClose={close} />}
     </div>
   );
