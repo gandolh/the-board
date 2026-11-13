@@ -4,7 +4,6 @@ import { fetchSprint, fetchSprints } from "./api";
 import { Collapsible } from "./components/ui/Collapsible";
 import { DetailPanel } from "./DetailPanel";
 import { DoneList } from "./DonePage";
-import { cn } from "./lib/cn";
 import { COUNT, EMPTY, MAIN } from "./looks";
 import { BottomBar, TopBar } from "./TopBar";
 import { usePolling } from "./usePolling";
@@ -39,9 +38,9 @@ export function SprintsPage() {
     <div>
       <TopBar page="sprints" polled={sprints} sprint={sprints.data?.active} />
 
-      <main className={cn(MAIN, "max-w-250")}>
-        <h2 className="mt-2 mb-1 text-title font-bold">Sprints</h2>
-        <p className="mb-2 text-ink-muted">
+      <main className={MAIN}>
+        <h2 className="text-display">Sprints</h2>
+        <p className="mt-1 text-ink-muted">
           The closed sprints, newest first, each with the tickets that were Done when it closed.
         </p>
         {sprints.data && (
@@ -124,15 +123,15 @@ function SprintSection({
       open={open}
       onOpenChange={() => onToggle(sprint.number)}
       label={`Sprint ${sprint.number}`}
-      className="mt-3"
+      className="mt-4 max-w-220 first:mt-5"
       heading="h3"
-      headingClassName="text-heading font-bold"
-      triggerClassName="flex w-full cursor-pointer flex-wrap items-center gap-x-3 gap-y-1 px-1 py-2 text-left"
-      panelClassName="[&>section:first-child]:mt-1"
+      headingClassName="text-title"
+      triggerClassName="flex min-h-9 w-full cursor-pointer flex-wrap items-center gap-x-3 gap-y-1 rounded-t-band rounded-b-badge border border-line bg-surface px-4 text-left shadow-card hover:bg-surface-sunk phone:min-h-13"
+      panelClassName="mt-2"
       trigger={
         <>
-          <span className="font-strong">Sprint {sprint.number}</span>
-          <span className="font-normal text-ink-muted tabular-nums">{sprintDates(sprint)}</span>
+          <span className="font-bold">Sprint {sprint.number}</span>
+          <span className="text-body font-normal text-ink-muted tabular-nums">{sprintDates(sprint)}</span>
           <span className={COUNT}>{sprint.doneCount} Done</span>
         </>
       }

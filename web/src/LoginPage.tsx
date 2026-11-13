@@ -1,11 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useLogin, useSession, useWardSignIn } from "../vendor/ward/ward-auth-react.js";
 import { appBase } from "./base";
-import { BRAND, BUTTON, BUTTON_PRIMARY, GATE, GATE_CARD, NOTICE } from "./looks";
+import { BRAND, BUTTON, BUTTON_PRIMARY, FIELD, GATE, GATE_CARD, NOTICE } from "./looks";
 import { loginMessage, sessionReasonMessage, wardSignInMessage } from "./messages";
-
-/** A text field: the border turns red when the entry is missing. */
-const INPUT = "rounded-box border border-line bg-surface px-2.5 py-2 text-ink aria-invalid:border-danger";
 
 /**
  * The login page: username, password and "Sign in", and "Sign in with Ward"
@@ -68,7 +65,7 @@ export function LoginPage() {
           <label className="flex flex-col gap-1 text-ink-muted">
             <span>Username</span>
             <input
-              className={INPUT}
+              className={FIELD}
               ref={usernameRef}
               name="username"
               autoComplete="username"
@@ -88,7 +85,7 @@ export function LoginPage() {
           <label className="flex flex-col gap-1 text-ink-muted">
             <span>Password</span>
             <input
-              className={INPUT}
+              className={FIELD}
               ref={passwordRef}
               name="password"
               type="password"
@@ -130,7 +127,7 @@ export function LoginPage() {
         {ward.error !== null && (
           <p className="text-danger" role="alert">
             {wardSignInMessage(ward.error)}{" "}
-            <button type="button" className="cursor-pointer text-accent underline" onClick={ward.reset}>
+            <button type="button" className="cursor-pointer font-medium text-ink underline" onClick={ward.reset}>
               Dismiss
             </button>
           </p>

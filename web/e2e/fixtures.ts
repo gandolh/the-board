@@ -282,8 +282,12 @@ export interface StubOptions {
   apiDown?: boolean;
   /** An empty board. */
   empty?: boolean;
-  /** Hold every GET open, so a loading state stays on screen. */
+  /** Hold the session question open, so the gate's loading state stays on screen. */
   hang?: boolean;
+  /** Hold the board's GETs open, so a page's loading state stays on screen. */
+  hangData?: boolean;
+  /** Fail the session question: the gate's "can't be reached" state. */
+  sessionDown?: boolean;
 }
 
 const json = (route: Route, body: unknown, status = 200) =>
@@ -296,6 +300,8 @@ export async function stubBoard(page: Page, options: StubOptions = {}): Promise<
     const url = new URL(route.request().url());
     const path = url.pathname.replace("/brief-board-api", "");
     if (path === "/auth/session") {
+      if (options.hang) return new Promise(() => undefined);
+      if (options.sessionDown) return route.abort();
       if (options.signedOut) return json(route, { user: null, session: null, ward: { enabled: true, linked: false } });
       return json(route, {
         user: { id: "u1", username: "demo", role: "owner", hasPassword: true },
@@ -303,7 +309,7 @@ export async function stubBoard(page: Page, options: StubOptions = {}): Promise<
         ward: { enabled: true, linked: false },
       });
     }
-    if (options.hang) return new Promise(() => undefined);
+    if (options.hangData) return new Promise(() => undefined);
     if (options.apiDown && path !== "/auth/session") return route.abort();
     if (path === "/api/board")
       return json(route, { sprint: { number: 3, startedOn: "2026-11-02" }, lanes: options.empty ? [] : LANES });

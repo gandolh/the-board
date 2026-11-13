@@ -16,7 +16,7 @@ export function ThemeSwitch() {
     <RadioGroup<Theme>
       label="Theme"
       className="flex flex-wrap items-center gap-2"
-      optionClassName="cursor-pointer rounded-box border border-line px-3 py-1 hover:bg-surface-sunk data-checked:border-accent data-checked:bg-accent/15 data-checked:font-semibold"
+      optionClassName="inline-flex min-h-8 cursor-pointer items-center rounded-card border border-outline bg-surface px-3 text-small font-medium hover:bg-surface-sunk data-checked:border-ink data-checked:bg-surface-sunk data-checked:font-bold phone:min-h-10"
       options={THEMES}
       value={useTheme()}
       onValueChange={setTheme}

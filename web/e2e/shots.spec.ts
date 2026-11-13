@@ -27,7 +27,8 @@ const SCREENS: Screen[] = [
   { name: "account", path: "account" },
   { name: "login", path: "login", stub: { signedOut: true } },
   { name: "gate-loading", path: "", stub: { hang: true } },
-  { name: "gate-unreachable", path: "", stub: { apiDown: true } },
+  { name: "gate-unreachable", path: "", stub: { sessionDown: true } },
+  { name: "board-loading", path: "", stub: { hangData: true } },
   { name: "board-empty", path: "", stub: { empty: true } },
   { name: "board-api-down", path: "", stub: { apiDown: true } },
 ];
