@@ -19,7 +19,7 @@
     "start": "node server/dist/server.js",
     "pretest": "tsc -b shared",
     "test": "vitest run",
-    "typecheck": "tsc -b && tsc -p web --noEmit",
+    "typecheck": "tsc -b && tsc -p web --noEmit && tsc -p web/e2e --noEmit",
     "lint": "eslint .",
     "house-style:sync": "node vendor/house-style/bin/sync.mjs",
     "format": "prettier --write .",
