@@ -12,6 +12,8 @@
   "dependencies": {
     "@base-ui/react": "1.9.0",
     "@brief-board/shared": "0.1.0",
+    "@fontsource/atkinson-hyperlegible-mono": "5.3.0",
+    "@fontsource/atkinson-hyperlegible-next": "5.3.0",
     "clsx": "2.1.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
@@ -19,6 +21,7 @@
     "tailwind-merge": "3.7.0"
   },
   "devDependencies": {
+    "@playwright/test": "1.63.0",
     "@tailwindcss/vite": "4.3.5",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.7",

@@ -12,8 +12,8 @@ const twMerge = extendTailwindMerge({
   extend: {
     theme: {
       text: ["micro", "meta", "small", "body", "heading", "title", "display"],
-      radius: ["chip", "box", "gate"],
-      shadow: ["card", "panel"],
+      radius: ["badge", "card", "band", "pill", "chip", "box", "gate"],
+      shadow: ["card", "panel", "sheet"],
       "font-weight": ["strong"],
     },
     classGroups: {

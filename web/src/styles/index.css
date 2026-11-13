@@ -4,6 +4,16 @@
 
 @import "tailwindcss";
 
+/* Self-hosted, exact pins: Atkinson Hyperlegible Next for the text, its Mono for ticket keys. */
+@import "@fontsource/atkinson-hyperlegible-next/latin-400.css" layer(vendor);
+@import "@fontsource/atkinson-hyperlegible-next/latin-500.css" layer(vendor);
+@import "@fontsource/atkinson-hyperlegible-next/latin-700.css" layer(vendor);
+@import "@fontsource/atkinson-hyperlegible-next/latin-ext-400.css" layer(vendor);
+@import "@fontsource/atkinson-hyperlegible-next/latin-ext-500.css" layer(vendor);
+@import "@fontsource/atkinson-hyperlegible-next/latin-ext-700.css" layer(vendor);
+@import "@fontsource/atkinson-hyperlegible-mono/latin-400.css" layer(vendor);
+@import "@fontsource/atkinson-hyperlegible-mono/latin-ext-400.css" layer(vendor);
+
 /* The vendored copies aren't the app's, and Tailwind would otherwise scan them for class names. */
 @source not "../../vendor";
 @source not "../../../vendor";
@@ -33,53 +43,85 @@
   --shadow-*: initial;
 
   /* Colours name a role, never a value. light-dark() holds both themes; color-scheme on <html>
-     picks one. The family's names (wicket's list) come first. */
-  --color-page: light-dark(#f4f5f7, #1d2125);
-  --color-surface: light-dark(#ffffff, #22272b);
-  --color-surface-sunk: light-dark(#ebecf0, #161a1d);
-  --color-ink: light-dark(#172b4d, #dee4ea);
-  --color-ink-muted: light-dark(#5e6c84, #9fadbc);
-  --color-line: light-dark(#dfe1e6, #38414a);
-  --color-accent: light-dark(#0c66e4, #579dff);
-  --color-danger: light-dark(#c9372c, #f87168);
-  --color-banner-bg: light-dark(#fff7d6, #332e1b);
-  --color-banner-text: light-dark(#533f04, #f5cd47);
+     picks one. The family's names (wicket's list) come first. A cool violet-grey ladder, ink as
+     the accent: only the statuses carry colour. */
+  --color-page: light-dark(#f0f0f4, #141419);
+  /* Cards, bands, the header, the panel: lighter than the page in dark. */
+  --color-surface: light-dark(#fdfdff, #2a2a35);
+  /* Inputs, the status wells, the copy button's ground. */
+  --color-surface-sunk: light-dark(#e4e3eb, #101015);
+  /* The 1 px edge of a sunk well. */
+  --color-well-edge: light-dark(#e4e3eb, #2a2a33);
+  --color-line: light-dark(#c9c8d4, #40404c);
+  /* Edges that must be seen: fields, the tag select. */
+  --color-outline: light-dark(#7a7990, #82819a);
+  --color-ink: light-dark(#1a1a24, #e9e8f0);
+  --color-ink-muted: light-dark(#575668, #a3a2b3);
+  /* The one primary is ink. */
+  --color-accent: light-dark(#1a1a24, #e9e8f0);
+  --color-on-accent: light-dark(#fdfdff, #141419);
+  --color-focus: light-dark(#1a1a24, #e9e8f0);
+  /* Behind the panel and the phone's sheet; the app sets the alpha. */
+  --color-scrim: light-dark(#1a1a24, #0a0a0f);
+  --color-danger: light-dark(#b42d26, #f07a70);
+  --color-banner-bg: light-dark(#fbefc4, #2f2914);
+  --color-banner-text: light-dark(#4a3805, #f0cd5c);
   /* What this board alone needs: a stale run, and the status colours (the API's status names). */
-  --color-warn: light-dark(#a54800, #fea362);
-  --color-backlog: light-dark(#86765a, #bfa983);
-  --color-todo: light-dark(#8590a2, #8c9bab);
-  --color-in_progress: light-dark(#0c66e4, #579dff);
-  --color-ready_for_test: light-dark(#b38600, #e2b203);
-  --color-ready_for_deploy: light-dark(#6e5dc6, #9f8fef);
-  --color-done: light-dark(#1f845a, #4bce97);
+  --color-warn: light-dark(#974603, #eda06a);
+  --color-backlog: light-dark(#85704c, #c6ae84);
+  --color-todo: light-dark(#5f6b7f, #98a4b5);
+  --color-in_progress: light-dark(#2457c5, #86a9f5);
+  --color-ready_for_test: light-dark(#8f6c00, #dfb426);
+  --color-ready_for_deploy: light-dark(#6550bd, #a898f2);
+  --color-done: light-dark(#1c7650, #55c996);
+  /* The washes behind the Needs you kinds and the status chips. */
+  --color-danger-wash: light-dark(#fbe7e5, #3b2023);
+  --color-question-wash: light-dark(#e3ebfb, #1f2a48);
+  --color-done-wash: light-dark(#dcf0e5, #16332a);
+  --color-test-wash: light-dark(#fdf8e6, #3a3014);
   /* A card or a row under the pointer: the surface, 8% toward the accent. */
   --color-surface-hover: color-mix(in srgb, var(--color-surface) 92%, var(--color-accent));
 
-  /* A named type scale (Q62), sizes only: the line height is the body's 1.45, inherited. */
+  /* A named type scale (Q62). Each size carries its line height, and some a weight. */
   --text-micro: 0.6875rem;
   --text-meta: 0.75rem;
+  --text-meta--line-height: 1rem;
   --text-small: 0.8125rem;
+  --text-small--line-height: 1.125rem;
+  --text-small--font-weight: 700;
   --text-body: 0.875rem;
+  --text-body--line-height: 1.25rem;
   --text-heading: 0.9375rem;
+  --text-heading--line-height: 1.375rem;
+  --text-heading--font-weight: 500;
   --text-title: 1.125rem;
-  --text-display: 1.25rem;
+  --text-title--line-height: 1.5rem;
+  --text-title--font-weight: 700;
+  --text-display: 1.375rem;
+  --text-display--line-height: 1.75rem;
+  --text-display--font-weight: 700;
 
-  --font-weight-strong: 650;
+  --font-weight-strong: 700;
 
-  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --default-mono-font-family: monospace;
+  --font-sans: "Atkinson Hyperlegible Next", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Atkinson Hyperlegible Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --default-mono-font-family: var(--font-mono);
 
   /* The header's height: the family's name (wicket, lantern), `min-h-top`. */
   --height-top: 56px;
 
+  --radius-badge: 6px;
+  --radius-card: 8px;
+  --radius-band: 12px;
+  --radius-pill: 999px;
   --radius-chip: 3px;
   --radius-box: 4px;
   --radius-gate: 8px;
 
-  --shadow-card:
-    0 1px 1px light-dark(rgb(9 30 66 / 0.25), rgb(0 0 0 / 0.5)),
-    0 0 1px light-dark(rgb(9 30 66 / 0.31), rgb(0 0 0 / 0.5));
-  --shadow-panel: -8px 0 24px rgb(9 30 66 / 0.15);
+  /* 1 raised (card, band, header), 2 overlay (panel, sheet). Dark: a lighter surface and a 1 px line, no shadow. */
+  --shadow-card: 0 1px 3px light-dark(rgb(26 26 36 / 0.12), transparent);
+  --shadow-panel: -12px 0 32px light-dark(rgb(26 26 36 / 0.16), rgb(0 0 0 / 0.5));
+  --shadow-sheet: 0 -12px 32px light-dark(rgb(26 26 36 / 0.18), rgb(0 0 0 / 0.5));
 
   /* The stacking order: a long cell's sticky name, the column heads, the header, the panel. */
   --z-index-cell: 1;
@@ -111,12 +153,15 @@
     background-color: var(--color-page);
     color: var(--color-ink);
     font-size: var(--text-body);
-    line-height: 1.45;
+    line-height: var(--text-body--line-height);
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-accent);
+    outline: 2px solid var(--color-focus);
     outline-offset: 2px;
+    box-shadow: 0 0 0 4px var(--color-surface);
   }
 }

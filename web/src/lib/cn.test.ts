@@ -21,6 +21,8 @@ describe("cn", () => {
     expect(cn("shadow-card", "shadow-panel")).toBe("shadow-panel");
     expect(cn("font-semibold", "font-strong")).toBe("font-strong");
     expect(cn("z-top", "z-panel")).toBe("z-panel");
+    expect(cn("rounded-card", "rounded-band")).toBe("rounded-band");
+    expect(cn("shadow-panel", "shadow-sheet")).toBe("shadow-sheet");
   });
 
   it("drops falsy values", () => {
