@@ -121,7 +121,7 @@ records what shipped. In short:
   choice. A row is not a control. On a phone the queue stops at four rows until "Show all N" (`usePhone`).
 - **Lanes** (`Board.tsx`): a band 38 px high (a 36 px toggle in a 1 px edge), wells hanging 4 px below it. One DOM serves
   both layouts: each cell is a well from 1100 px and a heading with its cards below it.
-- **Panel** (`DetailPanel.tsx`, `components/ui/Dialog.tsx`): still the non-modal Base UI dialog; under 720 px a bottom
+- **Panel** (`DetailPanel.tsx`, and `Dialog.tsx` under `web/src/components/ui/`): still the non-modal Base UI dialog; under 720 px a bottom
   sheet below a dimmed strip of the screen, with no drag handle.
 - **Checks**: `web/e2e/` (Playwright, Vite alone with every GET stubbed from `fixtures.ts`, a frozen clock) runs the
   focus ring, reduced motion, 390 and 360 px overflow and theme-switch specs in light, dark and system;
