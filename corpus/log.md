@@ -605,3 +605,13 @@ planned on 2026-11-12. Not deployed; ships with brief 22.
 The owner approved the redesign direction "The queue and the lanes" on the estate redesign board, with every question on
 the board standing as proposed. [Brief 20](briefs/todo/20-a-redesign-with-hallmark-on-the-estate-board.md) builds it:
 tokens first, then one screen per commit.
+
+## [2026-11-13] done | Brief 20, the redesign "The queue and the lanes"
+
+[Brief 20](briefs/done/20-a-redesign-with-hallmark-on-the-estate-board.md): the approved direction built as a token
+change and one commit per screen. The tokens and fonts (Atkinson Hyperlegible, self-hosted), a header with tabs and a
+phone bottom bar, Needs you as a queue (still a `RadioGroup` by kind), one sticky status row over lanes that stack
+below 1100 px and never scroll sideways, the cards, the detail panel (a bottom sheet under 720 px), Older Done, and
+the undrawn Sprints, account, sign-in and gate. Revisits one line of [wiki/board-ui.md](wiki/board-ui.md)
+([decisions.md](wiki/decisions.md), "Nothing on the board scrolls sideways"). `web/DESIGN.md` records the result;
+Playwright floor specs and `npm run check:contrast` are new. Web-only deploy; no server change.

@@ -1,6 +1,6 @@
 ---
-summary: Locked calls for brief-board's board model, each with date, rejected alternative and reason. One ticket per brief keyed <project>-<NN> with no hand-made tickets (revisited 2026-11-03: open todos get sync-owned tickets in a Backlog column; 2026-11-07: so do briefs in blocked/); Blocked only by agreement with the owner, apart from a blocked/ folder's Blocked by; which moves are allowed and which need a message; six columns with Ready for test and Ready for deploy as the owner's; the corpus wins over the board (revisited 2026-11-06: sync waits for a fresh run); a read-only UI; one project tag per ticket decides its lane; sync only by hand; a corpus nested deeper names itself, as churchix and scoala-ramna-theme do (2026-11-03); sprints, one active, the CLI starting the next on the owner's ask (2026-11-10); tags the one write a closed sprint's ticket or a Backlog ticket takes (2026-11-12). The CLI, the token, the VPS, Base UI and the house style are in decisions-engineering.md. Read before proposing to change any of these.
-updated: 2026-11-12
+summary: Locked calls for brief-board's board model, each with date, rejected alternative and reason. One ticket per brief keyed <project>-<NN> with no hand-made tickets (revisited 2026-11-03: open todos get sync-owned tickets in a Backlog column; 2026-11-07: so do briefs in blocked/); Blocked only by agreement with the owner, apart from a blocked/ folder's Blocked by; which moves are allowed and which need a message; six columns with Ready for test and Ready for deploy as the owner's; the corpus wins over the board (revisited 2026-11-06: sync waits for a fresh run); a read-only UI; one project tag per ticket decides its lane; sync only by hand; a corpus nested deeper names itself, as churchix and scoala-ramna-theme do (2026-11-03); sprints, one active, the CLI starting the next on the owner's ask (2026-11-10); tags the one write a closed sprint's ticket or a Backlog ticket takes (2026-11-12); nothing on the board scrolls sideways, lanes stack below 1100 px (2026-11-13). The CLI, the token, the VPS, Base UI and the house style are in decisions-engineering.md. Read before proposing to change any of these.
+updated: 2026-11-13
 ---
 
 # Decisions
@@ -155,3 +155,14 @@ closed sprint's ticket takes, because "tags are pretty cool to understand how
 they were grouped by features", and the old work is most of the board. It
 changes no column of the ticket, only its tags and their events. Rejected:
 freezing tags too (brief 22's first build), which left Sprint 1 ungrouped.
+
+## Nothing on the board scrolls sideways
+_2026-11-13_, the owner's approval of the redesign "The queue and the lanes" (brief 20), changing a line of
+[board-ui.md](board-ui.md): "Below 1100 px each lane scrolls sideways on its own and shows its own column names." From
+1100 px one sticky status row is the column header for every lane, aligned with the wells. Below 1100 px a lane
+stacks its non-empty statuses as headings with their cards, in a grid of 300 px columns, and the empty statuses fold
+into one line ("Backlog, Blocked: empty"). The phone's widths: the tabs become a bottom bar under 720 px. What stays: a
+cell past five cards still stops at 600 px and scrolls vertically, from 1100 px. Rejected: sideways scrolling lanes (a
+sideways scroll is easy to miss on a phone, and each lane then repeats the column names); a status row that stays on a
+narrow screen (it can't stay aligned with seven columns that are no longer there). The history line above is kept as
+it was written.

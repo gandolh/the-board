@@ -21,10 +21,11 @@ paths:
   (`bg-surface`, `text-ink`); no arbitrary colours (`bg-[#fff]`), no `text-[13px]`: type sizes
   come from the named scale (`text-body`, `text-meta`). A new token's name also goes in
   `web/src/lib/cn.ts`'s lists.
-- A class chosen by data is a whole string in a `Record` (see `STATUS_BADGE`), never built by
+- A class chosen by data is a whole string in a `Record` (see `STATUS_CHIP`), never built by
   concatenation: Tailwind reads source text, so a class built from `status` would produce no CSS.
-- `narrow:` and `phone:` are the two breakpoints, and they match the old `max-width: 1100px` and
-  `600px` queries, edge included. Don't use `max-sm:` or `max-lg:`: they are one pixel off.
+- `narrow:` (`max-width: 1099px`), `phone:` (`719px`) and `mid:` (`1239px`) are the breakpoints, each
+  the pixel before the edge the design names; the header's one row is `min-[1240px]:`. Don't use
+  `max-sm:` or `max-lg:`: they are one pixel off.
 - Light, Dark and System (light on a first visit) set `data-theme` on `<html>`, from
   `lib/theme.ts` and the boot script in `web/index.html`. Colour tokens are `light-dark()` pairs, so
   both themes change when a token changes; no `dark:` class is needed. `prefers-color-scheme`

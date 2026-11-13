@@ -1,6 +1,6 @@
 ---
-summary: How the read-only board in the browser is built, as of 2026-11-10. Its GETs and where the API is, polling every 10 s and the banner when the API is down, the tag filter (in the browser, carried between pages), lanes that scroll sideways below 1100 px, cells past five cards that stop at 600px and scroll (2026-11-09), the Older Done page for Done past the board's 14 days and how a ticket is on exactly one of the two (2026-11-09), the shared header and the active sprint in it, the Sprints page of closed sprints (2026-11-10), the non-modal Base UI detail panel and the wrappers Base UI sits behind (2026-11-11), the Tailwind stylesheet, its tokens and the Light / Dark / System switch (2026-11-11), and the demo seed script.
-updated: 2026-11-11
+summary: How the read-only board in the browser is built, as of 2026-11-13 (the redesign "The queue and the lanes": a Needs you queue, one sticky status row from 1100 px, lanes that stack below it, a bottom bar under 720 px). Its GETs and where the API is, polling every 10 s and the banner when the API is down, the tag filter (in the browser, carried between pages), lanes that stack below 1100 px and never scroll sideways (2026-11-13), cells past five cards that stop at 600px and scroll (2026-11-09), the Older Done page for Done past the board's 14 days and how a ticket is on exactly one of the two (2026-11-09), the shared header and the active sprint in it, the Sprints page of closed sprints (2026-11-10), the non-modal Base UI detail panel and the wrappers Base UI sits behind (2026-11-11), the Tailwind stylesheet, its tokens and the Light / Dark / System switch (2026-11-11), and the demo seed script.
+updated: 2026-11-13
 ---
 
 # Board UI
@@ -19,16 +19,18 @@ older Done, and since 2026-11-10 the sprints and one sprint), built from
 (`POLL_MS`), pauses while the tab is hidden, and keeps the last data behind a
 banner when the API is down. The tag filter works in the browser on the polled
 board; the Blocked count and the tab title ("(1 blocked) brief-board") stay
-board-wide. Below 1100 px each lane scrolls sideways on its own and shows its
-own column names, since one sticky header row can't stay aligned with all of
-them. Light, Dark and System are the owner's choice, light on a first visit
+board-wide. Nothing scrolls sideways (since 2026-11-13, [decisions.md](decisions.md),
+"Nothing on the board scrolls sideways"). From 1100 px one status row, sticky at the top
+of the screen, is the column header for every lane; below 1100 px a lane stacks its non-empty
+statuses as headings with their cards, in a grid of 300 px columns, and its empty statuses fold into one
+line, "Backlog, Blocked: empty". Light, Dark and System are the owner's choice, light on a first visit
 (see "Styling and themes" below). Ticket markdown goes through
 `react-markdown` with `skipHtml`.
 
 Since 2026-11-09 a cell holding more than five cards (`CELL_CARDS` in
 `Board.tsx`) gets the `CELL_LONG` utilities and a `data-long` attribute: it
-stops at `--cell-cap` (600px, about five Done cards) and scrolls inside, and
-on a narrow screen its column name sticks to its top. Only those utilities cap
+stops at `--cell-cap` (600px, about five Done cards) and scrolls inside, from 1100 px (below it the
+cards flow in the page). Only those utilities cap
 a cell, so one of five cards or fewer is as tall as its cards whatever their
 height. Older Done
 (`DonePage.tsx`, `<base>done`) lists `GET /api/done`: Done tickets past the
@@ -76,13 +78,15 @@ Since 2026-11-11 the whole web app is Tailwind 4, from one stylesheet,
 `web/src/styles/index.css`. Its `@theme` holds every token and clears
 Tailwind's default colour, text, radius and shadow scales, so only the board's
 own exist. Colours name a role (`surface`, `ink`, `ink-muted`, `line`,
-`accent`, `danger`, `page`, `surface-sunk`, `banner-bg`, `banner-text`, plus
-`warn` and the seven status colours, named as the API names them) and are
-`light-dark()` pairs. The type scale is `micro`, `meta`, `small`, `body`,
-`heading`, `title`, `display`, sizes only: the line height is the body's 1.45.
+`accent`, `danger`, `page`, `surface-sunk`, `banner-bg`, `banner-text`, plus `well-edge`, `outline`, `on-accent`,
+`focus`, `scrim`, the four washes, `warn` and the seven status colours, named as the API names them) and are
+`light-dark()` pairs. The type scale is `meta`, `small`, `body`,
+`heading`, `title`, `display`; each size carries its line height, and some a weight (`small` is bold, `heading`
+500, `title` and `display` 700). The text is Atkinson Hyperlegible Next, the ticket keys its Mono
+(`font-mono`), both self-hosted from `@fontsource` packages.
 The 14 px base sits on `body`, the root keeps the browser's size. `narrow:`
-(`max-width: 1100px`) and `phone:` (`600px`) are custom variants that compile
-to the old queries, edge included.
+(`max-width: 1099px`) and `phone:` (`719px`) are custom variants, and `mid:` (`1239px`) a third; the
+header's one row starts at 1240 px (`min-[1240px]:`). Each stops at the pixel before the edge the design names.
 
 Classes that depend on data (a status's colour, a role's badge, a needs kind's
 colour) are whole strings in a `Record` beside the component that uses them, so
@@ -102,3 +106,24 @@ operating system in CSS, with no listener.
 made-up projects. It refuses a board holding any other project. No one ticket
 can carry all six message roles, because a confirmation needs Blocked → Done,
 so the seed spreads them over two.
+
+## The redesign (2026-11-13)
+
+Brief 20 built the owner's approved direction "The queue and the lanes". [web/DESIGN.md](../../web/DESIGN.md)
+records what shipped. In short:
+
+- **Header** (`TopBar.tsx`): from 1240 px one 56 px row (name, sprint, blocked pill, the tabs Board, Older Done and
+  Sprints, the clock, the tag select, the account); from 720 px the tabs take a second row with the tag select; under
+  720 px a bottom bar (`BottomBar`) holds Board, Older Done, Sprints and the account, and the Sprints icon is a calendar.
+  The current page has an ink bar. The header scrolls away; the status row stays.
+- **Needs you** (`NeedsStrip.tsx`): a queue, a row per need (kind pill, key, title, the API's reason). The head line
+  holds a `RadioGroup` of totals by kind; the rows of the chosen kind are drawn pressed, and "Show all" clears the
+  choice. A row is not a control. On a phone the queue stops at four rows until "Show all N" (`usePhone`).
+- **Lanes** (`Board.tsx`): a band 38 px high (a 36 px toggle in a 1 px edge), wells hanging 4 px below it. One DOM serves
+  both layouts: each cell is a well from 1100 px and a heading with its cards below it.
+- **Panel** (`DetailPanel.tsx`, `components/ui/Dialog.tsx`): still the non-modal Base UI dialog; under 720 px a bottom
+  sheet below a dimmed strip of the screen, with no drag handle.
+- **Checks**: `web/e2e/` (Playwright, Vite alone with every GET stubbed from `fixtures.ts`, a frozen clock) runs the
+  focus ring, reduced motion, 390 and 360 px overflow and theme-switch specs in light, dark and system;
+  `SHOTS_DIR=<dir> npm run test:e2e -w @brief-board/web -- shots` writes the screenshots. `npm run check:contrast`
+  measures the built tokens.
