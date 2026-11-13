@@ -80,9 +80,8 @@ function BoardPage({ tag, onTag }: { tag: string; onTag: (tag: string) => void }
         tag={{ tags, value: tag, onChange: onTag }}
       />
 
-      <NeedsStrip needs={allNeeds} selected={needFilter ? needKind : null} onSelect={setNeedKind} />
-
       <main className={MAIN}>
+        <NeedsStrip needs={allNeeds} selected={needFilter ? needKind : null} onSelect={setNeedKind} />
         {board.data && lanes.length === 0 ? (
           <p className={EMPTY}>
             {needFilter
