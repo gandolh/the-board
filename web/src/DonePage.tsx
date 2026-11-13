@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { DEFAULT_DONE_DAYS, type Ticket } from "@brief-board/shared";
 import { fetchDone } from "./api";
 import { DetailPanel } from "./DetailPanel";
-import { cn } from "./lib/cn";
 import { COUNT, EMPTY, MAIN } from "./looks";
 import { BottomBar, TopBar } from "./TopBar";
 import { day, when } from "./time";
@@ -31,9 +30,9 @@ export function DonePage({ tag, onTag }: { tag: string; onTag: (tag: string) => 
     <div>
       <TopBar page="done" polled={done} tag={{ tags, value: tag, onChange: onTag }} />
 
-      <main className={cn(MAIN, "max-w-250")}>
-        <h2 className="mt-2 mb-1 text-title font-bold">Older Done</h2>
-        <p className="mb-2 text-ink-muted">
+      <main className={MAIN}>
+        <h2 className="text-display">Older Done</h2>
+        <p className="mt-1 text-ink-muted">
           Tickets that reached Done more than {DEFAULT_DONE_DAYS} days ago, by project, newest first.
         </p>
         {done.data && <DoneList tickets={all} tag={tag} onOpen={setOpenKey} />}
@@ -81,30 +80,33 @@ export function DoneList({
     else groups.set(ticket.project, [ticket]);
   }
   return (
-    <>
+    <div className="mt-5 flex max-w-220 flex-col gap-4 phone:mt-4 phone:gap-3">
       {[...groups].map(([project, inProject]) => (
-        <section key={project} className="mt-5" aria-label={`Project ${project}`}>
-          <Heading className="mb-1.5 text-body font-strong">
+        <section
+          key={project}
+          className="overflow-hidden rounded-band border border-line bg-surface shadow-card"
+          aria-label={`Project ${project}`}
+        >
+          <Heading className="flex items-baseline gap-3 border-b border-line px-4 py-3 text-title font-bold">
             {project} <span className={COUNT}>{inProject.length}</span>
           </Heading>
-          <ul className="grid grid-cols-[max-content_minmax(0,1fr)_max-content] rounded-box bg-surface shadow-card phone:grid-cols-[minmax(0,1fr)_max-content]">
+          <ul>
             {inProject.map((ticket) => (
-              <li
-                key={ticket.key}
-                className="col-span-full grid grid-cols-subgrid not-first:border-t not-first:border-line first:*:rounded-t-box last:*:rounded-b-box"
-              >
+              <li key={ticket.key} className="not-first:border-t not-first:border-line">
                 <button
                   type="button"
-                  className="col-span-full grid cursor-pointer grid-cols-subgrid items-baseline gap-x-4 gap-y-0.5 px-3 py-2 text-left hover:bg-surface-hover"
+                  className="relative flex min-h-12 w-full cursor-pointer items-baseline justify-between gap-4 px-4 py-3 text-left hover:bg-surface-sunk phone:min-h-14 phone:flex-col phone:gap-0"
                   onClick={() => onOpen(ticket.key)}
                   aria-label={`${ticket.key}: ${ticket.title}`}
                 >
-                  <span className="text-meta whitespace-nowrap text-ink-muted tabular-nums phone:overflow-hidden phone:text-ellipsis">
-                    {ticket.key}
+                  <span className="flex min-w-0 items-baseline gap-4 phone:flex-col phone:gap-0">
+                    <span className="min-w-26 flex-none font-mono text-meta whitespace-nowrap text-ink-muted tabular-nums phone:min-w-0">
+                      {ticket.key}
+                    </span>
+                    <span className="text-heading wrap-anywhere phone:text-[16px]/[22px]">{ticket.title}</span>
                   </span>
-                  <span className="wrap-anywhere phone:col-span-full phone:row-start-2">{ticket.title}</span>
                   <time
-                    className="justify-self-end text-meta whitespace-nowrap text-ink-muted tabular-nums"
+                    className="text-small font-normal whitespace-nowrap text-ink-muted tabular-nums phone:absolute phone:top-3 phone:right-4"
                     dateTime={ticket.statusChangedAt}
                     title={`Done since ${when(ticket.statusChangedAt)}`}
                   >
@@ -116,6 +118,6 @@ export function DoneList({
           </ul>
         </section>
       ))}
-    </>
+    </div>
   );
 }
