@@ -145,7 +145,7 @@ function Lane({
       onOpenChange={() => onToggle(lane.project)}
       label={`Project ${lane.project}`}
       className="mt-2 first:mt-3"
-      triggerClassName="flex min-h-9 w-full cursor-pointer items-center gap-2 rounded-t-band rounded-b-badge border border-line bg-surface px-4 text-left shadow-card hover:bg-surface-sunk phone:min-h-13"
+      triggerClassName="flex min-h-9.5 w-full cursor-pointer items-center gap-2 rounded-t-band rounded-b-badge border border-line bg-surface px-4 text-left shadow-card hover:bg-surface-sunk phone:min-h-13.5"
       panelClassName="mt-1"
       trigger={
         <>

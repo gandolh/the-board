@@ -5,7 +5,8 @@ export const EMPTY = "my-3.5 py-12 text-center text-ink-muted";
 export const COUNT = "ml-1 font-normal text-ink-muted tabular-nums";
 
 /** A tag chip. */
-export const TAG = "inline-block rounded-badge bg-surface-sunk px-2 text-meta font-normal text-ink-muted";
+export const TAG =
+  "inline-block rounded-badge bg-surface-sunk px-2 py-px text-meta leading-[18px] font-normal text-ink-muted";
 
 /** The page's width and padding; the board's other pages share it. The bottom padding clears the phone's bar. */
 export const MAIN = "mx-auto w-full max-w-360 px-6 pt-2 pb-10 phone:px-4 phone:pb-22";

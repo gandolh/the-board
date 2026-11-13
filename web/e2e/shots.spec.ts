@@ -14,6 +14,8 @@ interface Screen {
   stub?: StubOptions;
   /** Clicks a card or a row first. */
   open?: string;
+  /** Hovers a card first. */
+  hover?: string;
   /** Viewport height, where the screen is a stage of its own. */
   height?: (width: number) => number;
   full?: boolean;
@@ -22,6 +24,7 @@ interface Screen {
 const SCREENS: Screen[] = [
   { name: "board", path: "", full: true },
   { name: "detail", path: "", open: "shelfmark-31: Search results page", height: (w) => (w === 390 ? 1243 : 1180) },
+  { name: "board-card-hover", path: "", hover: "almanac-5: A redesign with Hallmark" },
   { name: "older-done", path: "done" },
   { name: "sprints", path: "sprints", full: true },
   { name: "account", path: "account" },
@@ -47,9 +50,21 @@ for (const theme of ["light", "dark"] as const) {
         await stubBoard(page, screen.stub);
         await page.goto(BASE + screen.path);
         if (screen.open) await page.getByRole("button", { name: screen.open }).click();
+        if (screen.hover) await page.getByRole("button", { name: screen.hover }).hover();
         await settle(page);
         await page.screenshot({ path: `${DIR}/${screen.name}-${theme}-${width}.png`, fullPage: screen.full ?? false });
       });
     }
   }
+}
+
+// The folds: the board at each width the layout changes at, light.
+for (const width of [1240, 1100, 1099, 720, 719, 360]) {
+  test(`board folds ${width}`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await stubBoard(page);
+    await page.goto(BASE);
+    await settle(page);
+    await page.screenshot({ path: `${DIR}/board-fold-light-${width}.png`, fullPage: true });
+  });
 }

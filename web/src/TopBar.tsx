@@ -87,7 +87,7 @@ export function TopBar({
             {polled.fetchedAt ? `Updated ${clock(polled.fetchedAt)}` : "Loading…"}
           </span>
           {tag && (
-            <div className="justify-self-end [grid-area:tag] mid:py-1.5">
+            <div className="justify-self-end [grid-area:tag] mid:py-1.5 phone:py-0">
               <TagFilter {...tag} />
             </div>
           )}
@@ -139,7 +139,7 @@ export function SprintName({ sprint }: { sprint: Pick<Sprint, "number" | "starte
  * chosen one when none of them carry it: the choice carries from one page
  * to the other, so the owner can always see and clear it.
  */
-export function TagFilter({ tags, value, onChange }: TagChoice) {
+function TagFilter({ tags, value, onChange }: TagChoice) {
   const options = value && !tags.includes(value) ? [...tags, value].sort() : tags;
   return (
     <label className="flex items-center gap-2 text-ink-muted">
@@ -165,7 +165,7 @@ export function TagFilter({ tags, value, onChange }: TagChoice) {
 }
 
 /** A link to another page of the board, followed without a reload unless the owner asks for a new tab. */
-export function PageLink({
+function PageLink({
   page,
   current,
   className,

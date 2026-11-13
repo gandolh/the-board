@@ -24,9 +24,11 @@
     "house-style:sync": "node vendor/house-style/bin/sync.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "npm run typecheck && npm run lint && npm run format:check && npm run check:conventions && npm test",
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm run check:contrast && npm run check:conventions && npm test",
     "check:fast": "npm run typecheck && node scripts/check-fast.mjs",
-    "check:conventions": "knip && depcruise server/src web/src shared/src cli/src && node vendor/house-style/bin/check-base-ui.mjs && node vendor/house-style/bin/check-structure.mjs"
+    "check:conventions": "knip && depcruise server/src web/src shared/src cli/src && node vendor/house-style/bin/check-base-ui.mjs && node vendor/house-style/bin/check-structure.mjs",
+    "check:contrast": "node scripts/check-contrast.mjs",
+    "test:e2e": "npm run test:e2e -w @brief-board/web"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

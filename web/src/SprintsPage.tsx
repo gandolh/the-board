@@ -126,7 +126,7 @@ function SprintSection({
       className="mt-4 max-w-220 first:mt-5"
       heading="h3"
       headingClassName="text-title"
-      triggerClassName="flex min-h-9 w-full cursor-pointer flex-wrap items-center gap-x-3 gap-y-1 rounded-t-band rounded-b-badge border border-line bg-surface px-4 text-left shadow-card hover:bg-surface-sunk phone:min-h-13"
+      triggerClassName="flex min-h-9.5 w-full cursor-pointer flex-wrap items-center gap-x-3 gap-y-1 rounded-t-band rounded-b-badge border border-line bg-surface px-4 text-left shadow-card hover:bg-surface-sunk phone:min-h-13.5"
       panelClassName="mt-2"
       trigger={
         <>

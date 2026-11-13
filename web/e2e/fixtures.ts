@@ -5,7 +5,7 @@ import type { Page, Route } from "@playwright/test";
  * wicket-15, shelfmark-31...), served by `page.route` in place of the API, and a clock frozen at
  * 10:30:06 UTC on 11 Nov 2026. Nothing here is a real ticket.
  */
-export const NOW = new Date("2026-11-11T10:30:06.000Z");
+const NOW = new Date("2026-11-11T10:30:06.000Z");
 export const BASE = "/brief-board/";
 const API = "**/brief-board-api/**";
 
@@ -74,7 +74,7 @@ const spec = (
   ...more,
 });
 
-export const LANES = [
+const LANES = [
   {
     project: "almanac",
     tickets: [

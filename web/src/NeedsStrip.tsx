@@ -75,7 +75,7 @@ export function NeedsStrip({
         <RadioGroup<NeedKind>
           label="Needs you"
           className="ml-2 flex flex-wrap items-center gap-x-1 phone:ml-0 phone:w-full phone:pl-7"
-          optionClassName="cursor-pointer rounded-badge px-2 py-0.5 text-small tabular-nums hover:bg-surface-sunk data-checked:bg-surface-sunk data-checked:inset-ring-1 data-checked:inset-ring-current"
+          optionClassName="cursor-pointer rounded-badge px-2 py-0.5 text-small tabular-nums hover:underline data-checked:font-bold data-checked:inset-ring-1 data-checked:inset-ring-current"
           options={groups.map((group) => ({
             value: group.kind,
             label: needCountText(group.kind, group.needs.length),
@@ -106,7 +106,7 @@ export function NeedsStrip({
           >
             <span
               className={cn(
-                "inline-flex h-5 items-center justify-self-start rounded-pill border bg-transparent px-2 text-small whitespace-nowrap",
+                "inline-flex h-5 items-center justify-self-start rounded-pill border bg-surface px-2 text-small whitespace-nowrap",
                 KIND_LOOK[need.kind].pill,
               )}
             >
