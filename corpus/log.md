@@ -599,3 +599,9 @@ they were grouped by features"); every other write keeps 409 `sprint_closed` or 
 clears a tag; a promoted todo's ticket still goes with its tags. Revisits in [wiki/decisions.md](wiki/decisions.md)
 (the frozen sprint and the sync-owned Backlog). `scripts/tag-tickets.mjs` covers every sprint and Backlog: 274 tickets
 planned on 2026-11-12. Not deployed; ships with brief 22.
+
+## [2026-11-13] decision | Brief 20, the redesign direction approved
+
+The owner approved the redesign direction "The queue and the lanes" on the estate redesign board, with every question on
+the board standing as proposed. [Brief 20](briefs/todo/20-a-redesign-with-hallmark-on-the-estate-board.md) builds it:
+tokens first, then one screen per commit.
