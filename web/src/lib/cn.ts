@@ -11,8 +11,8 @@ import { extendTailwindMerge } from "tailwind-merge";
 const twMerge = extendTailwindMerge({
   extend: {
     theme: {
-      text: ["micro", "meta", "small", "body", "heading", "title", "display"],
-      radius: ["badge", "card", "band", "pill", "chip", "box", "gate"],
+      text: ["meta", "small", "body", "heading", "title", "display"],
+      radius: ["badge", "card", "band", "pill"],
       shadow: ["card", "panel", "sheet"],
       "font-weight": ["strong"],
     },

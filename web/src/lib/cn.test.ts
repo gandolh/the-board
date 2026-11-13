@@ -17,7 +17,7 @@ describe("cn", () => {
   });
 
   it("knows the app's radii, shadows, weights and z values", () => {
-    expect(cn("rounded-box", "rounded-chip")).toBe("rounded-chip");
+    expect(cn("rounded-badge", "rounded-pill")).toBe("rounded-pill");
     expect(cn("shadow-card", "shadow-panel")).toBe("shadow-panel");
     expect(cn("font-semibold", "font-strong")).toBe("font-strong");
     expect(cn("z-top", "z-panel")).toBe("z-panel");
