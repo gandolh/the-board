@@ -1,6 +1,6 @@
 ---
-summary: How the board decides who gets in, as built 2026-11-02 and moved to ward-auth 0.7.0 on 2026-11-03. The vendored plugin as the one guard, its rename route off; a local account from the seed or Sign in with Ward; the CLI's bearer token; read-only browser sessions (read_only_session); the 401 rewritten into the API's error shape; the settings in config.ts and .env; the login and account pages; and how the local Ward check went.
-updated: 2026-11-03
+summary: How the board decides who gets in, as built 2026-11-02 and moved to ward-auth 0.7.0 on 2026-11-03 and to 1.1.0 on 2026-11-19 (Link Ward asks for the password). The vendored plugin as the one guard, its rename route off; a local account from the seed or Sign in with Ward; the CLI's bearer token; read-only browser sessions (read_only_session); the 401 rewritten into the API's error shape; the settings in config.ts and .env; the login and account pages; and how the local Ward check went.
+updated: 2026-11-19
 ---
 
 # Sign-in
@@ -13,8 +13,8 @@ it disagree.
 ## The guard
 
 `server/src/plugins/auth/index.ts` (registered first by `app.ts`) registers the vendored `wardAuth` plugin
-(`server/vendor/ward/`, ward-auth 0.7.0, vendored from `wzd_auth` on
-2026-11-03; it was 0.3.1, copied from almanac) before any
+(`server/vendor/ward/`, ward-auth 1.1.0, vendored from `wzd_auth` on
+2026-11-19; 0.7.0 from 2026-11-03, 0.3.1 before, copied from almanac) before any
 route, so no route authenticates itself:
 
 - cookie `brief_board_session`, path `/brief-board-api` (the browser-visible
@@ -70,13 +70,20 @@ needs `http://127.0.0.1:8806`, or the plugin refuses the login as cross-site.
 ## The board's pages
 
 `web/src/AuthGate.tsx` wraps the board on the vendored React hooks
-(`web/vendor/ward/`, the same 0.7.0 copy): loading, the login page when
+(`web/vendor/ward/`, the same 1.1.0 copy): loading, the login page when
 signed out (the address becomes `/brief-board/login`), the board or the
 account page when signed in. `route.ts` is a three-page router: board,
 `login`, `account`. A 401 from `api.ts` asks the hooks about the session
 again and the gate swaps to the login page; the polling doesn't count it as
 the API being down. The account page shows who is signed in and how, offers
-"Link Ward" when Ward is on and unlinked, and signs out. No buttons on cards:
+"Link Ward" when Ward is on and unlinked, and signs out. Link Ward is a form
+(`web/src/LinkWard.tsx`): the account's password typed again, then the button;
+a wrong password or too many tries shows beside the field, which keeps focus
+(the server answers `401 invalid_credentials` or `429 too_many_attempts`).
+Since 1.1.0 a username that only looks like another's (`AIice` and `alice`) is
+taken; the board has no register or rename route, so only the seed meets it
+(it throws `UsernameTakenError`), and migration 5 fills each user's key at the
+first boot. No buttons on cards:
 the board still only reads.
 
 ## The local Ward check (2026-11-02)

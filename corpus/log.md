@@ -615,3 +615,7 @@ below 1100 px and never scroll sideways, the cards, the detail panel (a bottom s
 the undrawn Sprints, account, sign-in and gate. Revisits one line of [wiki/board-ui.md](wiki/board-ui.md)
 ([decisions.md](wiki/decisions.md), "Nothing on the board scrolls sideways"). `web/DESIGN.md` records the result;
 Playwright floor specs and `npm run check:contrast` are new. Web-only deploy; no server change.
+
+## [2026-11-19] done | Brief 24, ward-auth 1.1.0 and Link Ward asks for the password
+
+[Brief 24](briefs/done/24-linking-ward-asks-for-the-password.md): both vendored copies moved from 0.7.0 to 1.1.0, rename still off. The account page's Link Ward is a form that asks for the password again and keeps a refusal beside the field. Migration 5 (a username look-alike key) runs at the first boot; the board has no register or rename route, so only the seed meets the look-alike rule. Server and web both change: not deployed, with a backup of the SQLite file first ([sign-in.md](wiki/sign-in.md)).
