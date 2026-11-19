@@ -3,6 +3,7 @@ import { useLogout, useSession, useWardLink, useWardResult, useWardSignOut } fro
 import { BUTTON, FACTS, NOTICE } from "./looks";
 import { cn } from "./lib/cn";
 import { accountMessage } from "./messages";
+import { LinkWard } from "./LinkWard";
 import { navigate } from "./route";
 import { ThemeSwitch } from "./ThemeSwitch";
 import { BottomBar } from "./TopBar";
@@ -27,7 +28,7 @@ export function AccountPage() {
   if (session.status !== "signed_in") return null;
   const { user, ward } = session;
   const viaWard = session.session.origin === "ward";
-  const failure = link.error ?? result.error ?? logout.error ?? wardSignOut.error;
+  const failure = result.error ?? logout.error ?? wardSignOut.error;
 
   return (
     <>
@@ -78,12 +79,9 @@ export function AccountPage() {
           </p>
         )}
 
+        {ward.enabled && !ward.linked && !link.linked && user.hasPassword && <LinkWard link={link} />}
+
         <div className="mt-4 flex flex-wrap gap-2">
-          {ward.enabled && !ward.linked && !link.linked && (
-            <button type="button" className={BUTTON} disabled={link.pending} onClick={() => void link.link()}>
-              {link.pending ? "Opening Ward…" : "Link Ward"}
-            </button>
-          )}
           <button type="button" className={BUTTON} disabled={logout.pending} onClick={() => void logout.logout()}>
             Sign out
           </button>

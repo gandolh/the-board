@@ -1,6 +1,8 @@
+import { generateKeyPairSync } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import type { BoardResponse, ErrorBody, SprintsResponse } from "@brief-board/shared";
 import type { InjectOptions } from "fastify";
+import { UsernameTakenError } from "../../../vendor/ward/ward-auth.js";
 import { seedUser } from "../../plugins/auth/accounts.js";
 import { SESSION_COOKIE } from "../../plugins/auth/index.js";
 import { useTestBoard, buildTestApp, call, detail, app, BEARER, accounts } from "../../testing/buildTestApp.js";
@@ -177,5 +179,116 @@ describe("signing in", () => {
   it("keeps health open", async () => {
     expect((await app.inject({ url: "/api/health" })).json()).toEqual({ ok: true });
     expect((await app.inject({ method: "HEAD", url: "/brief-board-api/api/health" })).statusCode).toBe(200);
+  });
+});
+
+describe("linking Ward", () => {
+  const PASSWORD = "p".repeat(12);
+  const ISSUER = "https://ward.test/ward-api/oidc";
+
+  /** A Ward client whose only server is a fetch stub that serves the discovery document. */
+  function wardOptions() {
+    const jwk = generateKeyPairSync("ed25519").privateKey.export({ format: "jwk" });
+    const clientKey = Buffer.from(JSON.stringify({ ...jwk, kid: "test-key" })).toString("base64url");
+    return {
+      issuer: ISSUER,
+      clientId: "brief-board",
+      clientKey,
+      redirectUri: "http://localhost/brief-board-api/auth/ward/callback",
+      fetch: (input: string | URL | Request) => {
+        const url = String(input);
+        if (url.endsWith("/.well-known/openid-configuration")) {
+          return Promise.resolve(
+            Response.json({
+              issuer: ISSUER,
+              authorization_endpoint: `${ISSUER}/authorize`,
+              token_endpoint: `${ISSUER}/token`,
+              jwks_uri: `${ISSUER}/jwks`,
+              response_types_supported: ["code"],
+              subject_types_supported: ["public"],
+              id_token_signing_alg_values_supported: ["EdDSA"],
+            }),
+          );
+        }
+        return Promise.resolve(new Response("not found", { status: 404 }));
+      },
+    };
+  }
+
+  async function withWard() {
+    const built = await buildTestApp({ ward: wardOptions() });
+    await seedUser(built.accounts, { username: "owner", password: PASSWORD });
+    const login = await built.app.inject({
+      method: "POST",
+      url: "/brief-board-api/auth/login",
+      payload: { username: "owner", password: PASSWORD },
+    });
+    const header = login.headers["set-cookie"];
+    const lines = header === undefined ? [] : Array.isArray(header) ? header : [header];
+    const cookie = lines.find((l) => l.startsWith(`${SESSION_COOKIE}=`))!.split(";")[0]!;
+    const link = (payload: unknown) =>
+      built.app.inject({
+        method: "POST",
+        url: "/brief-board-api/auth/ward/link",
+        payload: payload as object,
+        headers: { cookie },
+      });
+    return { ...built, link, cookie };
+  }
+
+  it("refuses a link without the password, and with a wrong one", async () => {
+    const { app: wardApp, link } = await withWard();
+    try {
+      const missing = await link({});
+      expect(missing.statusCode).toBe(400);
+      expect(missing.json<{ error: string }>().error).toBe("invalid_request");
+      const wrong = await link({ currentPassword: "w".repeat(12) });
+      expect(wrong.statusCode).toBe(401);
+      expect(wrong.json<{ error: string }>().error).toBe("invalid_credentials");
+    } finally {
+      await wardApp.close();
+    }
+  });
+
+  it("sends the browser to Ward once the right password is typed", async () => {
+    const { app: wardApp, link } = await withWard();
+    try {
+      const res = await link({ currentPassword: PASSWORD });
+      expect(res.statusCode).toBe(200);
+      expect(res.json<{ url: string }>().url).toContain(`${ISSUER}/authorize`);
+    } finally {
+      await wardApp.close();
+    }
+  });
+
+  it("answers 429 after five wrong passwords", async () => {
+    const { app: wardApp, link } = await withWard();
+    try {
+      for (let i = 0; i < 5; i++) expect((await link({ currentPassword: "w".repeat(12) })).statusCode).toBe(401);
+      const res = await link({ currentPassword: "w".repeat(12) });
+      expect(res.statusCode).toBe(429);
+      expect(res.json<{ error: string }>().error).toBe("too_many_attempts");
+    } finally {
+      await wardApp.close();
+    }
+  });
+
+  it("has no register route, and the seed refuses a name that looks like an existing one", async () => {
+    const { app: wardApp, accounts: wardAccounts, cookie } = await withWard();
+    try {
+      const register = await wardApp.inject({
+        method: "POST",
+        url: "/brief-board-api/auth/register",
+        payload: { username: "AIice", password: PASSWORD },
+        headers: { cookie },
+      });
+      expect(register.statusCode).toBe(404);
+      await seedUser(wardAccounts, { username: "alice", password: PASSWORD });
+      await expect(seedUser(wardAccounts, { username: "AIice", password: PASSWORD })).rejects.toThrow(
+        UsernameTakenError,
+      );
+    } finally {
+      await wardApp.close();
+    }
   });
 });

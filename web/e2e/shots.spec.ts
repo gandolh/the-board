@@ -19,6 +19,8 @@ interface Screen {
   /** Viewport height, where the screen is a stage of its own. */
   height?: (width: number) => number;
   full?: boolean;
+  /** Types a wrong password into Link Ward first, so the refusal shows. */
+  linkError?: boolean;
 }
 
 const SCREENS: Screen[] = [
@@ -28,6 +30,7 @@ const SCREENS: Screen[] = [
   { name: "older-done", path: "done" },
   { name: "sprints", path: "sprints", full: true },
   { name: "account", path: "account" },
+  { name: "account-link-error", path: "account", linkError: true },
   { name: "login", path: "login", stub: { signedOut: true } },
   { name: "gate-loading", path: "", stub: { hang: true } },
   { name: "gate-unreachable", path: "", stub: { sessionDown: true } },
@@ -48,7 +51,17 @@ for (const theme of ["light", "dark"] as const) {
         await page.setViewportSize({ width, height: screen.height?.(width) ?? (width === 390 ? 844 : 800) });
         await page.addInitScript((t) => localStorage.setItem("theme", t), theme);
         await stubBoard(page, screen.stub);
+        if (screen.linkError) {
+          await page.route("**/brief-board-api/auth/ward/link", (route) =>
+            route.fulfill({ status: 401, json: { error: "invalid_credentials" } }),
+          );
+        }
         await page.goto(BASE + screen.path);
+        if (screen.linkError) {
+          await page.getByLabel("Current password").fill("not-the-password");
+          await page.getByRole("button", { name: "Link Ward" }).click();
+          await page.getByRole("alert").waitFor();
+        }
         if (screen.open) await page.getByRole("button", { name: screen.open }).click();
         if (screen.hover) await page.getByRole("button", { name: screen.hover }).hover();
         await settle(page);
