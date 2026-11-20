@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The board direction, The queue and the lanes</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;500;700&amp;family=Atkinson+Hyperlegible+Mono:wght@400&amp;display=swap">
+<style>
+/* Hallmark · shape: app screen · genre: modern-minimal · theme: brand · redesign: full
+ * paper: oklch(95.5% 0.006 290) · accent: oklch(23% 0.02 290) · display: Atkinson Hyperlegible Next · body: Atkinson Hyperlegible Next
+ * nav: header plus a tab row at desktop, a four-item bottom bar on a phone · signature: Needs you as a queue of rows that say what is asked, in the API's own words · states: loading, empty, no match, API down, ticket not loaded, nothing older
+ * axes: cool violet-grey paper/one humanist family/ink as the accent · posture: restrained · modes: light+dark · contrast: pass · v2.0.0 */
+/* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V4 · weakest: S, the lanes are still lanes of cards; the queue and the aligned status row carry the identity, and the status colours carry all the chroma */
+/* Hallmark · waive 26b · no :disabled style, no aria-disabled, one native select · the board is read-only, so no control on any status page is ever disabled */
+/* Hallmark · waive 72 · li.col top 4px, bottom 4px · each status column box holds a 24px count line under a 3px cap, so the count never touches the edge */
+/* Hallmark · dismissed F24 · the detail panel left edge is transparent in light and its shadow none in dark, so only one of the two draws */
+/* Hallmark · answered F4 · this app is read-only: nothing on a screen is a primary button, so ink is the accent and the one fill is the current tab bar */
+.theme-light{color-scheme:light;--color-page:#f0f0f4;--color-surface:#fdfdff;--color-surface-sunk:#e4e3eb;--color-well-edge:#e4e3eb;--color-line:#c9c8d4;--color-outline:#7a7990;--color-ink:#1a1a24;--color-ink-muted:#575668;--color-accent:#1a1a24;--color-on-accent:#fdfdff;--color-focus:#1a1a24;--color-backlog:#85704c;--color-todo:#5f6b7f;--color-in-progress:#2457c5;--color-danger:#b42d26;--color-ready-for-test:#8f6c00;--color-ready-for-deploy:#6550bd;--color-done:#1c7650;--color-warn:#974603;--color-danger-wash:#fbe7e5;--color-question-wash:#e3ebfb;--color-done-wash:#dcf0e5;--color-test-wash:#fdf8e6;--color-banner-bg:#fbefc4;--color-banner-text:#4a3805;--color-scrim:#1a1a24;--color-callout:#c83122;--color-on-callout:#fffdfb;--shadow-1:0 1px 3px rgb(26 26 36 / 0.12);--shadow-2:-12px 0 32px rgb(26 26 36 / 0.16);--shadow-sheet:0 -12px 32px rgb(26 26 36 / 0.18)}
+.theme-dark{color-scheme:dark;--color-page:#141419;--color-surface:#2a2a35;--color-surface-sunk:#101015;--color-well-edge:#2a2a33;--color-line:#40404c;--color-outline:#82819a;--color-ink:#e9e8f0;--color-ink-muted:#a3a2b3;--color-accent:#e9e8f0;--color-on-accent:#141419;--color-focus:#e9e8f0;--color-backlog:#c6ae84;--color-todo:#98a4b5;--color-in-progress:#86a9f5;--color-danger:#f07a70;--color-ready-for-test:#dfb426;--color-ready-for-deploy:#a898f2;--color-done:#55c996;--color-warn:#eda06a;--color-danger-wash:#3b2023;--color-question-wash:#1f2a48;--color-done-wash:#16332a;--color-test-wash:#3a3014;--color-banner-bg:#2f2914;--color-banner-text:#f0cd5c;--color-scrim:#0a0a0f;--color-callout:#ff9a8c;--color-on-callout:#2a0a06;--shadow-1:none;--shadow-2:-12px 0 32px rgb(0 0 0 / 0.5);--shadow-sheet:0 -12px 32px rgb(0 0 0 / 0.5)}
+
+.bb{--font-ui:'Atkinson Hyperlegible Next',system-ui,-apple-system,'Segoe UI',sans-serif;--font-mono:'Atkinson Hyperlegible Mono',ui-monospace,'SFMono-Regular',Menlo,monospace;--space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:20px;--space-6:24px;--radius-s:6px;--radius-m:8px;--radius-l:12px;--radius-full:999px;
+ container:page/inline-size;background:var(--color-page);color:var(--color-ink);font:400 14px/20px var(--font-ui);font-variant-numeric:tabular-nums;font-synthesis:none;-webkit-font-smoothing:antialiased;min-height:800px;display:flex;flex-direction:column}
+.bb *,.bb *::before,.bb *::after{box-sizing:border-box}
+.bb :where(h1,h2,h3,h4,p,ul,ol,dl,dd,figure){margin:0;padding:0}
+.bb :where(ul,ol){list-style:none}
+.bb :where(button,select){font:inherit;color:inherit}
+.bb a{color:inherit}
+.bb h1,.bb h2{text-wrap:balance}
+.bb ::selection{background:var(--color-ink);color:var(--color-surface)}
+.bb{scrollbar-color:var(--color-outline) var(--color-page)}
+.btn:active,.need:active,.toggle:active,.iconbtn:active{background:var(--color-line)}
+.bb svg{display:block;flex:none}
+.bb :focus-visible{outline:2px solid var(--color-focus);outline-offset:2px;box-shadow:0 0 0 4px var(--color-surface)}
+.wrap{width:100%;max-width:1440px;margin:0 auto;padding:0 24px}
+.key{font-family:var(--font-mono);font-size:12px;line-height:16px;color:var(--color-ink-muted)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-height:32px;padding:0 12px;border:1px solid var(--color-outline);border-radius:var(--radius-m);background:var(--color-surface);color:var(--color-ink);font-size:13px;line-height:18px;font-weight:500;cursor:pointer}
+.btn:hover{background:var(--color-surface-sunk)}
+.btn[aria-pressed="true"]{background:var(--color-surface-sunk)}
+.iconbtn{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border:1px solid transparent;border-radius:var(--radius-m);background:transparent;color:var(--color-ink);cursor:pointer}
+.iconbtn:hover{background:var(--color-surface-sunk);border-color:var(--color-line)}
+
+/* header */
+.top{background:var(--color-surface);border-bottom:1px solid var(--color-line);box-shadow:var(--shadow-1)}
+.r1{display:flex;align-items:center;gap:20px;height:56px}
+.mark{font-size:22px;line-height:28px;font-weight:700;letter-spacing:-.01em}
+.sprint{display:flex;gap:8px;color:var(--color-ink-muted);white-space:nowrap}
+.blockedchip{display:inline-flex;align-items:center;height:28px;padding:0 12px;border-radius:var(--radius-full);background:var(--color-danger-wash);color:var(--color-danger);font-weight:700;white-space:nowrap;border:1px solid var(--color-danger)}
+.sp{flex:1}
+.upd{color:var(--color-ink-muted);font-size:13px;line-height:18px;white-space:nowrap}
+.acct{display:inline-flex;align-items:center;gap:8px;font-weight:500;text-decoration:underline;text-underline-offset:3px;min-height:40px}
+.r2{display:flex;align-items:center;gap:4px;height:48px;border-top:1px solid var(--color-line)}
+.tabs{display:flex;gap:4px}
+.tabs a{display:inline-flex;align-items:center;height:36px;padding:0 16px;border-radius:var(--radius-m);text-decoration:none;font-weight:500;color:var(--color-ink-muted);position:relative}
+.tabs a:hover{background:var(--color-surface-sunk);color:var(--color-ink)}
+.tabs a[aria-current]{color:var(--color-ink);font-weight:700}
+.tabs a[aria-current]::after{content:"";position:absolute;left:16px;right:16px;bottom:-6px;height:3px;border-radius:2px;background:var(--color-ink)}
+.tagf{display:flex;align-items:center;gap:8px;color:var(--color-ink-muted)}
+.bb select{height:36px;padding:0 32px 0 12px;border:1px solid var(--color-outline);border-radius:var(--radius-m);background-color:var(--color-surface);color:var(--color-ink);appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+.hw,.hp{display:none}
+.hm{display:block}
+.r2b{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:4px 0 12px}
+.r2b .meta{display:flex;flex-direction:column;gap:4px;color:var(--color-ink-muted)}
+.r2b .upd{font-size:12px;line-height:16px}
+.hw .tabs a{height:56px;border-radius:0}
+.hw .tabs a[aria-current]::after{bottom:0;left:16px;right:16px}
+.hw .r1{gap:24px}
+.banner{margin:12px 0 0;padding:8px 12px;border-radius:var(--radius-m);background:var(--color-banner-bg);color:var(--color-banner-text)}
+.main{padding:8px 0 40px;flex:1}
+
+/* needs you */
+.needs{background:var(--color-surface);border:1px solid var(--color-line);border-radius:var(--radius-l);box-shadow:var(--shadow-1);overflow:hidden}
+.nbar{display:flex;align-items:center;gap:8px;padding-right:12px}
+.nbar h2{flex:1;min-width:0}
+.nclear{flex:none}
+.nhead{display:flex;flex-wrap:wrap;align-items:center;gap:0 8px;width:100%;min-height:36px;padding:0 16px;border:0;background:transparent;cursor:pointer;text-align:left}
+.nhead:hover{background:var(--color-surface-sunk)}
+.nhead svg{color:var(--color-ink-muted)}
+.nname{font-size:18px;line-height:24px;font-weight:700}
+.ntots{display:flex;flex-wrap:wrap;gap:0 16px;margin-left:8px;font-size:13px;line-height:18px;font-weight:700}
+.nlist{border-top:1px solid var(--color-line)}
+.nlist li+li{border-top:1px solid var(--color-line)}
+.need{display:grid;grid-template-columns:104px 112px minmax(0,300px) minmax(0,1fr);align-items:baseline;column-gap:16px;width:100%;padding:4px 16px;min-height:34px;border:0;border-left:4px solid transparent;background:transparent;text-align:left;cursor:pointer}
+.need:hover{background:var(--color-surface-sunk)}
+.need[aria-pressed="true"]{background:var(--color-surface-sunk);border-left-color:var(--color-ink)}
+.kind{display:inline-flex;align-items:center;justify-self:start;height:20px;padding:0 8px;border:1px solid var(--k);border-radius:var(--radius-full);color:var(--k);font-size:13px;line-height:18px;font-weight:700;white-space:nowrap}
+.nt{font-size:14px;line-height:20px;font-weight:700}
+.nr{color:var(--color-ink-muted);font-size:13px;line-height:18px}
+
+/* status row = column header at desktop, chips below */
+.cols{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 8px}
+.col{color:var(--color-ink);display:flex;align-items:baseline;gap:8px;min-width:0;padding:4px 12px;background:var(--color-surface);border:1px solid var(--color-line);border-top:3px solid var(--s);border-radius:var(--radius-m);box-shadow:var(--shadow-1);white-space:nowrap}
+.cn{color:var(--s);font-weight:700;font-size:13px;line-height:18px}
+.cc{font-weight:700;font-size:18px;line-height:24px}
+.cc.z{color:var(--color-ink-muted);font-weight:400}
+
+/* lanes */
+.lane{margin-top:8px}
+.cols+.lane{margin-top:12px}
+.lhead{background:var(--color-surface);border:1px solid var(--color-line);border-radius:var(--radius-l) var(--radius-l) var(--radius-s) var(--radius-s);box-shadow:var(--shadow-1)}
+.toggle{display:flex;align-items:center;gap:8px;width:100%;min-height:36px;padding:0 16px;border:0;background:transparent;border-radius:var(--radius-l) var(--radius-l) var(--radius-s) var(--radius-s);cursor:pointer;text-align:left}
+.toggle:hover{background:var(--color-surface-sunk)}
+.toggle svg{color:var(--color-ink-muted)}
+.lname{font-size:18px;line-height:24px;font-weight:700}
+.lcounts{display:flex;gap:12px;color:var(--color-ink-muted);margin-left:8px;font:400 14px/20px var(--font-ui)}
+.wells{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));align-items:stretch;gap:8px;margin-top:4px}
+.well{background:var(--color-surface-sunk);box-shadow:inset 0 0 0 1px var(--color-well-edge);border-radius:var(--radius-l);padding:8px;display:flex;flex-direction:column;gap:8px}
+.well.e{min-height:44px;padding:0}
+.card{color:var(--color-ink);display:flex;flex-direction:column;gap:4px;background:var(--color-surface);border:1px solid var(--color-line);border-radius:var(--radius-m);padding:8px;text-decoration:none;box-shadow:var(--shadow-1);min-width:0}
+.card:hover{border-color:var(--color-outline)}
+.card.sel{outline:2px solid var(--color-ink);outline-offset:1px}
+.ctitle{font-size:14px;line-height:20px;font-weight:500;overflow-wrap:anywhere}
+.run{display:flex;flex-wrap:wrap;gap:0 12px;color:var(--color-ink-muted);font-size:13px;line-height:18px}
+.run.warn{color:var(--color-warn);font-weight:500}
+.badges{display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin-top:2px}
+.badge{display:inline-block;border-radius:var(--radius-s);padding:0 8px;font-size:13px;line-height:18px;font-weight:500;max-width:100%;border:1px solid}
+.badge b{font-weight:700}
+.badge.blk{background:var(--color-danger-wash);color:var(--color-danger);border-color:var(--color-danger)}
+.badge.q{background:var(--color-question-wash);color:var(--color-in-progress);border-color:var(--color-in-progress);font-weight:700}
+.foot{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin-top:4px}
+.tags{display:flex;flex-wrap:wrap;gap:4px;min-width:0}
+.tag{background:var(--color-surface-sunk);color:var(--color-ink-muted);border-radius:var(--radius-s);padding:1px 8px;font-size:12px;line-height:18px}
+.age{font-size:12px;line-height:16px;color:var(--color-ink-muted);margin-left:auto}
+.stack{display:none}
+.bnav{display:none}
+.co{position:absolute;left:-21px;top:2px;width:18px;height:18px;border-radius:50%;background:var(--color-callout);color:var(--color-on-callout);font:700 11px/18px var(--font-ui);text-align:center;z-index:6}
+.rel{position:relative}
+
+/* older done */
+.pagehead h2{font-size:22px;line-height:28px;font-weight:700}
+.pagehead p{margin-top:4px;color:var(--color-ink-muted)}
+.groups{display:flex;flex-direction:column;max-width:880px;gap:16px;margin-top:20px}
+.grp{background:var(--color-surface);border:1px solid var(--color-line);border-radius:var(--radius-l);box-shadow:var(--shadow-1);overflow:hidden}
+.gh{display:flex;align-items:baseline;gap:12px;padding:12px 16px;border-bottom:1px solid var(--color-line)}
+.gh h3{font-size:18px;line-height:24px;font-weight:700}
+.gh span{color:var(--color-ink-muted)}
+.drow{display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:12px 16px;text-decoration:none;min-height:48px}
+.drow+.drow{border-top:1px solid var(--color-line)}
+.drow:hover{background:var(--color-surface-sunk)}
+.drow .l1{display:flex;align-items:baseline;gap:16px;min-width:0}
+.drow .key{flex:none;min-width:104px}
+.drow .dt{font-size:15px;line-height:22px;font-weight:500}
+.drow .dd{font-size:13px;line-height:18px;color:var(--color-ink-muted);white-space:nowrap}
+
+/* detail panel */
+.detail{position:relative;height:1180px;overflow:hidden}
+.behind{display:flex;flex-direction:column;min-height:100%}
+.scrim{display:none}
+.panel{color:var(--color-ink);position:absolute;z-index:10;top:0;right:0;bottom:0;width:480px;background:var(--color-surface);border-left:1px solid var(--color-line);box-shadow:var(--shadow-2);overflow:hidden;display:flex;flex-direction:column}
+.phead{display:flex;align-items:center;gap:8px;padding:12px 12px 0 20px;min-height:56px}
+.phead .key{font-size:13px;line-height:18px}
+.pbody{padding:0 20px 24px;display:flex;flex-direction:column;gap:20px}
+.pbody h2{font-size:22px;line-height:28px;font-weight:700;overflow-wrap:anywhere}
+.facts{display:grid;grid-template-columns:84px minmax(0,1fr);gap:8px 12px;align-items:baseline;padding:12px 16px;background:var(--color-surface-sunk);border:1px solid var(--color-surface-sunk);border-radius:var(--radius-l)}
+.theme-dark .facts{border-color:var(--color-line)}
+.facts dt{color:var(--color-ink-muted)}
+.facts .tag{background:var(--color-surface);border:1px solid var(--color-line)}
+.facts .tags{display:flex}
+.facts code{font-family:var(--font-mono);font-size:13px;line-height:18px;overflow-wrap:anywhere}
+.stchip{display:inline-flex;align-items:center;height:24px;padding:0 12px;border:1px solid var(--s);border-radius:var(--radius-full);color:var(--s);background:var(--color-surface);font-size:13px;line-height:18px;font-weight:700;white-space:nowrap}
+.sec{border-top:1px solid var(--color-line);padding-top:16px}
+.sh3{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
+.sh3 h3{font-size:15px;line-height:22px;font-weight:700}
+.sh3 span{color:var(--color-ink-muted)}
+.sec>h3{font-size:15px;line-height:22px;font-weight:700;margin-bottom:8px}
+.item{padding:12px 0}
+.item+.item{border-top:1px solid var(--color-line)}
+.ihead{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;margin-bottom:4px;font-size:13px;line-height:18px}
+.ihead time,.ihead .m{color:var(--color-ink-muted)}
+.role{display:inline-block;border-radius:var(--radius-s);padding:1px 8px;font-size:13px;line-height:18px;font-weight:700;border:1px solid}
+.role.ans{background:var(--color-done-wash);color:var(--color-done);border-color:var(--color-done)}
+.role.com{background:var(--color-surface-sunk);color:var(--color-ink-muted);border-color:var(--color-line)}
+.role.tn{background:var(--color-test-wash);color:var(--color-ready-for-test);border-color:var(--color-ready-for-test)}
+.quote{margin-top:8px;padding-left:12px;border-left:2px solid var(--color-outline)}
+.quote .ihead{color:var(--color-ink-muted);margin-bottom:2px}
+.mdl{margin:8px 0 0;padding-left:20px;list-style:disc}
+.mdl li{padding:1px 0}
+.small{font-size:14px;line-height:20px;padding:4px 0}
+.small .m{color:var(--color-ink-muted)}
+
+@container page (max-width:1099px){
+ .wells{display:none}
+ .stack{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr));align-items:start;gap:16px;background:var(--color-surface-sunk);border-radius:var(--radius-l);padding:12px;margin-top:4px}
+ .sgh{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+ .sgh h3{font-size:15px;line-height:22px;font-weight:700}
+ .bar{width:4px;height:18px;border-radius:2px;background:var(--s)}
+ .gc{font-weight:700;color:var(--color-ink-muted)}
+ .gl{display:flex;flex-direction:column;gap:8px}
+ .emptyline{color:var(--color-ink-muted);grid-column:1 / -1}
+ .card{padding:12px}
+ .need{grid-template-columns:auto minmax(0,1fr);row-gap:2px;padding:8px 16px}
+ .need .kind{grid-column:1}.need .key{grid-column:2;justify-self:start}.need .nt,.need .nr{grid-column:1 / -1}
+ .co{display:none}
+ .col{padding:4px 8px;gap:4px}
+ .cc{font-size:15px;line-height:20px}
+}
+@container page (min-width:1240px){
+ .hw{display:block}
+ .hm{display:none}
+}
+@container page (min-width:1100px){
+ .cols{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));position:sticky;top:0;z-index:4;margin:12px 0 0;padding:0 0 8px;background:var(--color-page)}
+ .col{justify-content:space-between}
+}
+@container page (max-width:719px){
+ .wrap{padding:0 16px}
+ .hm,.hw{display:none}
+ .hp{display:block}
+ .hp .r1{height:auto;padding:12px 0 4px;gap:12px}
+ .bb select{height:44px;font-size:16px}
+ .blockedchip{height:32px}
+ .main{padding:8px 0 88px}
+ .nhead{min-height:48px}
+ .ntots{margin-left:0;width:100%;padding-left:28px}
+ .nt{font-size:15px;line-height:22px}
+ .ctitle{font-size:16px;line-height:22px}
+ .cols{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:8px;margin-top:8px}
+ .col{grid-column:span 4;flex-direction:column-reverse;align-items:center;gap:0;padding:4px}
+ .col:nth-of-type(-n+4){grid-column:span 3}
+ .cn{font-size:12px;line-height:16px}
+ .cc{font-size:18px;line-height:24px}
+ .lane{margin-top:8px}
+ .toggle{min-height:52px}
+ .pagehead h2{font-size:22px}
+ .bnav{display:flex;position:sticky;bottom:0;z-index:5;background:var(--color-surface);border-top:1px solid var(--color-line);padding:0 8px env(safe-area-inset-bottom);height:calc(56px + env(safe-area-inset-bottom))}
+ .bnav a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:56px;text-decoration:none;color:var(--color-ink-muted);font-size:12px;line-height:16px;font-weight:500;position:relative;min-width:0}
+ .bnav a[aria-current]{color:var(--color-ink);font-weight:700}
+ .bnav a[aria-current]::before{content:"";position:absolute;top:0;left:22%;right:22%;height:3px;border-radius:0 0 3px 3px;background:var(--color-ink)}
+ .bnav span{white-space:nowrap}
+ .groups{gap:12px;margin-top:16px}
+ .drow{flex-direction:column;gap:0;padding:12px 16px;min-height:56px}
+ .drow .l1{flex-direction:column;gap:0}
+ .drow .key{min-width:0}
+ .drow .dt{font-size:16px;order:2}
+ .drow .dd{position:absolute;right:16px;top:12px}
+ .drow{position:relative}
+ /* the detail panel becomes a bottom sheet */
+ .detail{height:auto;overflow:visible}
+ .behind .bnav{display:none}
+ .behind{height:76px;min-height:0;overflow:hidden;position:relative}
+ .scrim{display:block;position:absolute;left:0;right:0;top:0;height:76px;background:var(--color-scrim);opacity:.55;z-index:7}
+ .theme-dark .scrim{opacity:.6}
+ .panel{position:relative;width:auto;top:auto;right:auto;bottom:auto;margin-top:-12px;border-left:0;border-top:1px solid var(--color-line);border-radius:16px 16px 0 0;box-shadow:var(--shadow-sheet);z-index:8}
+ .phead{padding:4px 8px 0 16px;min-height:56px}
+ .phead .key{font-size:14px}
+ .pbody{padding:0 16px 32px}
+ .facts{grid-template-columns:72px minmax(0,1fr)}
+ .btn{min-height:40px}
+ .item{padding:12px 0}
+ .small{padding:8px 0}
+}
+html,body{overflow-x:clip}
+.theme-light .panel{border-left-color:transparent}
+.theme-dark .panel{box-shadow:none}
+@media (prefers-reduced-motion:reduce){.bb *{transition:none!important;animation:none!important}}
+
+.dir{width:1440px;padding:48px 56px 64px;background:var(--color-page)}
+.dir h1{font-size:40px;line-height:48px;font-weight:700;letter-spacing:-.01em}
+.dir .idea{margin-top:8px;font-size:18px;line-height:26px;color:var(--color-ink-muted);max-width:760px}
+.dir h2.sh{font-size:22px;line-height:28px;font-weight:700;margin:48px 0 16px;padding-top:24px;border-top:1px solid var(--color-line)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.theme-pane{background:var(--color-page);color:var(--color-ink);border:1px solid var(--color-line);border-radius:var(--radius-l);padding:20px}
+.pane-t{font-size:13px;line-height:18px;font-weight:700;color:var(--color-ink-muted);margin-bottom:12px}
+.sw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+.sw{display:flex;gap:10px;align-items:center;padding:8px;background:var(--color-surface);border:1px solid var(--color-line);border-radius:var(--radius-m)}
+.chipc{width:36px;height:36px;border-radius:var(--radius-s);border:1px solid var(--color-line);flex:none}
+.sw b{display:block;font-size:13px;line-height:16px}
+.sw span{display:block;font-family:var(--font-mono);font-size:12px;line-height:16px;color:var(--color-ink-muted)}
+.trow{display:grid;grid-template-columns:300px 1fr;gap:16px;align-items:baseline;padding:10px 0;border-top:1px solid var(--color-line)}
+.trow .lab{font-family:var(--font-mono);font-size:12px;color:var(--color-ink-muted)}
+.rad{display:flex;gap:16px;flex-wrap:wrap;align-items:end}
+.rad div{width:88px;height:64px;background:var(--color-surface);border:1px solid var(--color-line);display:flex;align-items:end;padding:6px;font-family:var(--font-mono);font-size:12px;color:var(--color-ink-muted)}
+.sp8{display:flex;gap:12px;align-items:end}
+.sp8 div{background:var(--color-ink);border-radius:2px;width:var(--w);height:16px;opacity:.85}
+.elev{display:flex;gap:20px;flex-wrap:wrap}
+.elev div{width:170px;height:80px;background:var(--color-surface);border:1px solid var(--color-line);border-radius:var(--radius-m);padding:10px;font-size:13px;line-height:18px}
+.comp{display:flex;flex-direction:column;gap:20px}
+.crow{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.lbl{font-size:12px;line-height:16px;color:var(--color-ink-muted);font-family:var(--font-mono);margin-bottom:6px}
+.f{outline:2px solid var(--color-focus);outline-offset:2px;box-shadow:0 0 0 4px var(--color-surface)}
+.statebox{background:var(--color-surface);border:1px solid var(--color-line);border-radius:var(--radius-m);padding:12px 14px;min-height:56px}
+.skel{height:14px;border-radius:7px;background:var(--color-surface-sunk);margin:6px 0}
+.bnav.demo a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:56px;text-decoration:none;color:var(--color-ink-muted);font-size:12px;line-height:16px;font-weight:500;position:relative}
+.bnav.demo a[aria-current]{color:var(--color-ink);font-weight:700}
+.bnav.demo a[aria-current]::before{content:"";position:absolute;top:0;left:22%;right:22%;height:3px;border-radius:0 0 3px 3px;background:var(--color-ink)}
+.nn .need{grid-template-columns:auto minmax(0,1fr);row-gap:2px;padding:8px 16px}
+.nn .need .kind{grid-column:1}.nn .need .key{grid-column:2;justify-self:start}.nn .need .nt,.nn .need .nr{grid-column:1 / -1}
+.ct{width:100%;border-collapse:collapse;font-size:13px;line-height:18px}
+.ct th,.ct td{text-align:left;padding:6px 10px;border-top:1px solid var(--color-line)}
+.ct td.n{font-variant-numeric:tabular-nums;text-align:right}
+.ct th{color:var(--color-ink-muted);font-weight:700}
+.ct .sec-r td{font-weight:700;background:var(--color-surface-sunk)}
+body{margin:0}
+</style>
+</helmet>
+<div class="theme-light bb" style="width: 1440px">
+<div class="dir">
+<h1>The queue and the lanes</h1>
+<p class="idea">Needs you becomes a queue that says what is being asked without opening a ticket, and a status row lines up with the lanes' columns so the board reads whole.</p>
+<h2 class="sh">Palette by role</h2>
+<div class="two"><div class="theme-light theme-pane"><div class="pane-t">Light</div><div class="sw-grid"><div class="sw"><span class="chipc" style="background:var(--color-page)"></span><div><b>page</b><span>#f0f0f4</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-surface)"></span><div><b>surface</b><span>#fdfdff</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-surface-sunk)"></span><div><b>surface-sunk</b><span>#e4e3eb</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-well-edge)"></span><div><b>well-edge</b><span>#e4e3eb</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-line)"></span><div><b>line</b><span>#c9c8d4</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-outline)"></span><div><b>outline</b><span>#7a7990</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-ink)"></span><div><b>ink</b><span>#1a1a24</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-ink-muted)"></span><div><b>ink-muted</b><span>#575668</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-accent)"></span><div><b>accent</b><span>#1a1a24</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-on-accent)"></span><div><b>on-accent</b><span>#fdfdff</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-focus)"></span><div><b>focus</b><span>#1a1a24</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-backlog)"></span><div><b>backlog</b><span>#85704c</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-todo)"></span><div><b>todo</b><span>#5f6b7f</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-in-progress)"></span><div><b>in-progress</b><span>#2457c5</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-danger)"></span><div><b>danger</b><span>#b42d26</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-ready-for-test)"></span><div><b>ready-for-test</b><span>#8f6c00</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-ready-for-deploy)"></span><div><b>ready-for-deploy</b><span>#6550bd</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-done)"></span><div><b>done</b><span>#1c7650</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-warn)"></span><div><b>warn</b><span>#974603</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-danger-wash)"></span><div><b>danger-wash</b><span>#fbe7e5</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-question-wash)"></span><div><b>question-wash</b><span>#e3ebfb</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-done-wash)"></span><div><b>done-wash</b><span>#dcf0e5</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-test-wash)"></span><div><b>test-wash</b><span>#fdf8e6</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-banner-bg)"></span><div><b>banner-bg</b><span>#fbefc4</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-banner-text)"></span><div><b>banner-text</b><span>#4a3805</span></div></div></div></div><div class="theme-dark theme-pane"><div class="pane-t">Dark</div><div class="sw-grid"><div class="sw"><span class="chipc" style="background:var(--color-page)"></span><div><b>page</b><span>#141419</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-surface)"></span><div><b>surface</b><span>#2a2a35</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-surface-sunk)"></span><div><b>surface-sunk</b><span>#101015</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-well-edge)"></span><div><b>well-edge</b><span>#2a2a33</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-line)"></span><div><b>line</b><span>#40404c</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-outline)"></span><div><b>outline</b><span>#82819a</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-ink)"></span><div><b>ink</b><span>#e9e8f0</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-ink-muted)"></span><div><b>ink-muted</b><span>#a3a2b3</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-accent)"></span><div><b>accent</b><span>#e9e8f0</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-on-accent)"></span><div><b>on-accent</b><span>#141419</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-focus)"></span><div><b>focus</b><span>#e9e8f0</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-backlog)"></span><div><b>backlog</b><span>#c6ae84</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-todo)"></span><div><b>todo</b><span>#98a4b5</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-in-progress)"></span><div><b>in-progress</b><span>#86a9f5</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-danger)"></span><div><b>danger</b><span>#f07a70</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-ready-for-test)"></span><div><b>ready-for-test</b><span>#dfb426</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-ready-for-deploy)"></span><div><b>ready-for-deploy</b><span>#a898f2</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-done)"></span><div><b>done</b><span>#55c996</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-warn)"></span><div><b>warn</b><span>#eda06a</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-danger-wash)"></span><div><b>danger-wash</b><span>#3b2023</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-question-wash)"></span><div><b>question-wash</b><span>#1f2a48</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-done-wash)"></span><div><b>done-wash</b><span>#16332a</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-test-wash)"></span><div><b>test-wash</b><span>#3a3014</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-banner-bg)"></span><div><b>banner-bg</b><span>#2f2914</span></div></div><div class="sw"><span class="chipc" style="background:var(--color-banner-text)"></span><div><b>banner-text</b><span>#f0cd5c</span></div></div></div></div></div>
+<h2 class="sh">Type</h2>
+<div class="theme-light theme-pane"><div class="trow" style="border-top:0"><span class="lab">Atkinson Hyperlegible Next 400 / 500 / 700</span><span style="font-size:22px;line-height:28px;font-weight:700">Hamburgefonstiv 0123456789 ăâîșț</span></div><div class="trow"><span class="lab">Atkinson Hyperlegible Mono 400</span><span style="font-family:var(--font-mono);font-size:14px">almanac-6 shelfmark-31 wicket-15</span></div><div class="trow"><span class="lab">22/28 700 · mark</span><span style="font-size:22px;line-height:28px;font-weight:700">brief-board</span></div><div class="trow"><span class="lab">18/24 700 · lane name, column count</span><span style="font-size:18px;line-height:24px;font-weight:700">almanac 3 open 1 done</span></div><div class="trow"><span class="lab">15/22 500 · card title (16 on a phone)</span><span style="font-size:15px;line-height:22px;font-weight:500">Reminder times for all-day events</span></div><div class="trow"><span class="lab">14/20 400 · body, meta, reasons</span><span style="font-size:14px;line-height:20px">Which default reminder should a new all-day event get?</span></div><div class="trow"><span class="lab">13/18 700 · badges, status names, run line</span><span style="font-size:13px;line-height:18px;font-weight:700">Blocked by: Waits on the owner’s choice of default time</span></div><div class="trow"><span class="lab">12/16 mono · ticket keys only</span><span style="font-family:var(--font-mono);font-size:12px;line-height:16px">shelfmark-31</span></div></div>
+<h2 class="sh">Spacing, radii, elevation</h2>
+<div class="two"><div class="theme-light theme-pane"><div class="lbl">spacing 4 / 8 / 12 / 16 / 20 / 24</div><div class="sp8"><div style="--w:12px"></div><div style="--w:24px"></div><div style="--w:36px"></div><div style="--w:48px"></div><div style="--w:60px"></div><div style="--w:72px"></div></div><div class="lbl" style="margin-top:20px">radii 6 / 8 / 12 / full</div><div class="rad"><div style="border-radius:6px">6 badge</div><div style="border-radius:8px">8 card</div><div style="border-radius:12px">12 band</div><div style="border-radius:999px;justify-content:center;align-items:center">full</div></div><div class="lbl" style="margin-top:20px">elevation: line only, raised, overlay</div><div class="elev"><div style="box-shadow:none">0 flat: line</div><div style="box-shadow:var(--shadow-1)">1 raised: card, band, header</div><div style="box-shadow:var(--shadow-2)">2 overlay: panel, sheet</div></div></div><div class="theme-dark theme-pane"><div class="lbl">spacing 4 / 8 / 12 / 16 / 20 / 24</div><div class="sp8"><div style="--w:12px"></div><div style="--w:24px"></div><div style="--w:36px"></div><div style="--w:48px"></div><div style="--w:60px"></div><div style="--w:72px"></div></div><div class="lbl" style="margin-top:20px">radii 6 / 8 / 12 / full</div><div class="rad"><div style="border-radius:6px">6 badge</div><div style="border-radius:8px">8 card</div><div style="border-radius:12px">12 band</div><div style="border-radius:999px;justify-content:center;align-items:center">full</div></div><div class="lbl" style="margin-top:20px">elevation: lighter surface plus a 1 px line</div><div class="elev"><div>0 flat: line</div><div>1 raised: lighter surface</div><div style="box-shadow:var(--shadow-2)">2 overlay: panel, sheet</div></div></div></div>
+<h2 class="sh">Components</h2>
+<div class="two"><div class="theme-light theme-pane"><div class="pane-t">Light</div><div class="comp">
+<div><div class="lbl">Copy button: rest, hover, focus, copied</div><div class="crow"><button type="button" class="btn"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15V5a2 2 0 0 1 2-2h8"></path></svg>Copy</button><button type="button" class="btn" style="background:var(--color-surface-sunk)"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15V5a2 2 0 0 1 2-2h8"></path></svg>Copy</button><button type="button" class="btn f"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15V5a2 2 0 0 1 2-2h8"></path></svg>Copy</button><button type="button" class="btn" aria-pressed="true">Copied</button><button type="button" class="iconbtn" aria-label="Close"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button></div></div>
+<div><div class="lbl">Tag select with its label: rest, focus</div><div class="crow"><label class="tagf">Tag<select aria-label="Tag"><option>All tags</option></select></label><label class="tagf">Tag<select aria-label="Tag, focused" class="f"><option>All tags</option></select></label></div></div>
+<div><div class="lbl">Status columns, blocked chip, badges, role badges</div><div class="crow"><span class="col" style="--s:var(--color-backlog)"><span class="cn">Backlog</span><span class="cc">2</span></span><span class="col" style="--s:var(--color-danger)"><span class="cn">Blocked</span><span class="cc">1</span></span><span class="col" style="--s:var(--color-done)"><span class="cn">Done</span><span class="cc">4</span></span><span class="blockedchip">1 blocked</span><span class="badge q">1 question</span><span class="role ans">Answered</span><span class="role tn">Test notes</span><span class="role com">Comment</span></div></div>
+<div><div class="lbl">Needs you: rest, one need chosen</div><div class="nn" style="display:grid;gap:12px"><div class="rel"><section class="needs" aria-label="Needs you"><div class="nbar"><h2><button type="button" class="nhead" aria-expanded="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg><span class="nname">Needs you</span><span class="ntots"><span class="ntot" style="color:var(--color-in-progress)">1 question</span><span class="ntot" style="color:var(--color-warn)">1 stale run</span><span class="ntot" style="color:var(--color-ready-for-test)">1 to test</span><span class="ntot" style="color:var(--color-ready-for-deploy)">1 to deploy</span></span></button></h2></div><ul class="nlist"><li><button type="button" class="need" aria-pressed="false" style="--k:var(--color-in-progress)"><span class="kind">Question</span><span class="key">almanac-6</span><span class="nt">Reminder times for all-day events</span><span class="nr">Which default reminder should a new all-day event get?</span></button></li><li><button type="button" class="need" aria-pressed="false" style="--k:var(--color-warn)"><span class="kind">Stale run</span><span class="key">wicket-15</span><span class="nt">Retry a failed call once</span><span class="nr">Run by builder-b, silent for 30 hours</span></button></li><li><button type="button" class="need" aria-pressed="false" style="--k:var(--color-ready-for-test)"><span class="kind">To test</span><span class="key">shelfmark-31</span><span class="nt">Search results page</span><span class="nr">Open the search page, search for a title and check the covers load.</span></button></li><li><button type="button" class="need" aria-pressed="false" style="--k:var(--color-ready-for-deploy)"><span class="kind">To deploy</span><span class="key">almanac-4</span><span class="nt">The server in the code structure</span><span class="nr">Run node cli.ts almanac server from the deploy checkout.</span></button></li></ul></section></div><div class="rel"><section class="needs" aria-label="Needs you"><div class="nbar"><h2><button type="button" class="nhead" aria-expanded="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg><span class="nname">Needs you</span><span class="ntots"><span class="ntot" style="color:var(--color-in-progress)">1 question</span><span class="ntot" style="color:var(--color-warn)">1 stale run</span><span class="ntot" style="color:var(--color-ready-for-test)">1 to test</span><span class="ntot" style="color:var(--color-ready-for-deploy)">1 to deploy</span></span></button></h2><button type="button" class="btn nclear">Show all</button></div><ul class="nlist"><li><button type="button" class="need" aria-pressed="false" style="--k:var(--color-in-progress)"><span class="kind">Question</span><span class="key">almanac-6</span><span class="nt">Reminder times for all-day events</span><span class="nr">Which default reminder should a new all-day event get?</span></button></li><li><button type="button" class="need" aria-pressed="false" style="--k:var(--color-warn)"><span class="kind">Stale run</span><span class="key">wicket-15</span><span class="nt">Retry a failed call once</span><span class="nr">Run by builder-b, silent for 30 hours</span></button></li><li><button type="button" class="need" aria-pressed="true" style="--k:var(--color-ready-for-test)"><span class="kind">To test</span><span class="key">shelfmark-31</span><span class="nt">Search results page</span><span class="nr">Open the search page, search for a title and check the covers load.</span></button></li><li><button type="button" class="need" aria-pressed="false" style="--k:var(--color-ready-for-deploy)"><span class="kind">To deploy</span><span class="key">almanac-4</span><span class="nt">The server in the code structure</span><span class="nr">Run node cli.ts almanac server from the deploy checkout.</span></button></li></ul></section></div></div></div>
+<div><div class="lbl">Cards: plain, blocked with question, stale run, selected</div><div class="crow" style="align-items:flex-start"><div style="width:178px"><a class="card" href="#almanac-5"><span class="key">almanac-5</span><span class="ctitle">A redesign with Hallmark</span><span class="foot"><span class="tags"><span class="tag">web</span><span class="tag">design</span></span><span class="age">12h</span></span></a></div><div style="width:178px"><a class="card" href="#almanac-6"><span class="key">almanac-6</span><span class="ctitle">Reminder times for all-day events</span><span class="badges"><span class="badge blk" title="Blocked by: Waits on the owner’s choice of default time"><b>Blocked by:</b> Waits on the owner’s choice of default time</span><span class="badge q">1 question</span></span><span class="foot"><span class="tags"><span class="tag">server</span></span><span class="age">40h</span></span></a></div><div style="width:178px"><a class="card" href="#wicket-15"><span class="key">wicket-15</span><span class="ctitle">Retry a failed call once</span><span class="run warn"><span>builder-b</span><span>stale run, heard 30h ago</span><span>ran ≥ &lt;1m</span></span><span class="foot"><span class="tags"><span class="tag">server</span></span><span class="age">1h</span></span></a></div><div style="width:178px"><a class="card sel" href="#shelfmark-31"><span class="key">shelfmark-31</span><span class="ctitle">Search results page</span><span class="foot"><span class="tags"><span class="tag">web</span></span><span class="age">8h</span></span></a></div></div></div>
+<div><div class="lbl">Lane head: open, collapsed</div><div style="display:grid;gap:8px;max-width:520px"><div class="lhead"><button type="button" class="toggle" aria-expanded="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg><span class="lname">almanac</span><span class="lcounts"><span>3 open</span><span>1 done</span></span></button></div><div class="lhead"><button type="button" class="toggle" aria-expanded="false" style="transform:none"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path transform="rotate(-90 12 12)" d="m6 9 6 6 6-6"></path></svg><span class="lname">lantern</span><span class="lcounts"><span>2 open</span><span>1 done</span></span></button></div></div></div>
+<div><div class="lbl">Tab row, API-down banner (the app's one error)</div><div class="top" style="max-width:520px;padding:0 12px;border:1px solid var(--color-line);border-radius:var(--radius-m)"><div class="r2" style="border-top:0"><ul class="tabs"><li><a href="#board" aria-current="page">Board</a></li><li><a href="#done">Older Done</a></li><li><a href="#sprints">Sprints</a></li></ul></div></div><div class="banner" style="max-width:520px">The board's API isn't answering. Showing what it said at 10:30:06 AM. Trying again every 10 seconds.</div></div>
+<div><div class="lbl">Older Done group, bottom bar (phone)</div><div class="crow" style="align-items:flex-start"><section class="grp" style="width:300px"><div class="gh"><h3>shelfmark</h3><span>1</span></div><a class="drow" href="#shelfmark-22"><span class="l1"><span class="key">shelfmark-22</span><span class="dd">Oct 22, 2026</span></span><span class="dt">Import from a CSV file</span></a></section><nav class="bnav demo" style="display:flex;position:static;width:340px;border:1px solid var(--color-line);border-radius:var(--radius-m);padding:0 8px" aria-label="Pages"><a href="#board" aria-current="page"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="5" height="16" rx="1.5"></rect><rect x="10" y="4" width="5" height="10" rx="1.5"></rect><rect x="17" y="4" width="4" height="13" rx="1.5"></rect></svg><span>Board</span></a><a href="#done"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m8 12.5 3 3 5-6"></path></svg><span>Older Done</span></a><a href="#sprints"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg><span>Sprints</span></a><a href="#account"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"></path></svg><span>demo</span></a></nav></div></div>
+</div></div><div class="theme-dark theme-pane"><div class="pane-t">Dark</div><div class="comp">
+<div><div class="lbl">Copy button: rest, hover, focus, copied</div><div class="crow"><button type="button" class="btn"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15V5a2 2 0 0 1 2-2h8"></path></svg>Copy</button><button type="button" class="btn" style="background:var(--color-surface-sunk)"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15V5a2 2 0 0 1 2-2h8"></path></svg>Copy</button><button type="button" class="btn f"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15V5a2 2 0 0 1 2-2h8"></path></svg>Copy</button><button type="button" class="btn" aria-pressed="true">Copied</button><button type="button" class="iconbtn" aria-label="Close"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button></div></div>
+<div><div class="lbl">Tag select with its label: rest, focus</div><div class="crow"><label class="tagf">Tag<select aria-label="Tag"><option>All tags</option></select></label><label class="tagf">Tag<select aria-label="Tag, focused" class="f"><option>All tags</option></select></label></div></div>
+<div><div class="lbl">Status columns, blocked chip, badges, role badges</div><div class="crow"><span class="col" style="--s:var(--color-backlog)"><span class="cn">Backlog</span><span class="cc">2</span></span><span class="col" style="--s:var(--color-danger)"><span class="cn">Blocked</span><span class="cc">1</span></span><span class="col" style="--s:var(--color-done)"><span class="cn">Done</span><span class="cc">4</span></span><span class="blockedchip">1 blocked</span><span class="badge q">1 question</span><span class="role ans">Answered</span><span class="role tn">Test notes</span><span class="role com">Comment</span></div></div>
+<div><div class="lbl">Needs you: rest, one need chosen</div><div class="nn" style="display:grid;gap:12px"><div class="rel"><section class="needs" aria-label="Needs you"><div class="nbar"><h2><button type="button" class="nhead" aria-expanded="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg><span class="nname">Needs you</span><span class="ntots"><span class="ntot" style="color:var(--color-in-progress)">1 question</span><span class="ntot" style="color:var(--color-warn)">1 stale run</span><span class="ntot" style="color:var(--color-ready-for-test)">1 to test</span><span class="ntot" style="color:var(--color-ready-for-deploy)">1 to deploy</span></span></button></h2></div><ul class="nlist"><li><button type="button" class="need" aria-pressed="false" style="--k:var(--color-in-progress)"><span class="kind">Question</span><span class="key">almanac-6</span><span class="nt">Reminder times for all-day events</span><span class="nr">Which default reminder should a new all-day event get?</span></button></li><li><button type="button" class="need" aria-pressed="false" style="--k:var(--color-warn)"><span class="kind">Stale run</span><span class="key">wicket-15</span><span class="nt">Retry a failed call once</span><span class="nr">Run by builder-b, silent for 30 hours</span></button></li><li><button type="button" class="need" aria-pressed="false" style="--k:var(--color-ready-for-test)"><span class="kind">To test</span><span class="key">shelfmark-31</span><span class="nt">Search results page</span><span class="nr">Open the search page, search for a title and check the covers load.</span></button></li><li><button type="button" class="need" aria-pressed="false" style="--k:var(--color-ready-for-deploy)"><span class="kind">To deploy</span><span class="key">almanac-4</span><span class="nt">The server in the code structure</span><span class="nr">Run node cli.ts almanac server from the deploy checkout.</span></button></li></ul></section></div><div class="rel"><section class="needs" aria-label="Needs you"><div class="nbar"><h2><button type="button" class="nhead" aria-expanded="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg><span class="nname">Needs you</span><span class="ntots"><span class="ntot" style="color:var(--color-in-progress)">1 question</span><span class="ntot" style="color:var(--color-warn)">1 stale run</span><span class="ntot" style="color:var(--color-ready-for-test)">1 to test</span><span class="ntot" style="color:var(--color-ready-for-deploy)">1 to deploy</span></span></button></h2><button type="button" class="btn nclear">Show all</button></div><ul class="nlist"><li><button type="button" class="need" aria-pressed="false" style="--k:var(--color-in-progress)"><span class="kind">Question</span><span class="key">almanac-6</span><span class="nt">Reminder times for all-day events</span><span class="nr">Which default reminder should a new all-day event get?</span></button></li><li><button type="button" class="need" aria-pressed="false" style="--k:var(--color-warn)"><span class="kind">Stale run</span><span class="key">wicket-15</span><span class="nt">Retry a failed call once</span><span class="nr">Run by builder-b, silent for 30 hours</span></button></li><li><button type="button" class="need" aria-pressed="true" style="--k:var(--color-ready-for-test)"><span class="kind">To test</span><span class="key">shelfmark-31</span><span class="nt">Search results page</span><span class="nr">Open the search page, search for a title and check the covers load.</span></button></li><li><button type="button" class="need" aria-pressed="false" style="--k:var(--color-ready-for-deploy)"><span class="kind">To deploy</span><span class="key">almanac-4</span><span class="nt">The server in the code structure</span><span class="nr">Run node cli.ts almanac server from the deploy checkout.</span></button></li></ul></section></div></div></div>
+<div><div class="lbl">Cards: plain, blocked with question, stale run, selected</div><div class="crow" style="align-items:flex-start"><div style="width:178px"><a class="card" href="#almanac-5"><span class="key">almanac-5</span><span class="ctitle">A redesign with Hallmark</span><span class="foot"><span class="tags"><span class="tag">web</span><span class="tag">design</span></span><span class="age">12h</span></span></a></div><div style="width:178px"><a class="card" href="#almanac-6"><span class="key">almanac-6</span><span class="ctitle">Reminder times for all-day events</span><span class="badges"><span class="badge blk" title="Blocked by: Waits on the owner’s choice of default time"><b>Blocked by:</b> Waits on the owner’s choice of default time</span><span class="badge q">1 question</span></span><span class="foot"><span class="tags"><span class="tag">server</span></span><span class="age">40h</span></span></a></div><div style="width:178px"><a class="card" href="#wicket-15"><span class="key">wicket-15</span><span class="ctitle">Retry a failed call once</span><span class="run warn"><span>builder-b</span><span>stale run, heard 30h ago</span><span>ran ≥ &lt;1m</span></span><span class="foot"><span class="tags"><span class="tag">server</span></span><span class="age">1h</span></span></a></div><div style="width:178px"><a class="card sel" href="#shelfmark-31"><span class="key">shelfmark-31</span><span class="ctitle">Search results page</span><span class="foot"><span class="tags"><span class="tag">web</span></span><span class="age">8h</span></span></a></div></div></div>
+<div><div class="lbl">Lane head: open, collapsed</div><div style="display:grid;gap:8px;max-width:520px"><div class="lhead"><button type="button" class="toggle" aria-expanded="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg><span class="lname">almanac</span><span class="lcounts"><span>3 open</span><span>1 done</span></span></button></div><div class="lhead"><button type="button" class="toggle" aria-expanded="false" style="transform:none"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path transform="rotate(-90 12 12)" d="m6 9 6 6 6-6"></path></svg><span class="lname">lantern</span><span class="lcounts"><span>2 open</span><span>1 done</span></span></button></div></div></div>
+<div><div class="lbl">Tab row, API-down banner (the app's one error)</div><div class="top" style="max-width:520px;padding:0 12px;border:1px solid var(--color-line);border-radius:var(--radius-m)"><div class="r2" style="border-top:0"><ul class="tabs"><li><a href="#board" aria-current="page">Board</a></li><li><a href="#done">Older Done</a></li><li><a href="#sprints">Sprints</a></li></ul></div></div><div class="banner" style="max-width:520px">The board's API isn't answering. Showing what it said at 10:30:06 AM. Trying again every 10 seconds.</div></div>
+<div><div class="lbl">Older Done group, bottom bar (phone)</div><div class="crow" style="align-items:flex-start"><section class="grp" style="width:300px"><div class="gh"><h3>shelfmark</h3><span>1</span></div><a class="drow" href="#shelfmark-22"><span class="l1"><span class="key">shelfmark-22</span><span class="dd">Oct 22, 2026</span></span><span class="dt">Import from a CSV file</span></a></section><nav class="bnav demo" style="display:flex;position:static;width:340px;border:1px solid var(--color-line);border-radius:var(--radius-m);padding:0 8px" aria-label="Pages"><a href="#board" aria-current="page"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="5" height="16" rx="1.5"></rect><rect x="10" y="4" width="5" height="10" rx="1.5"></rect><rect x="17" y="4" width="4" height="13" rx="1.5"></rect></svg><span>Board</span></a><a href="#done"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m8 12.5 3 3 5-6"></path></svg><span>Older Done</span></a><a href="#sprints"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg><span>Sprints</span></a><a href="#account"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"></path></svg><span>demo</span></a></nav></div></div>
+</div></div></div>
+<h2 class="sh">States</h2>
+<div class="two"><div class="theme-light theme-pane"><div class="pane-t">Light</div><div class="comp">
+<div><div class="lbl">Board: loading, empty, no match, API down</div><div class="crow" style="align-items:stretch"><div class="statebox" style="width:150px"><p class="upd">Loading…</p><div class="skel"></div><div class="skel" style="width:70%"></div></div><div class="statebox" style="width:300px"><p>No tickets yet. An agent runs brief-board sync to fill the board.</p></div><div class="statebox" style="width:230px"><p>No tickets carry the tag "web".</p></div><div class="banner" style="margin:0;width:300px">The board's API isn't answering. Trying again every 10 seconds.</div></div></div>
+<div><div class="lbl">Ticket detail: loading, not loaded</div><div class="crow"><div class="statebox" style="width:200px"><p style="color:var(--color-ink-muted)">Loading…</p></div><div class="statebox" style="width:260px"><p style="color:var(--color-ink-muted)">Couldn't load this ticket.</p></div></div></div>
+<div><div class="lbl">Older Done: nothing older, no match</div><div class="crow"><div class="statebox" style="width:280px"><p style="color:var(--color-ink-muted)">Nothing older than 14 days yet.</p></div><div class="statebox" style="width:340px"><p style="color:var(--color-ink-muted)">No ticket older than 14 days carries the tag "web".</p></div></div></div>
+</div></div><div class="theme-dark theme-pane"><div class="pane-t">Dark</div><div class="comp">
+<div><div class="lbl">Board: loading, empty, no match, API down</div><div class="crow" style="align-items:stretch"><div class="statebox" style="width:150px"><p class="upd">Loading…</p><div class="skel"></div><div class="skel" style="width:70%"></div></div><div class="statebox" style="width:300px"><p>No tickets yet. An agent runs brief-board sync to fill the board.</p></div><div class="statebox" style="width:230px"><p>No tickets carry the tag "web".</p></div><div class="banner" style="margin:0;width:300px">The board's API isn't answering. Trying again every 10 seconds.</div></div></div>
+<div><div class="lbl">Ticket detail: loading, not loaded</div><div class="crow"><div class="statebox" style="width:200px"><p style="color:var(--color-ink-muted)">Loading…</p></div><div class="statebox" style="width:260px"><p style="color:var(--color-ink-muted)">Couldn't load this ticket.</p></div></div></div>
+<div><div class="lbl">Older Done: nothing older, no match</div><div class="crow"><div class="statebox" style="width:280px"><p style="color:var(--color-ink-muted)">Nothing older than 14 days yet.</p></div><div class="statebox" style="width:340px"><p style="color:var(--color-ink-muted)">No ticket older than 14 days carries the tag "web".</p></div></div></div>
+</div></div></div>
+<h2 class="sh">Contrast</h2>
+<div class="theme-light theme-pane"><table class="ct"><thead><tr><th>Pair</th><th class="n" style="text-align:right">Light</th><th style="text-align:right">Dark</th><th style="text-align:right">Need</th><th>Result</th></tr></thead><tbody><tr class=""><td>ink on page</td><td class="n">15.18</td><td class="n">15.09</td><td class="n">4.5</td><td>pass</td></tr><tr class=""><td>ink on surface</td><td class="n">16.98</td><td class="n">11.66</td><td class="n">4.5</td><td>pass</td></tr><tr class=""><td>ink on surface-sunk</td><td class="n">13.54</td><td class="n">15.6</td><td class="n">4.5</td><td>pass</td></tr><tr class=""><td>ink-muted on page</td><td class="n">6.29</td><td class="n">7.32</td><td class="n">4.5</td><td>pass</td></tr><tr class=""><td>ink-muted on surface</td><td class="n">7.04</td><td class="n">5.66</td><td class="n">4.5</td><td>pass</td></tr><tr class=""><td>ink-muted on surface-sunk (empty line, tags, ages)</td><td class="n">5.61</td><td class="n">7.57</td><td class="n">4.5</td><td>pass</td></tr><tr class=""><td>on-accent on accent (fill)</td><td class="n">16.98</td><td class="n">15.09</td><td class="n">4.5</td><td>pass</td></tr><tr class=""><td>backlog text on surface</td><td class="n">4.68</td><td class="n">6.61</td><td class="n">4.5</td><td>pass</td></tr><tr class=""><td>to do text on surface</td><td class="n">5.31</td><td class="n">5.61</td><td class="n">4.5</td><td>pass</td></tr><tr class=""><td>in progress text on surface</td><td class="n">6.37</td><td class="n">6.08</td><td class="n">4.5</td><td>pass</td></tr><tr class=""><td>blocked / danger text on surface</td><td class="n">6.18</td><td class="n">5.21</td><td class="n">4.5</td><td>pass</td></tr><tr class=""><td>ready for test text on surface</td><td class="n">4.79</td><td class="n">7.22</td><td class="n">4.5</td><td>pass</td></tr><tr class=""><td>ready for deploy text on surface</td><td class="n">6.02</td><td class="n">5.7</td><td class="n">4.5</td><td>pass</td></tr><tr class=""><td>done text on surface</td><td class="n">5.5</td><td class="n">6.87</td><td class="n">4.5</td><td>pass</td></tr><tr class=""><td>warn text on surface (stale run)</td><td class="n">6.47</td><td class="n">6.64</td><td class="n">4.5</td><td>pass</td></tr><tr class=""><td>danger on danger-wash (Blocked chip, badge)</td><td class="n">5.28</td><td class="n">5.45</td><td class="n">4.5</td><td>pass</td></tr><tr class=""><td>in progress on question-wash (question badge)</td><td class="n">5.41</td><td class="n">6.07</td><td class="n">4.5</td><td>pass</td></tr><tr class=""><td>done on done-wash (Answered badge)</td><td class="n">4.7</td><td class="n">6.61</td><td class="n">4.5</td><td>pass</td></tr><tr class=""><td>ready for test on test-wash (Test notes badge)</td><td class="n">4.58</td><td class="n">6.63</td><td class="n">4.5</td><td>pass</td></tr><tr class=""><td>banner-text on banner-bg</td><td class="n">9.81</td><td class="n">9.39</td><td class="n">4.5</td><td>pass</td></tr><tr class=""><td>danger text on surface-sunk</td><td class="n">4.93</td><td class="n">6.98</td><td class="n">4.5</td><td>pass</td></tr><tr class=""><td>warn text on surface-sunk</td><td class="n">5.16</td><td class="n">8.89</td><td class="n">4.5</td><td>pass</td></tr><tr class=""><td>on-callout on callout (board marker)</td><td class="n">5.28</td><td class="n">8.96</td><td class="n">4.5</td><td>pass</td></tr><tr class=""><td>outline (Tag select edge) on surface</td><td class="n">4.16</td><td class="n">3.75</td><td class="n">3</td><td>pass</td></tr><tr class=""><td>outline on page</td><td class="n">3.72</td><td class="n">4.86</td><td class="n">3</td><td>pass</td></tr><tr class=""><td>focus ring on surface</td><td class="n">16.98</td><td class="n">11.66</td><td class="n">3</td><td>pass</td></tr><tr class=""><td>focus ring on surface-sunk</td><td class="n">13.54</td><td class="n">15.6</td><td class="n">3</td><td>pass</td></tr><tr class=""><td>focus ring on page</td><td class="n">15.18</td><td class="n">15.09</td><td class="n">3</td><td>pass</td></tr><tr class=""><td>accent (current-tab bar, links) on surface</td><td class="n">16.98</td><td class="n">11.66</td><td class="n">3</td><td>pass</td></tr><tr class=""><td>status cap backlog on surface</td><td class="n">4.68</td><td class="n">6.61</td><td class="n">3</td><td>pass</td></tr><tr class=""><td>status cap to do on surface</td><td class="n">5.31</td><td class="n">5.61</td><td class="n">3</td><td>pass</td></tr><tr class=""><td>status cap in progress on surface</td><td class="n">6.37</td><td class="n">6.08</td><td class="n">3</td><td>pass</td></tr><tr class=""><td>status cap blocked on surface</td><td class="n">6.18</td><td class="n">5.21</td><td class="n">3</td><td>pass</td></tr><tr class=""><td>status cap ready for test on surface</td><td class="n">4.79</td><td class="n">7.22</td><td class="n">3</td><td>pass</td></tr><tr class=""><td>status cap ready for deploy on surface</td><td class="n">6.02</td><td class="n">5.7</td><td class="n">3</td><td>pass</td></tr><tr class=""><td>status cap done on surface</td><td class="n">5.5</td><td class="n">6.87</td><td class="n">3</td><td>pass</td></tr><tr class=""><td>SURFACE: surface on page (header, bands, panel)</td><td class="n">1.12</td><td class="n">1.29</td><td class="n">1.09</td><td>pass</td></tr><tr class=""><td>SURFACE: surface-sunk on page (wells, no edge)</td><td class="n">1.12</td><td class="n">1.03</td><td class="n">1.03</td><td>pass</td></tr><tr class=""><td>SURFACE: card (surface) on well (surface-sunk)</td><td class="n">1.25</td><td class="n">1.34</td><td class="n">1.25</td><td>pass</td></tr><tr class=""><td>EDGE: well-edge on page (dark well edge; light = fill)</td><td class="n">1.12</td><td class="n">1.29</td><td class="n">1</td><td>pass</td></tr><tr class=""><td>EDGE: line on page (every raised edge)</td><td class="n">1.46</td><td class="n">1.8</td><td class="n">1.3</td><td>pass</td></tr><tr class=""><td>EDGE: line on surface-sunk (well edge in dark)</td><td class="n">1.3</td><td class="n">1.86</td><td class="n">1.3</td><td>pass</td></tr><tr class=""><td>EDGE: line on surface (card edge)</td><td class="n">1.63</td><td class="n">1.39</td><td class="n">1.3</td><td>pass</td></tr></tbody></table></div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":6187}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

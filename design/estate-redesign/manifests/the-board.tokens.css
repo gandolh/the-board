@@ -1,0 +1,83 @@
+/*
+ * The board (brief-board's web app), direction "The queue and the lanes": the token set in the app's
+ * own names. Drop-in for the colour, text, font, radius and shadow groups of the `@theme static` block
+ * in web/src/styles/index.css; the `--color-*: initial` resets, `--height-top`, the z-index group, the
+ * `@layer base` block and the two custom variants stay. The file's own mechanism is kept: each colour
+ * is light-dark(light, dark), picked by color-scheme on :root; shadows use light-dark() too, so there is
+ * no [data-theme="dark"] block. The status names keep the API's underscores. NEW marks names the app
+ * does not have yet. The accent is graphite ink now, not blue: links and the one primary are ink.
+ */
+@theme static {
+  /* Neutrals: a cool violet-grey ladder */
+  --color-page: light-dark(#f0f0f4, #141419);
+  --color-surface: light-dark(#fdfdff, #2a2a35); /* cards, bands, header, the panel; lighter than the page in dark */
+  --color-surface-sunk: light-dark(#e4e3eb, #101015); /* inputs, the status row's wells, the copy button's ground */
+  --color-well-edge: light-dark(#e4e3eb, #2a2a33); /* NEW: the 1 px edge of a sunk well */
+  --color-line: light-dark(#c9c8d4, #40404c);
+  --color-outline: light-dark(#7a7990, #82819a); /* NEW: edges that must be seen: fields, the tag select */
+  --color-ink: light-dark(#1a1a24, #e9e8f0);
+  --color-ink-muted: light-dark(#575668, #a3a2b3);
+  --color-accent: light-dark(#1a1a24, #e9e8f0); /* was blue; the one primary is ink */
+  --color-on-accent: light-dark(#fdfdff, #141419); /* NEW: text on the accent */
+  --color-focus: light-dark(#1a1a24, #e9e8f0); /* NEW: the focus ring (equals the accent) */
+  --color-scrim: light-dark(#1a1a24, #0a0a0f); /* NEW: behind the panel and the sheet; the app sets its alpha */
+
+  /* The status colours (the API's names) */
+  --color-backlog: light-dark(#85704c, #c6ae84);
+  --color-todo: light-dark(#5f6b7f, #98a4b5);
+  --color-in_progress: light-dark(#2457c5, #86a9f5);
+  --color-ready_for_test: light-dark(#8f6c00, #dfb426);
+  --color-ready_for_deploy: light-dark(#6550bd, #a898f2);
+  --color-done: light-dark(#1c7650, #55c996);
+  --color-danger: light-dark(#b42d26, #f07a70);
+  --color-warn: light-dark(#974603, #eda06a); /* a stale run */
+
+  /* NEW: the washes behind the Needs you queue's kinds and the status chips */
+  --color-danger-wash: light-dark(#fbe7e5, #3b2023); /* a blocked chip, a stale run */
+  --color-question-wash: light-dark(#e3ebfb, #1f2a48); /* a question */
+  --color-done-wash: light-dark(#dcf0e5, #16332a); /* done, answered */
+  --color-test-wash: light-dark(#fdf8e6, #3a3014); /* to test */
+
+  --color-banner-bg: light-dark(#fbefc4, #2f2914); /* the API-down banner */
+  --color-banner-text: light-dark(#4a3805, #f0cd5c);
+
+  /* Derived: a card or a row under the pointer, the surface 8% toward the accent */
+  --color-surface-hover: color-mix(in srgb, var(--color-surface) 92%, var(--color-accent));
+
+  /* Type: Atkinson Hyperlegible Next 400, 500, 700; Atkinson Hyperlegible Mono 400 for ticket keys. Sizes: 12 13 14 15 18 22.
+     Line height and weight ride on each size as --text-*--line-height and --text-*--font-weight. */
+  --font-sans: "Atkinson Hyperlegible Next", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Atkinson Hyperlegible Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; /* NEW */
+  --default-mono-font-family: var(--font-mono);
+  --text-meta: 0.75rem; /* 12/16, mono 400: ticket keys only */
+  --text-meta--line-height: 1rem;
+  --text-small: 0.8125rem; /* 13/18, 700: badges, status names, the run line */
+  --text-small--line-height: 1.125rem;
+  --text-small--font-weight: 700;
+  --text-body: 0.875rem; /* 14/20, 400: body, meta, reasons */
+  --text-body--line-height: 1.25rem;
+  --text-heading: 0.9375rem; /* 15/22, 500: a card's title (16 on a phone, a phone: variant) */
+  --text-heading--line-height: 1.375rem;
+  --text-heading--font-weight: 500;
+  --text-title: 1.125rem; /* 18/24, 700: a lane name, a column count */
+  --text-title--line-height: 1.5rem;
+  --text-title--font-weight: 700;
+  --text-display: 1.375rem; /* 22/28, 700: the "brief-board" mark (was 20) */
+  --text-display--line-height: 1.75rem;
+  --text-display--font-weight: 700;
+  --font-weight-strong: 700; /* was 650 */
+
+  /* Radii: 6 badge, 8 card, 12 band, full */
+  --radius-badge: 6px; /* NEW: badges, the copy button, chips */
+  --radius-card: 8px; /* NEW: cards, the Needs you rows */
+  --radius-band: 12px; /* NEW: a lane's band, the header, the Needs you panel */
+  --radius-pill: 999px; /* NEW */
+  --radius-chip: 3px;
+  --radius-box: 4px;
+  --radius-gate: 8px;
+
+  /* Elevation: 0 flat (a line), 1 raised (card, band, header), 2 overlay (panel, sheet). Dark: a lighter surface and a 1 px line, no shadow */
+  --shadow-card: 0 1px 3px light-dark(rgb(26 26 36 / 0.12), transparent);
+  --shadow-panel: -12px 0 32px light-dark(rgb(26 26 36 / 0.16), rgb(0 0 0 / 0.5));
+  --shadow-sheet: 0 -12px 32px light-dark(rgb(26 26 36 / 0.18), rgb(0 0 0 / 0.5)); /* NEW: the phone's bottom sheet */
+}
