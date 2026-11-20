@@ -619,3 +619,7 @@ Playwright floor specs and `npm run check:contrast` are new. Web-only deploy; no
 ## [2026-11-19] done | Brief 24, ward-auth 1.1.0 and Link Ward asks for the password
 
 [Brief 24](briefs/done/24-linking-ward-asks-for-the-password.md): both vendored copies moved from 0.7.0 to 1.1.0, rename still off. The account page's Link Ward is a form that asks for the password again and keeps a refusal beside the field. Migration 5 (a username look-alike key) runs at the first boot; the board has no register or rename route, so only the seed meets the look-alike rule. Server and web both change: not deployed, with a backup of the SQLite file first ([sign-in.md](wiki/sign-in.md)).
+
+## [2026-11-20] research | A flow view for the board: not worth it, two small additions are
+
+The owner asked whether a statechart-like view would make the board easier to watch. 394 tickets and 1,268 history events, read through the CLI: 95% of moves follow four arrows, a run takes a median 15 min (In Progress time understates it: some moves were recorded after the work), and the wait is the owner's deploy rollout. No diagram; the web Needs strip could show ages and a sprint summary line could give the medians and the tickets closed by sync. Nothing filed. See [wiki/research-flow-view.md](wiki/research-flow-view.md).
