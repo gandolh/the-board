@@ -633,3 +633,10 @@ the board may sleep; the CLI gives a call 30 s instead of 2 s so the first call 
 instead of reporting the board unreachable. Nothing deploys for 26; the `sleep` setting is vps-deploy's.
 
 ## [2026-11-24] done | Brief 26: the CLI gives the board 30 s instead of 2 s, so a sleeping board can wake (Sablier blocking holds the first request); live in the linked CLI, nothing deploys
+
+## [2026-11-24] brief | 25 The image's build stage installs only the server, on a pinned base
+
+Built. `deps` runs `npm ci -w @brief-board/server --include-workspace-root` (327 → 255 MB of `node_modules`;
+the `deps` stage image 924 → 857 MB), and every stage is on `node:24.22.1-alpine`. The final image is 209 MB (208
+before) and turned healthy on scratch data. Ready for deploy: `node cli.ts brief-board server`. See
+[briefs/done/25-the-images-build-stage-installs-only-the-server.md](briefs/done/25-the-images-build-stage-installs-only-the-server.md).
