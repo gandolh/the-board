@@ -7,6 +7,9 @@ paths:
 
 - Read the `base-ui` skill before you add or change a component, and
   [corpus/wiki/board-ui.md](../../corpus/wiki/board-ui.md) for UI work.
+- Browsers: Chrome on Android decides what to build; Safari on iPhone,
+  Firefox and desktop Safari must keep working. Before you use a platform
+  feature newer than Baseline Widely available, read the `web-platform` skill.
 - The board is read-only ([corpus/wiki/decisions.md](../../corpus/wiki/decisions.md),
   "The UI is read-only"): no control that writes to the API.
 - Base UI is imported only under `web/src/components/ui/` (`Dialog`,
