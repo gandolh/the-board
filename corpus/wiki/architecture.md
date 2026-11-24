@@ -93,9 +93,8 @@ corpus. The author is `--author`, else `BRIEF_BOARD_AUTHOR`, else `agent`.
 - Exit codes (`cli/src/main.ts`): 0 success, 1 a usage mistake, 2 the board
   or the local check refused (with the allowed moves and their messages), 3
   the board is unreachable, printed as one line. A 4xx that isn't the
-  contract's JSON (another service on the port) counts as unreachable, and so
-  does no answer within 30 s (`DEFAULT_TIMEOUT_MS`, 2 s before 2026-11-24): a
-  sleeping board's first request waits for it to start (about 3.3 s).
+  contract's JSON (another service on the port) counts as unreachable, as does
+  no answer in 30 s (2026-11-24: a sleeping board's first call waits ~3.3 s).
 - Tags (2026-11-12): `tag`, `untag` and `list --tag`; see [tags.md](tags.md).
 - Sprints (2026-11-10): `sprint` prints the active one; `sprint start <N>`
   starts the next on the owner's ask (a stale N exits 1); `list --sprint

@@ -631,3 +631,5 @@ instead of every workspace (about 73 MB less build cache per cold build on the b
 `node:24.22.1-alpine`; ships with `node cli.ts brief-board server`. Brief 26: the owner agreed on 2026-11-24 that
 the board may sleep; the CLI gives a call 30 s instead of 2 s so the first call after a sleep waits for the start
 instead of reporting the board unreachable. Nothing deploys for 26; the `sleep` setting is vps-deploy's.
+
+## [2026-11-24] done | Brief 26: the CLI gives the board 30 s instead of 2 s, so a sleeping board can wake (Sablier blocking holds the first request); live in the linked CLI, nothing deploys

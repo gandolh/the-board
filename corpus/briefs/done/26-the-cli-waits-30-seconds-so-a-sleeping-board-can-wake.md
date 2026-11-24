@@ -64,3 +64,18 @@ CLI, and that is this brief; the `sleep` setting itself is vps-deploy's change, 
 ## Owner steps
 
 - None for this brief. The board sleeps once vps-deploy sets `sleep` on its stack, which comes after it.
+
+## Outcome (2026-11-24)
+
+Built as written by the controller, Done on the board (nothing deploys).
+
+- Step 1: the CLI calls `/brief-board-api`, a sub-path route with no strategy named, so vps-deploy's
+  `sleepStrategy` (in `lib/core/synth.ts`) gives it `blocking`: the first request is held until the board answers.
+  No retry loop needed.
+- `cli/src/client.ts`: `DEFAULT_TIMEOUT_MS = 30_000`, with the reason in its comment; `BoardClient` takes the
+  timeout as an optional third argument. `runtime.ts` constructs it without one, so the CLI gets 30 s.
+- `cli/src/client.test.ts` (3 tests): a board answering after 300 ms passes with 1 s; one that never answers is
+  `Unreachable` with 200 ms; with no argument the request's signal is `AbortSignal.timeout(30_000)`.
+- `corpus/wiki/architecture.md`: the exit-codes bullet names the 30 s and why.
+- Checks: `npm run check` passed; `npm run build -w @brief-board/cli` rebuilt the linked CLI, and
+  `brief-board list` read the live board.
