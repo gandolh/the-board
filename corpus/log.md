@@ -623,3 +623,11 @@ Playwright floor specs and `npm run check:contrast` are new. Web-only deploy; no
 ## [2026-11-20] research | A flow view for the board: not worth it, two small additions are
 
 The owner asked whether a statechart-like view would make the board easier to watch. 394 tickets and 1,268 history events, read through the CLI: 95% of moves follow four arrows, a run takes a median 15 min (In Progress time understates it: some moves were recorded after the work), and the wait is the owner's deploy rollout. No diagram; the web Needs strip could show ages and a sprint summary line could give the medians and the tickets closed by sync. Nothing filed. See [wiki/research-flow-view.md](wiki/research-flow-view.md).
+
+## [2026-11-24] todo | Briefs 25 and 26 from the infra review of 2026-11-24
+
+Filed from the estate's infra review. Brief 25: the image's `deps` stage installs only the server's closure
+instead of every workspace (about 73 MB less build cache per cold build on the box), and every base is pinned to
+`node:24.22.1-alpine`; ships with `node cli.ts brief-board server`. Brief 26: the owner agreed on 2026-11-24 that
+the board may sleep; the CLI gives a call 30 s instead of 2 s so the first call after a sleep waits for the start
+instead of reporting the board unreachable. Nothing deploys for 26; the `sleep` setting is vps-deploy's.
