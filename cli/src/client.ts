@@ -31,8 +31,13 @@ import {
 } from "@brief-board/shared";
 import { Rejected, Unreachable } from "./errors.js";
 
-/** How long the board gets before the CLI calls it down. */
-const TIMEOUT_MS = 2_000;
+/**
+ * How long the board gets before the CLI calls it down. The board may sleep: the
+ * first request then waits for it to start (Sablier's `blocking` strategy, about
+ * 3.3 s measured on 2026-11-05), so this is ten times that and well under the one
+ * minute Sablier holds a request.
+ */
+export const DEFAULT_TIMEOUT_MS = 30_000;
 
 /** A refusal from the board, with its error body. */
 export class ApiRejected extends Rejected {
@@ -67,10 +72,12 @@ export class TokenRefused extends Error {
 export class BoardClient {
   readonly url: string;
   private readonly token: string | undefined;
+  private readonly timeoutMs: number;
 
-  constructor(url: string, token?: string) {
+  constructor(url: string, token?: string, timeoutMs = DEFAULT_TIMEOUT_MS) {
     this.url = url;
     this.token = token;
+    this.timeoutMs = timeoutMs;
   }
 
   private async call<T>(method: string, path: string, body?: unknown): Promise<T> {
@@ -83,7 +90,7 @@ export class BoardClient {
         method,
         headers,
         body: body === undefined ? undefined : JSON.stringify(body),
-        signal: AbortSignal.timeout(TIMEOUT_MS),
+        signal: AbortSignal.timeout(this.timeoutMs),
       });
     } catch {
       throw new Unreachable(this.url);

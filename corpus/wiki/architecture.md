@@ -1,6 +1,6 @@
 ---
 summary: How brief-board is put together, as built 2026-10-09, with the 2026-11-02 sub-path, token and sign-in, the 2026-11-03 todo keys, the 2026-11-06 runs and their holds, and the 2026-11-10 sprints (every ticket in one, the routes, the frozen closed sprint), and the 2026-11-12 tags route, tag events and tag/untag; the board in the browser is board-ui.md. npm workspaces with a Fastify + SQLite API, a read-only Vite + React board, and the brief-board CLI that agents use; how the CLI finds the board without any repo holding a path; keys, the CLI's exit codes, the server's error codes, build gotchas, and what each project's CLAUDE.md says. The owner starts the server by hand on 127.0.0.1:8806.
-updated: 2026-11-12
+updated: 2026-11-24
 ---
 
 # Architecture
@@ -93,7 +93,9 @@ corpus. The author is `--author`, else `BRIEF_BOARD_AUTHOR`, else `agent`.
 - Exit codes (`cli/src/main.ts`): 0 success, 1 a usage mistake, 2 the board
   or the local check refused (with the allowed moves and their messages), 3
   the board is unreachable, printed as one line. A 4xx that isn't the
-  contract's JSON (another service on the port) counts as unreachable.
+  contract's JSON (another service on the port) counts as unreachable, and so
+  does no answer within 30 s (`DEFAULT_TIMEOUT_MS`, 2 s before 2026-11-24): a
+  sleeping board's first request waits for it to start (about 3.3 s).
 - Tags (2026-11-12): `tag`, `untag` and `list --tag`; see [tags.md](tags.md).
 - Sprints (2026-11-10): `sprint` prints the active one; `sprint start <N>`
   starts the next on the owner's ask (a stale N exits 1); `list --sprint
