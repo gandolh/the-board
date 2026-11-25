@@ -645,4 +645,4 @@ before) and turned healthy on scratch data. Ready for deploy: `node cli.ts brief
 
 Filed from the owner's report that the colour-mode picker acts across apps. brief-board and six other apps on the shared
 domain keep the choice under the bare `theme` key; it moves to `brief-board.theme`, carrying the old value over once.
-Ships with `node cli.ts brief-board all`.
+Ships with `node cli.ts brief-board deploy`.
