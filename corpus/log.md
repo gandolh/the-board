@@ -640,3 +640,9 @@ Built. `deps` runs `npm ci -w @brief-board/server --include-workspace-root` (327
 the `deps` stage image 924 → 857 MB), and every stage is on `node:24.22.1-alpine`. The final image is 209 MB (208
 before) and turned healthy on scratch data. Ready for deploy: `node cli.ts brief-board server`. See
 [briefs/done/25-the-images-build-stage-installs-only-the-server.md](briefs/done/25-the-images-build-stage-installs-only-the-server.md).
+
+## [2026-11-25] todo | Brief 27: the colour mode is kept under brief-board's own key
+
+Filed from the owner's report that the colour-mode picker acts across apps. brief-board and six other apps on the shared
+domain keep the choice under the bare `theme` key; it moves to `brief-board.theme`, carrying the old value over once.
+Ships with `node cli.ts brief-board all`.
