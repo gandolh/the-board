@@ -67,3 +67,19 @@ All settled. None of them is open.
 
 - Settled 2026-11-25 (owner): "color-mode picker should be per app, not per ward account." The key, the carry-over
   and the legacy name are the controller's calls, the same in all seven apps.
+
+## Outcome
+
+Built as written, 2026-11-26. The board was not updated (brief-board was not available in the session).
+
+- `web/index.html` and `web/src/lib/theme.ts` use `brief-board.theme`. When it holds nothing valid, both read the bare
+  `theme` once (`LEGACY_THEME_KEY` in the store), write a valid value to `brief-board.theme` and never touch the bare
+  key.
+- `web/src/lib/theme.test.ts`: the new key wins over the bare one; a bare `dark` starts dark and lands under the new
+  key; the bare key is never written; an unknown value in either reads as light. The same cases run against the boot
+  script.
+- `web/e2e/shots.spec.ts` and `floor.spec.ts` seed `brief-board.theme`; the full e2e run passed (111 passed).
+- Checked in Chromium on Vite with stubbed data: a stored bare `dark` showed `data-theme="dark"` from the first change
+  with no flash and was copied to `brief-board.theme`; setting the bare key to `light` and reloading stayed dark;
+  picking Light wrote only `brief-board.theme`.
+- `npm run check` passed.

@@ -49,7 +49,7 @@ for (const theme of ["light", "dark"] as const) {
     for (const screen of SCREENS) {
       test(`${screen.name} ${theme} ${width}`, async ({ page }) => {
         await page.setViewportSize({ width, height: screen.height?.(width) ?? (width === 390 ? 844 : 800) });
-        await page.addInitScript((t) => localStorage.setItem("theme", t), theme);
+        await page.addInitScript((t) => localStorage.setItem("brief-board.theme", t), theme);
         await stubBoard(page, screen.stub);
         if (screen.linkError) {
           await page.route("**/brief-board-api/auth/ward/link", (route) =>

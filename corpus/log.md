@@ -646,3 +646,10 @@ before) and turned healthy on scratch data. Ready for deploy: `node cli.ts brief
 Filed from the owner's report that the colour-mode picker acts across apps. brief-board and six other apps on the shared
 domain keep the choice under the bare `theme` key; it moves to `brief-board.theme`, carrying the old value over once.
 Ships with `node cli.ts brief-board deploy`.
+
+## [2026-11-26] done | Brief 27: the colour mode is kept under brief-board.theme
+
+[Brief 27](briefs/done/27-the-colour-mode-is-kept-under-its-own-key.md): the boot script and the store use
+`brief-board.theme` and read the bare `theme` once to carry an old choice over, never writing or deleting it. The
+e2e specs seed the new key. Web build only: `node cli.ts brief-board deploy`. The board was not updated because
+brief-board was not available in this session.

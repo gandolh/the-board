@@ -6,8 +6,14 @@
     <title>brief-board</title>
     <script>
       // The saved theme before the first paint, so a dark choice never flashes light; light on a first visit.
+      // The bare "theme" key is the old one shared with other apps: read once, never written.
       try {
-        var theme = localStorage.getItem("theme");
+        var theme = localStorage.getItem("brief-board.theme");
+        if (theme !== "light" && theme !== "dark" && theme !== "system") {
+          var legacy = localStorage.getItem("theme");
+          theme = legacy === "light" || legacy === "dark" || legacy === "system" ? legacy : null;
+          if (theme) localStorage.setItem("brief-board.theme", theme);
+        }
         document.documentElement.dataset.theme = theme === "dark" || theme === "system" ? theme : "light";
       } catch (error) {
         document.documentElement.dataset.theme = "light";
