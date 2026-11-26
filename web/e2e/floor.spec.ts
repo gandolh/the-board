@@ -29,7 +29,7 @@ const SCREENS: Screen[] = [
 type Mode = "light" | "dark" | "system";
 
 async function visit(page: Page, screen: Screen, mode: Mode) {
-  await page.addInitScript((m) => localStorage.setItem("theme", m), mode);
+  await page.addInitScript((m) => localStorage.setItem("brief-board.theme", m), mode);
   await stubBoard(page, screen.stub);
   await page.goto(BASE + screen.path);
   if (screen.open) await page.getByRole("button", { name: screen.open }).click();

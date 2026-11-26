@@ -1,6 +1,6 @@
 ---
 summary: How the read-only board in the browser is built, as of 2026-11-13 (the redesign "The queue and the lanes": a Needs you queue, one sticky status row from 1100 px, lanes that stack below it, a bottom bar under 720 px). Its GETs and where the API is, polling every 10 s and the banner when the API is down, the tag filter (in the browser, carried between pages), lanes that stack below 1100 px and never scroll sideways (2026-11-13), cells past five cards that stop at 600px and scroll (2026-11-09), the Older Done page for Done past the board's 14 days and how a ticket is on exactly one of the two (2026-11-09), the shared header and the active sprint in it, the Sprints page of closed sprints (2026-11-10), the non-modal Base UI detail panel and the wrappers Base UI sits behind (2026-11-11), the Tailwind stylesheet, its tokens and the Light / Dark / System switch (2026-11-11), and the demo seed script.
-updated: 2026-11-13
+updated: 2026-11-26
 ---
 
 # Board UI
@@ -100,7 +100,10 @@ Light, Dark and System are a `RadioGroup` on the account page
 board still only reads. `web/src/lib/theme.ts` sets `data-theme` on `<html>`; the boot
 script in `web/index.html` does the same before the first paint, light when
 nothing is stored. `color-scheme` follows the attribute, so System tracks the
-operating system in CSS, with no listener.
+operating system in CSS, with no listener. The choice is kept under `brief-board.theme`: the board shares one
+`localStorage` with the other apps on the domain, so a bare `theme` would be one setting for all of them. When
+`brief-board.theme` holds nothing valid, the store and the boot script read the bare `theme` once
+(`LEGACY_THEME_KEY`), copy a valid value to `brief-board.theme` and never write or delete the bare key.
 
 `scripts/seed-demo.ts` (plain `node`) fills a scratch board with three
 made-up projects. It refuses a board holding any other project. No one ticket
